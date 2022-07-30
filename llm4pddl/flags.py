@@ -1,4 +1,4 @@
-"""Command-line flags."""
+"""Command line flags."""
 
 from absl import flags
 
