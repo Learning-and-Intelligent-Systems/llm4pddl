@@ -8,6 +8,7 @@ __pycache__
 *.csv
 *.zip
 *.so
+venv
 build
 dist
 .coverage
