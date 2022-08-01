@@ -1,0 +1,83 @@
+name: llm4pddl
+
+on: [push]
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+        cache-dependency-path: '**/setup.py'
+    - run: |
+        pip install -e .
+        pip install pytest-cov
+    - name: Pytest
+      run: |
+        pytest -s tests/ --cov-config=.coveragerc --cov=llm4pddl/ --cov=tests/ --cov-fail-under=100 --cov-report=term-missing:skip-covered
+  static-type-checking:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip' 
+        cache-dependency-path: '**/setup.py'
+    - name: Install dependencies
+      run: |
+        pip install -e .
+        pip install mypy
+    - name: Mypy
+      run: |
+        mypy .
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+        cache-dependency-path: '**/setup.py'
+    - name: Install dependencies
+      run: |
+        pip install -e .
+        pip install pytest-pylint
+    - name: Pylint
+      run: |
+        pytest . --pylint -m pylint --pylint-rcfile=.llm4pddl_pylintrc
+  autoformat:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+        cache-dependency-path: '**/setup.py'
+    - name: Run YAPF to test if python code is correctly formatted
+      uses: AlexanderMelde/yapf-action@master
+      with:
+        args: --verbose --style .style.yapf
+    - name: Run isort to organize imports
+      uses: isort/isort-action@master

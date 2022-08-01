@@ -1,1 +1,22 @@
 # llm4pddl
+
+Under development.
+
+## Requirements
+* Python 3.8+
+
+## Instructions For Contributing
+* (Highly recommended) Make a virtual environment:
+    * `virtualenv venv`
+    * `source venv/bin/activate`
+* Run `pip install -e .[develop]` to install all dependencies for development.
+* You can't push directly to master. Make a new branch in this repository (don't use a fork, since that will not properly trigger the checks when you make a PR). When your code is ready for review, make a PR and request reviews from the appropriate people.
+* To merge a PR, you need at least one approval, and you have to pass the 4 checks defined in `.github/workflows/llm4pddl.yml`, which you can run locally as follows:
+    * `pytest -s tests/ --cov-config=.coveragerc --cov=llm4pddl/ --cov=tests/ --cov-fail-under=100 --cov-report=term-missing:skip-covered --durations=0`
+    * `mypy .`
+    * `pytest . --pylint -m pylint --pylint-rcfile=.llm4pddl_pylintrc`
+    * `./run_autoformat.sh`
+* The first one is the unit testing check, which verifies that unit tests pass and that code is adequately covered. The "100" means that all lines in every file must be covered.
+* The second one is the static typing check, which uses Mypy to verify type annotations.
+* The third one is the linter check, which runs Pylint with the custom config file `.llm4pddl_pylintrc` in the root of this repository. Feel free to edit this file as necessary.
+* The fourth one is the autoformatting check, which uses the custom config files `.style.yapf` and `.isort.cfg` in the root of this repository.
