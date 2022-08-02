@@ -4,7 +4,7 @@ on: [push]
 
 jobs:
   unit-tests:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: [3.8]
@@ -23,7 +23,7 @@ jobs:
       run: |
         pytest -s tests/ --cov-config=.coveragerc --cov=llm4pddl/ --cov=tests/ --cov-fail-under=100 --cov-report=term-missing:skip-covered
   static-type-checking:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: [3.8]
@@ -43,7 +43,7 @@ jobs:
       run: |
         mypy .
   lint:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: [3.8]
@@ -63,7 +63,7 @@ jobs:
       run: |
         pytest . --pylint -m pylint --pylint-rcfile=.llm4pddl_pylintrc
   autoformat:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: [3.8]
