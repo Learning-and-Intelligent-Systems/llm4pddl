@@ -18,9 +18,9 @@ def validate_plan(domain_file: str, problem_file: str,
     with open(plan_file, "w", encoding="utf-8") as f:
         f.write(plan_str)
     val_dir = Path(__file__).parent / "third_party" / "val"
-    if sys.platform == "darwin":
+    if sys.platform == "darwin":  # pragma: no cover
         platform_dir = "darwin"
-    else:  # pragma: no cover
+    else:
         assert sys.platform.startswith("linux")
         platform_dir = "linux64"
     val_binary = val_dir / platform_dir / "Validate"
