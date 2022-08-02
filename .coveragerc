@@ -1,6 +1,6 @@
 [run]
 omit =
-    llm4pddl/third_party
+    llm4pddl/third_party/**
 
 [report]
 # Regexes for lines to exclude from consideration
