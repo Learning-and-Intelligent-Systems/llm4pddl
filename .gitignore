@@ -7,7 +7,6 @@ __pycache__
 *.python-version
 *.csv
 *.zip
-*.so
 venv
 build
 dist
