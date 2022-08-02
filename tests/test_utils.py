@@ -1,9 +1,10 @@
 """Tests for utils.py."""
 
-from llm4pddl import utils
+import tempfile
 
 import pytest
-import tempfile
+
+from llm4pddl import utils
 
 
 @pytest.fixture(scope="module", name="domain_file")
@@ -58,11 +59,12 @@ def _create_domain_file():
 		   (not (handempty))
 		   (not (on ?x ?y)))))
 """
-    domain_file = tempfile.NamedTemporaryFile(delete=False, suffix=".pddl").name
+    domain_file = tempfile.NamedTemporaryFile(delete=False,
+                                              suffix=".pddl").name
     with open(domain_file, "w", encoding="utf-8") as f:
         f.write(domain_str)
     return domain_file
-    
+
 
 @pytest.fixture(scope="module", name="problem_file")
 def _create_problem_file():
@@ -87,7 +89,8 @@ def _create_problem_file():
     (:goal (and (holding a)))
 )
 """
-    problem_file = tempfile.NamedTemporaryFile(delete=False, suffix=".pddl").name
+    problem_file = tempfile.NamedTemporaryFile(delete=False,
+                                               suffix=".pddl").name
     with open(problem_file, "w", encoding="utf-8") as f:
         f.write(problem_str)
     return problem_file
@@ -96,17 +99,10 @@ def _create_problem_file():
 @pytest.fixture(scope="module", name="valid_plans")
 def _create_valid_plans():
     # Optimal valid plan.
-    valid_plan1 = [
-        "(unstack b a)",
-        "(stack b c)",
-        "(pick-up a)"
-    ]
+    valid_plan1 = ["(unstack b a)", "(stack b c)", "(pick-up a)"]
     # Not optimal, but still valid.
     valid_plan2 = [
-        "(unstack b a)",
-        "(stack b c)",
-        "(unstack b c)",
-        "(stack b c)",
+        "(unstack b a)", "(stack b c)", "(unstack b c)", "(stack b c)",
         "(pick-up a)"
     ]
     valid_plans = [valid_plan1, valid_plan2]
@@ -117,18 +113,10 @@ def _create_valid_plans():
 def _create_invalid_plans():
     # Invalid because the second action's preconditions do not hold.
     invalid_plan1 = [
-        "(unstack b a)",
-        "(unstack b a)",
-        "(stack b c)",
-        "(pick-up a)"
+        "(unstack b a)", "(unstack b a)", "(stack b c)", "(pick-up a)"
     ]
     # Invalid because there's a garbage entry.
-    invalid_plan2 = [
-        "garbage",
-        "(unstack b a)",
-        "(stack b c)",
-        "(pick-up a)"
-    ]
+    invalid_plan2 = ["garbage", "(unstack b a)", "(stack b c)", "(pick-up a)"]
     # Invalid because the plan stops short.
     invalid_plan3 = [
         "(unstack b a)",
