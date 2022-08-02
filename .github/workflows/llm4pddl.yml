@@ -16,6 +16,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
         cache-dependency-path: '**/setup.py'
+        submodules: recursive
     - run: |
         pip install -e .
         pip install pytest-cov
@@ -36,6 +37,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
         cache: 'pip' 
         cache-dependency-path: '**/setup.py'
+        submodules: recursive
     - name: Install dependencies
       run: |
         pip install -e .
@@ -57,6 +59,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
         cache-dependency-path: '**/setup.py'
+        submodules: recursive
     - name: Install dependencies
       run: |
         pip install -e .
@@ -78,6 +81,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
         cache-dependency-path: '**/setup.py'
+        submodules: recursive
     - name: Run YAPF to test if python code is correctly formatted
       uses: AlexanderMelde/yapf-action@master
       with:
