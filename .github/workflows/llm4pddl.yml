@@ -19,6 +19,7 @@ jobs:
     - run: |
         pip install -e .
         pip install pytest-cov
+        pip install -e llm4pddl/third_party/pyperplan
     - name: Pytest
       run: |
         pytest -s tests/ --cov-config=.coveragerc --cov=llm4pddl/ --cov=tests/ --cov-fail-under=100 --cov-report=term-missing:skip-covered
@@ -39,6 +40,7 @@ jobs:
       run: |
         pip install -e .
         pip install mypy
+        pip install -e llm4pddl/third_party/pyperplan
     - name: Mypy
       run: |
         mypy .
@@ -59,6 +61,7 @@ jobs:
       run: |
         pip install -e .
         pip install pytest-pylint
+        pip install -e llm4pddl/third_party/pyperplan
     - name: Pylint
       run: |
         pytest . --pylint -m pylint --pylint-rcfile=.llm4pddl_pylintrc

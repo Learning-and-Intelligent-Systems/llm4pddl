@@ -1,0 +1,3 @@
+[submodule "llm4pddl/third_party/pyperplan"]
+	path = llm4pddl/third_party/pyperplan
+	url = https://github.com/tomsilver/pyperplan
