@@ -1,5 +1,7 @@
 """Tests for the envs module."""
 
+import pytest
+
 from llm4pddl import utils
 from llm4pddl.envs import create_env
 
@@ -13,3 +15,7 @@ def test_create_env():
     assert len(train_tasks) == 3
     eval_tasks = blocks_env.get_eval_tasks()
     assert len(eval_tasks) == 6
+    # Test unrecognized env.
+    with pytest.raises(NotImplementedError) as e:
+        create_env("not a real environment")
+    assert "Unrecognized env" in str(e)
