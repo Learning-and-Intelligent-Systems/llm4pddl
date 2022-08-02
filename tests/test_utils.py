@@ -1,5 +1,6 @@
 """Tests for utils.py."""
 
+import os
 import tempfile
 
 import pytest
@@ -162,6 +163,28 @@ def test_validate_plan(domain_file, problem_file, valid_plans, invalid_plans):
         assert not utils.validate_plan(domain_file, problem_file, invalid_plan)
 
 
+def test_get_path_to_pyperplan_benchmark():
+    """Tests for get_path_to_pyperplan_benchmark()."""
+    # Standard domain format.
+    domain_file, problem_file = utils.get_path_to_pyperplan_benchmark(
+        "blocks", 1)
+    assert os.path.exists(domain_file)
+    assert os.path.exists(problem_file)
+    # Per-problem domain files.
+    domain_file, problem_file = utils.get_path_to_pyperplan_benchmark(
+        "airport", 1)
+    assert os.path.exists(domain_file)
+    assert os.path.exists(problem_file)
+    # Domain doesn't exist.
+    with pytest.raises(FileNotFoundError) as e:
+        utils.get_path_to_pyperplan_benchmark("not a real domain", 1)
+    assert "Domain not found" in str(e)
+    # Problem doesn't exist.
+    with pytest.raises(FileNotFoundError) as e:
+        utils.get_path_to_pyperplan_benchmark("blocks", 100)
+    assert "Problem not found" in str(e)
+
+
 def test_run_planning(domain_file, problem_file, impossible_problem_file):
     """Tests for run_planning()."""
     # Test planning successfully.
@@ -171,3 +194,9 @@ def test_run_planning(domain_file, problem_file, impossible_problem_file):
     # Test planning in an impossible problem.
     plan = utils.run_planning(domain_file, impossible_problem_file)
     assert plan is None
+    # Test planning in a pyperplan benchmark problem.
+    domain_file2, problem_file2 = utils.get_path_to_pyperplan_benchmark(
+        "blocks", 1)
+    plan = utils.run_planning(domain_file2, problem_file2)
+    assert plan is not None
+    assert utils.validate_plan(domain_file2, problem_file2, plan)
