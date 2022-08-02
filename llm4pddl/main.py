@@ -61,7 +61,7 @@ def _run_pipeline(approach: BaseApproach, env: BaseEnv) -> None:
 
 
 def _run_evaluation(approach, eval_tasks) -> Metrics:
-    """Evaluation the approach in the evaluation tasks."""
+    """Evaluate the approach in the evaluation tasks."""
     num_eval_tasks = len(eval_tasks)
     num_successes = 0
     num_invalid_plans = 0
