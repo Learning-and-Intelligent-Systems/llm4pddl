@@ -10,6 +10,9 @@ from typing import List, Optional, Tuple
 from pyperplan.planner import HEURISTICS, SEARCHES, search_plan
 
 
+from typing import List
+
+
 def validate_plan(domain_file: Path, problem_file: Path,
                   plan: List[str]) -> bool:
     """Use VAL to check if a plan solves a PDDL problem."""
