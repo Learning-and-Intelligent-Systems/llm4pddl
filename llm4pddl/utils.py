@@ -5,15 +5,15 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from pyperplan.planner import HEURISTICS, SEARCHES, search_plan
 
 from llm4pddl.flags import FLAGS
-from llm4pddl.structs import Task
+from llm4pddl.structs import Plan, Task
 
 
-def validate_plan(task: Task, plan: List[str]) -> bool:
+def validate_plan(task: Task, plan: Plan) -> bool:
     """Use VAL to check if a plan solves a PDDL problem."""
     plan_str = ""
     for t, action in enumerate(plan):
@@ -38,7 +38,7 @@ def validate_plan(task: Task, plan: List[str]) -> bool:
 
 def run_planning(task: Task,
                  heuristic: str = "hff",
-                 search: str = "gbf") -> Optional[List[str]]:
+                 search: str = "gbf") -> Optional[Plan]:
     """Find a plan with pyperplan."""
     search_fn = SEARCHES[search]
     heuristic_fn = HEURISTICS[heuristic]
