@@ -1,0 +1,20 @@
+[run]
+omit =
+    llm4pddl/third_party/**
+
+[report]
+# Regexes for lines to exclude from consideration
+exclude_lines =
+    # Have to re-enable the standard pragma
+    # per https://coverage.readthedocs.io/en/latest/config.html#syntax
+    pragma: no cover
+
+    # Don't complain about abstract methods, they aren't run
+    @abstractmethod
+    @abc.abstractmethod
+
+    # Don't complain about TYPE_CHECKING imports.
+    if TYPE_CHECKING:
+
+    # Don't complain about longrun tests.
+    @longrun

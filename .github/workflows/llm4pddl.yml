@@ -17,8 +17,10 @@ jobs:
         cache: 'pip'
         cache-dependency-path: '**/setup.py'
     - run: |
+        git submodule update --init --recursive
         pip install -e .
         pip install pytest-cov
+        pip install -e llm4pddl/third_party/pyperplan
     - name: Pytest
       run: |
         pytest -s tests/ --cov-config=.coveragerc --cov=llm4pddl/ --cov=tests/ --cov-fail-under=100 --cov-report=term-missing:skip-covered
@@ -37,8 +39,10 @@ jobs:
         cache-dependency-path: '**/setup.py'
     - name: Install dependencies
       run: |
+        git submodule update --init --recursive
         pip install -e .
         pip install mypy
+        pip install -e llm4pddl/third_party/pyperplan
     - name: Mypy
       run: |
         mypy .
@@ -57,8 +61,10 @@ jobs:
         cache-dependency-path: '**/setup.py'
     - name: Install dependencies
       run: |
+        git submodule update --init --recursive
         pip install -e .
         pip install pytest-pylint
+        pip install -e llm4pddl/third_party/pyperplan
     - name: Pylint
       run: |
         pytest . --pylint -m pylint --pylint-rcfile=.llm4pddl_pylintrc
