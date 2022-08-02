@@ -16,8 +16,8 @@ jobs:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
         cache-dependency-path: '**/setup.py'
-        submodules: recursive
     - run: |
+        git submodule update --init --recursive
         pip install -e .
         pip install pytest-cov
         pip install -e llm4pddl/third_party/pyperplan
@@ -37,9 +37,9 @@ jobs:
         python-version: ${{ matrix.python-version }}
         cache: 'pip' 
         cache-dependency-path: '**/setup.py'
-        submodules: recursive
     - name: Install dependencies
       run: |
+        git submodule update --init --recursive
         pip install -e .
         pip install mypy
         pip install -e llm4pddl/third_party/pyperplan
@@ -59,9 +59,9 @@ jobs:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
         cache-dependency-path: '**/setup.py'
-        submodules: recursive
     - name: Install dependencies
       run: |
+        git submodule update --init --recursive
         pip install -e .
         pip install pytest-pylint
         pip install -e llm4pddl/third_party/pyperplan
@@ -81,7 +81,6 @@ jobs:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
         cache-dependency-path: '**/setup.py'
-        submodules: recursive
     - name: Run YAPF to test if python code is correctly formatted
       uses: AlexanderMelde/yapf-action@master
       with:
