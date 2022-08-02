@@ -27,6 +27,7 @@ def validate_plan(domain_file: str, problem_file: str, plan: List[str]) -> bool:
     val_binary = val_dir / platform_dir / "Validate"
     cmd_str = f"{val_binary} -v {domain_file} {problem_file} {plan_file}"
     output = subprocess.getoutput(cmd_str)
+    print("OUTPUT:", output)
     os.remove(plan_file)
     if "Plan valid" in output:
         return True
