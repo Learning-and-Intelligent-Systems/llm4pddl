@@ -5,10 +5,11 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from pyperplan.planner import HEURISTICS, SEARCHES, search_plan
 
+from llm4pddl.flags import FLAGS
 from llm4pddl.structs import Task
 
 
@@ -52,10 +53,10 @@ def run_planning(task: Task,
     return [a.name for a in pyperplan_plan]
 
 
-def get_pyperplan_benchmark_task(domain_name: str, task_num: int) -> Task:
+def get_pyperplan_benchmark_task(benchmark_name: str, task_num: int) -> Task:
     """Get the paths to the pyperplan benchmark domain and problem files."""
     pyperplan_dir = Path(__file__).parent / "third_party" / "pyperplan"
-    domain_dir = pyperplan_dir / "benchmarks" / domain_name
+    domain_dir = pyperplan_dir / "benchmarks" / benchmark_name
     standard_domain_file = domain_dir / "domain.pddl"
     if os.path.exists(standard_domain_file):
         domain_file = standard_domain_file
@@ -69,3 +70,9 @@ def get_pyperplan_benchmark_task(domain_name: str, task_num: int) -> Task:
     if not os.path.exists(problem_file):
         raise FileNotFoundError(f"Problem not found: {problem_file}")
     return Task(domain_file, problem_file)
+
+
+def reset_flags(args: Dict[str, Any]) -> None:
+    """Resets FLAGS for use in unit tests."""
+    FLAGS.__dict__.clear()
+    FLAGS.__dict__.update(args)

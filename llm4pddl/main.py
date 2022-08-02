@@ -6,9 +6,9 @@ from llm4pddl.flags import FLAGS, parse_flags
 def _main() -> None:
     """The main entry point."""
     parse_flags()
-    domain = FLAGS.domain
+    env = FLAGS.env
     approach = FLAGS.approach
-    print("Domain:", domain)
+    print("Env:", env)
     print("Approach:", approach)
 
 
