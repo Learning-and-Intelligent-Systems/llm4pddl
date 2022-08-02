@@ -13,6 +13,8 @@ setup(name="llm4pddl",
       install_requires=[
           "PyYAML",
       ],
+      setup_requires=['setuptools_scm'],
+      include_package_data=True,
       extras_require={
           "develop": [
               "mypy", "pytest-cov>=2.12.1", "pytest-pylint>=0.18.0",
