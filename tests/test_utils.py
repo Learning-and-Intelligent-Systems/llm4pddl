@@ -6,6 +6,7 @@ import tempfile
 import pytest
 
 from llm4pddl import utils
+from llm4pddl.structs import Task
 
 
 @pytest.fixture(scope="module", name="domain_file")
@@ -157,46 +158,46 @@ def _create_invalid_plans():
 
 def test_validate_plan(domain_file, problem_file, valid_plans, invalid_plans):
     """Tests for validate_plan()."""
+    task = Task(domain_file, problem_file)
     for valid_plan in valid_plans:
-        assert utils.validate_plan(domain_file, problem_file, valid_plan)
+        assert utils.validate_plan(task, valid_plan)
     for invalid_plan in invalid_plans:
-        assert not utils.validate_plan(domain_file, problem_file, invalid_plan)
+        assert not utils.validate_plan(task, invalid_plan)
 
 
-def test_get_path_to_pyperplan_benchmark():
-    """Tests for get_path_to_pyperplan_benchmark()."""
+def test_get_pyperplan_benchmark_task():
+    """Tests for get_pyperplan_benchmark_task()."""
     # Standard domain format.
-    domain_file, problem_file = utils.get_path_to_pyperplan_benchmark(
-        "blocks", 1)
-    assert os.path.exists(domain_file)
-    assert os.path.exists(problem_file)
+    task = utils.get_pyperplan_benchmark_task("blocks", 1)
+    assert os.path.exists(task.domain_file)
+    assert os.path.exists(task.problem_file)
     # Per-problem domain files.
-    domain_file, problem_file = utils.get_path_to_pyperplan_benchmark(
-        "airport", 1)
-    assert os.path.exists(domain_file)
-    assert os.path.exists(problem_file)
+    task = utils.get_pyperplan_benchmark_task("airport", 1)
+    assert os.path.exists(task.domain_file)
+    assert os.path.exists(task.problem_file)
     # Domain doesn't exist.
     with pytest.raises(FileNotFoundError) as e:
-        utils.get_path_to_pyperplan_benchmark("not a real domain", 1)
+        utils.get_pyperplan_benchmark_task("not a real domain", 1)
     assert "Domain not found" in str(e)
     # Problem doesn't exist.
     with pytest.raises(FileNotFoundError) as e:
-        utils.get_path_to_pyperplan_benchmark("blocks", 100)
+        utils.get_pyperplan_benchmark_task("blocks", 100)
     assert "Problem not found" in str(e)
 
 
 def test_run_planning(domain_file, problem_file, impossible_problem_file):
     """Tests for run_planning()."""
     # Test planning successfully.
-    plan = utils.run_planning(domain_file, problem_file)
+    task = Task(domain_file, problem_file)
+    plan = utils.run_planning(task)
     assert plan is not None
-    assert utils.validate_plan(domain_file, problem_file, plan)
+    assert utils.validate_plan(task, plan)
     # Test planning in an impossible problem.
-    plan = utils.run_planning(domain_file, impossible_problem_file)
+    impossible_task = Task(domain_file, impossible_problem_file)
+    plan = utils.run_planning(impossible_task)
     assert plan is None
     # Test planning in a pyperplan benchmark problem.
-    domain_file2, problem_file2 = utils.get_path_to_pyperplan_benchmark(
-        "blocks", 1)
-    plan = utils.run_planning(domain_file2, problem_file2)
+    task = utils.get_pyperplan_benchmark_task("blocks", 1)
+    plan = utils.run_planning(task)
     assert plan is not None
-    assert utils.validate_plan(domain_file2, problem_file2, plan)
+    assert utils.validate_plan(task, plan)
