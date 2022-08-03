@@ -18,7 +18,7 @@ class RunConfig:
     experiment_id: str
     approach: str
     env: str
-    args: List[str]  # e.g. --make_test_videos
+    args: List[str]  # e.g. --debug
     flags: Dict[str, Any]  # e.g. --num_train_tasks 1
 
     def __post_init__(self) -> None:
