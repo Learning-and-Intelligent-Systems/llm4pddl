@@ -66,11 +66,8 @@ def config_to_cmd_flags(cfg: RunConfig) -> str:
     return args_and_flags_str
 
 
-def parse_configs(config_filename: str) -> Iterator[Dict[str, Any]]:
+def parse_configs(config_filepath: str) -> Iterator[Dict[str, Any]]:
     """Parse the YAML config file."""
-    scripts_dir = os.path.dirname(os.path.realpath(__file__))
-    configs_dir = os.path.join(scripts_dir, "configs")
-    config_filepath = os.path.join(configs_dir, config_filename)
     with open(config_filepath, "r", encoding="utf-8") as f:
         for config in yaml.safe_load_all(f):
             yield config
