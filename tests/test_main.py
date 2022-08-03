@@ -72,9 +72,7 @@ def test_run_evaluation():
     env = create_env("pyperplan-blocks")
     eval_tasks = env.get_eval_tasks()
     results = _run_evaluation(approach, eval_tasks)
-    assert results == {
-        "num_eval_tasks": 2,
-        "num_successes": 0,
-        "num_no_solution": 1,
-        "num_invalid_plans": 1,
-    }
+    assert set(results) == set(eval_tasks)
+    task0, task1 = eval_tasks
+    assert results[task0]["result"] == "no_plan_found"
+    assert results[task1]["result"] == "invalid_plan"

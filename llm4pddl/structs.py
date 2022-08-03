@@ -1,7 +1,7 @@
 """Data structures."""
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Dict, List
 
 
 @dataclass(frozen=True)
@@ -16,4 +16,5 @@ class Task:
 Plan = List[str]
 
 # Metrics are saved during evaluation.
-Metrics = Dict[str, float]
+TaskMetrics = Dict[str, Any]
+Metrics = Dict[Task, TaskMetrics]

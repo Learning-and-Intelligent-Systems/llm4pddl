@@ -13,7 +13,7 @@ from llm4pddl.approaches.base_approach import BaseApproach
 from llm4pddl.envs import create_env
 from llm4pddl.envs.base_env import BaseEnv
 from llm4pddl.flags import FLAGS, parse_flags
-from llm4pddl.structs import Metrics
+from llm4pddl.structs import Metrics, TaskMetrics
 
 
 def _main() -> None:
@@ -62,37 +62,34 @@ def _run_pipeline(approach: BaseApproach, env: BaseEnv) -> None:
 
 def _run_evaluation(approach, eval_tasks) -> Metrics:
     """Evaluate the approach in the evaluation tasks."""
+    results: Metrics = {}
     num_eval_tasks = len(eval_tasks)
-    num_successes = 0
-    num_invalid_plans = 0
-    num_no_solution = 0
     for i, task in enumerate(eval_tasks):
+        # Save metrics for this task.
+        task_metrics: TaskMetrics = {}
+        results[task] = task_metrics
         # Get a plan.
+        start_time = time.time()
         plan = approach.solve(task)
+        solve_time = time.time() - start_time
+        task_metrics["solve_time"] = solve_time
         # If the approach didn't find any plan, this is a failure.
         if plan is None:
             logging.info(f"Task {i+1} / {num_eval_tasks}: "
                          f"Approach failed to find any plan.")
-            num_no_solution += 1
+            task_metrics["result"] = "no_plan_found"
             continue
         # Validate the plan.
         is_valid = utils.validate_plan(task, plan)
         if not is_valid:
             logging.info(f"Task {i+1} / {num_eval_tasks}: "
                          f"Approach returned an invalid plan.")
-            num_invalid_plans += 1
+            task_metrics["result"] = "invalid_plan"
         # Found a good plan!
         else:
             logging.info(f"Task {i+1} / {num_eval_tasks}: SOLVED")
-            num_successes += 1
-    assert num_successes + num_no_solution + num_invalid_plans == \
-        num_eval_tasks
-    return {
-        "num_eval_tasks": num_eval_tasks,
-        "num_successes": num_successes,
-        "num_no_solution": num_no_solution,
-        "num_invalid_plans": num_invalid_plans,
-    }
+            task_metrics["result"] = "success"
+    return results
 
 
 if __name__ == "__main__":  # pragma: no cover
