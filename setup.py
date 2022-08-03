@@ -12,6 +12,8 @@ setup(name="llm4pddl",
       packages=find_packages(include=["llm4pddl", "llm4pddl.*"]),
       install_requires=[
           "PyYAML",
+          "numpy",
+          "pandas",
       ],
       setup_requires=['setuptools_scm'],
       include_package_data=True,

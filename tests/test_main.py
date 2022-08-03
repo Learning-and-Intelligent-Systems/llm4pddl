@@ -17,8 +17,8 @@ def test_main():
     # Test successful pipeline run with pure planning in blocks.
     sys.argv = [
         "dummy", "--env", "pyperplan-blocks", "--approach", "pure-planning",
-        "--num_train_tasks", "0", "--num_eval_tasks", "2", "--results_dir",
-        temp_results_dir
+        "--seed", "123", "--num_train_tasks", "0", "--num_eval_tasks", "2",
+        "--results_dir", temp_results_dir
     ]
     _main()  # should run
     # Remove temporary results dir.
@@ -28,17 +28,22 @@ def test_main():
 class _MockApproach(BaseApproach):
 
     def __init__(self, plan_sequence):
+        super().__init__()
         self.remaining_plans = plan_sequence
 
     @property
     def is_learning_based(self) -> bool:
         return True
 
+    @property
+    def is_planning_based(self) -> bool:
+        return False
+
     def get_name(self):
         return "dummy"
 
     def solve(self, task):
-        return self.remaining_plans.pop(0)
+        return self.remaining_plans.pop(0), {}
 
 
 def test_run_pipeline():
@@ -69,12 +74,11 @@ def test_run_evaluation():
     plan_sequence = [None, []]
     approach = _MockApproach(plan_sequence)
     assert approach.get_name() == "dummy"
-    env = create_env("pyperplan-blocks")
+    env_name = "pyperplan-blocks"
+    env = create_env(env_name)
     eval_tasks = env.get_eval_tasks()
-    results = _run_evaluation(approach, eval_tasks)
-    assert results == {
-        "num_eval_tasks": 2,
-        "num_successes": 0,
-        "num_no_solution": 1,
-        "num_invalid_plans": 1,
-    }
+    results = _run_evaluation(approach, eval_tasks, env_name)
+    assert len(results) == 2
+    task0_id, task1_id = sorted(results)
+    assert results[task0_id]["result"] == "no_plan_found"
+    assert results[task1_id]["result"] == "invalid_plan"
