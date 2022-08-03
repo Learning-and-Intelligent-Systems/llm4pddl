@@ -8,7 +8,7 @@ ENVS:
   airport:  # used in constructing the experiment ID
     NAME: "pyperplan-airport"
     FLAGS: {}
-  blocks:  # used in constructing the experiment ID
+  blocks:
     NAME: "pyperplan-blocks"
     FLAGS: {}
 ARGS:
