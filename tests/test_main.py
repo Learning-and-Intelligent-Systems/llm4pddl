@@ -53,6 +53,7 @@ def test_run_pipeline():
     utils.reset_flags({
         "env": "pyperplan-blocks",
         "approach": "dummy",
+        "experiment_id": "dummy",
         "num_train_tasks": 0,
         "num_eval_tasks": 2,
         "results_dir": temp_results_dir
