@@ -33,6 +33,7 @@ def _main() -> None:
     logging.info(FLAGS)
     logging.info(f"Git commit hash: {utils.get_git_commit_hash()}")
     # Create the approach and env.
+    # The approach is seeded in BaseApproach.__init__() using FLAGS.seed.
     approach = create_approach(FLAGS.approach)
     env = create_env(FLAGS.env)
     # Run the pipeline.

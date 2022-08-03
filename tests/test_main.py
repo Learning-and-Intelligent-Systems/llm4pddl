@@ -17,8 +17,8 @@ def test_main():
     # Test successful pipeline run with pure planning in blocks.
     sys.argv = [
         "dummy", "--env", "pyperplan-blocks", "--approach", "pure-planning",
-        "--num_train_tasks", "0", "--num_eval_tasks", "2", "--results_dir",
-        temp_results_dir
+        "--seed", "123", "--num_train_tasks", "0", "--num_eval_tasks", "2",
+        "--results_dir", temp_results_dir
     ]
     _main()  # should run
     # Remove temporary results dir.
@@ -28,6 +28,7 @@ def test_main():
 class _MockApproach(BaseApproach):
 
     def __init__(self, plan_sequence):
+        super().__init__()
         self.remaining_plans = plan_sequence
 
     @property

@@ -77,10 +77,15 @@ def get_pyperplan_benchmark_task(benchmark_name: str, task_num: int) -> Task:
     return Task(domain_file, problem_file)
 
 
-def reset_flags(args: Dict[str, Any]) -> None:
-    """Resets FLAGS for use in unit tests."""
+def reset_flags(args: Dict[str, Any], default_seed: int = 123) -> None:
+    """Resets FLAGS for use in unit tests.
+
+    Unless seed is specified, we use a default for testing.
+    """
     FLAGS.__dict__.clear()
     FLAGS.__dict__.update(args)
+    if "seed" not in FLAGS:
+        FLAGS.__dict__["seed"] = default_seed
 
 
 @functools.lru_cache(maxsize=None)
@@ -92,4 +97,4 @@ def get_git_commit_hash() -> str:
 
 def get_config_path_str() -> str:
     """Get a string identifier for an experiment from FLAGS."""
-    return f"{FLAGS.env}__{FLAGS.approach}"
+    return f"{FLAGS.env}__{FLAGS.approach}__{FLAGS.seed}"

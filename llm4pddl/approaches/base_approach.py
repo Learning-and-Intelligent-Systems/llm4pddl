@@ -3,11 +3,17 @@
 import abc
 from typing import Optional, Sequence, Tuple
 
+import numpy as np
+
+from llm4pddl.flags import FLAGS
 from llm4pddl.structs import Plan, Task, TaskMetrics
 
 
 class BaseApproach(abc.ABC):
     """Base class for an approach that solves tasks."""
+
+    def __init__(self) -> None:
+        self._rng = np.random.default_rng(FLAGS.seed)
 
     @property
     @abc.abstractmethod
