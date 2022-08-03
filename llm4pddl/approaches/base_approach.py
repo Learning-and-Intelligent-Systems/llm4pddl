@@ -1,9 +1,9 @@
 """Base class for approaches."""
 
 import abc
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Tuple
 
-from llm4pddl.structs import Plan, Task
+from llm4pddl.structs import Plan, Task, TaskMetrics
 
 
 class BaseApproach(abc.ABC):
@@ -15,13 +15,19 @@ class BaseApproach(abc.ABC):
         """Whether or not this approach should be trained."""
         raise NotImplementedError("Override me!")
 
+    @property
+    @abc.abstractmethod
+    def is_planning_based(self) -> bool:
+        """Whether or not this approach uses planning."""
+        raise NotImplementedError("Override me!")
+
     @abc.abstractmethod
     def get_name(self) -> str:
         """Get the approach name."""
         raise NotImplementedError("Override me!")
 
     @abc.abstractmethod
-    def solve(self, task: Task) -> Optional[Plan]:
+    def solve(self, task: Task) -> Tuple[Optional[Plan], TaskMetrics]:
         """Return a plan, or None if no plan can be found."""
         raise NotImplementedError("Override me!")
 

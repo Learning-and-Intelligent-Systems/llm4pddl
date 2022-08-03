@@ -7,12 +7,12 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 from pyperplan.planner import HEURISTICS, SEARCHES, search_plan
 
 from llm4pddl.flags import FLAGS
-from llm4pddl.structs import Plan, Task
+from llm4pddl.structs import Plan, Task, TaskMetrics
 
 
 def validate_plan(task: Task, plan: Plan) -> bool:
@@ -40,13 +40,13 @@ def validate_plan(task: Task, plan: Plan) -> bool:
 
 def run_planning(task: Task,
                  heuristic: str = "hff",
-                 search: str = "gbf") -> Optional[Plan]:
+                 search: str = "gbf") -> Tuple[Optional[Plan], TaskMetrics]:
     """Find a plan with pyperplan."""
     search_fn = SEARCHES[search]
     heuristic_fn = HEURISTICS[heuristic]
     # Quiet the pyperplan logging.
     logging.disable(logging.ERROR)
-    pyperplan_plan = search_plan(
+    pyperplan_plan, metrics = search_plan(
         task.domain_file,
         task.problem_file,
         search_fn,
@@ -54,8 +54,8 @@ def run_planning(task: Task,
     )
     logging.disable(logging.NOTSET)
     if pyperplan_plan is None:
-        return None
-    return [a.name for a in pyperplan_plan]
+        return None, metrics
+    return [a.name for a in pyperplan_plan], metrics
 
 
 def get_pyperplan_benchmark_task(benchmark_name: str, task_num: int) -> Task:

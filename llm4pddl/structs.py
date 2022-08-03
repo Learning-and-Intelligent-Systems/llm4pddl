@@ -17,4 +17,5 @@ Plan = List[str]
 
 # Metrics are saved during evaluation.
 TaskMetrics = Dict[str, Any]
-Metrics = Dict[Task, TaskMetrics]
+# Maps a task string identifier to task metrics.
+Metrics = Dict[str, TaskMetrics]

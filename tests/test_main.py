@@ -34,11 +34,15 @@ class _MockApproach(BaseApproach):
     def is_learning_based(self) -> bool:
         return True
 
+    @property
+    def is_planning_based(self) -> bool:
+        return False
+
     def get_name(self):
         return "dummy"
 
     def solve(self, task):
-        return self.remaining_plans.pop(0)
+        return self.remaining_plans.pop(0), {}
 
 
 def test_run_pipeline():
@@ -69,10 +73,11 @@ def test_run_evaluation():
     plan_sequence = [None, []]
     approach = _MockApproach(plan_sequence)
     assert approach.get_name() == "dummy"
-    env = create_env("pyperplan-blocks")
+    env_name = "pyperplan-blocks"
+    env = create_env(env_name)
     eval_tasks = env.get_eval_tasks()
-    results = _run_evaluation(approach, eval_tasks)
-    assert set(results) == set(eval_tasks)
-    task0, task1 = eval_tasks
-    assert results[task0]["result"] == "no_plan_found"
-    assert results[task1]["result"] == "invalid_plan"
+    results = _run_evaluation(approach, eval_tasks, env_name)
+    assert len(results) == 2
+    task0_id, task1_id = sorted(results)
+    assert results[task0_id]["result"] == "no_plan_found"
+    assert results[task1_id]["result"] == "invalid_plan"

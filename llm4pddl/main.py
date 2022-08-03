@@ -7,6 +7,8 @@ import sys
 import time
 from pathlib import Path
 
+import numpy as np
+
 from llm4pddl import utils
 from llm4pddl.approaches import create_approach
 from llm4pddl.approaches.base_approach import BaseApproach
@@ -47,7 +49,7 @@ def _run_pipeline(approach: BaseApproach, env: BaseEnv) -> None:
         approach.train(train_tasks)
     # Run evaluation for all approaches.
     eval_tasks = env.get_eval_tasks()
-    results = _run_evaluation(approach, eval_tasks)
+    results = _run_evaluation(approach, eval_tasks, env.get_name())
     # Save the results.
     os.makedirs(FLAGS.results_dir, exist_ok=True)
     outdata = {
@@ -60,19 +62,26 @@ def _run_pipeline(approach: BaseApproach, env: BaseEnv) -> None:
         pickle.dump(outdata, f)
 
 
-def _run_evaluation(approach, eval_tasks) -> Metrics:
+def _run_evaluation(approach, eval_tasks, env_name) -> Metrics:
     """Evaluate the approach in the evaluation tasks."""
     results: Metrics = {}
     num_eval_tasks = len(eval_tasks)
     for i, task in enumerate(eval_tasks):
         # Save metrics for this task.
         task_metrics: TaskMetrics = {}
-        results[task] = task_metrics
+        task_id = f"{env_name}__{task.problem_file.stem}"
+        results[task_id] = task_metrics
         # Get a plan.
         start_time = time.time()
-        plan = approach.solve(task)
+        plan, solve_metrics = approach.solve(task)
         solve_time = time.time() - start_time
         task_metrics["solve_time"] = solve_time
+        if approach.is_planning_based:
+            task_metrics["nodes_created"] = solve_metrics["nodes_created"]
+            task_metrics["nodes_expanded"] = solve_metrics["nodes_expanded"]
+        else:
+            task_metrics["nodes_created"] = np.nan
+            task_metrics["nodes_expanded"] = np.nan
         # If the approach didn't find any plan, this is a failure.
         if plan is None:
             logging.info(f"Task {i+1} / {num_eval_tasks}: "
