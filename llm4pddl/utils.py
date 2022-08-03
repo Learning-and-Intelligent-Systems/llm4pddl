@@ -1,7 +1,5 @@
 """Utility functions."""
 
-import functools
-import logging
 import os
 import subprocess
 import sys
@@ -44,15 +42,12 @@ def run_planning(task: Task,
     """Find a plan with pyperplan."""
     search_fn = SEARCHES[search]
     heuristic_fn = HEURISTICS[heuristic]
-    # Quiet the pyperplan logging.
-    logging.disable(logging.ERROR)
     pyperplan_plan = search_plan(
         task.domain_file,
         task.problem_file,
         search_fn,
         heuristic_fn,
     )
-    logging.disable(logging.NOTSET)
     if pyperplan_plan is None:
         return None
     return [a.name for a in pyperplan_plan]
@@ -81,15 +76,3 @@ def reset_flags(args: Dict[str, Any]) -> None:
     """Resets FLAGS for use in unit tests."""
     FLAGS.__dict__.clear()
     FLAGS.__dict__.update(args)
-
-
-@functools.lru_cache(maxsize=None)
-def get_git_commit_hash() -> str:
-    """Return the hash of the current git commit."""
-    out = subprocess.check_output(["git", "rev-parse", "HEAD"])
-    return out.decode("ascii").strip()
-
-
-def get_config_path_str() -> str:
-    """Get a string identifier for an experiment from FLAGS."""
-    return f"{FLAGS.env}__{FLAGS.approach}"

@@ -10,10 +10,6 @@ from llm4pddl.structs import Plan, Task
 class PurePlanningApproach(BaseApproach):
     """An approach that simply runs a planner to solve tasks."""
 
-    @property
-    def is_learning_based(self) -> bool:
-        return False
-
     def get_name(self) -> str:
         return "pure-planning"
 
