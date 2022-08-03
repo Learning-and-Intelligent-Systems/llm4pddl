@@ -1,7 +1,7 @@
 """Data structures."""
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List
+from typing import Dict, List
 
 
 @dataclass(frozen=True)
@@ -14,3 +14,6 @@ class Task:
 # A plan is currently just a list of strings, where each string is one ground
 # operator, e.g., (unstack a b). We may change this later.
 Plan = List[str]
+
+# Metrics are saved during evaluation.
+Metrics = Dict[str, float]
