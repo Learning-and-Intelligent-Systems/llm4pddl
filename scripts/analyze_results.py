@@ -23,6 +23,7 @@ def _main() -> None:
     raw_results = _load_results(args.results_dir)
     _create_summary_table(raw_results)
 
+
 def _load_results(results_dir: str) -> pd.DataFrame:
     all_data = []
     git_commit_hashes = set()
@@ -82,6 +83,7 @@ def _create_summary_table(raw_results: pd.DataFrame) -> None:
     print(means.reset_index())
     means.to_csv("results_summary.csv")
     print("\n\nWrote out table to results_summary.csv")
+
 
 if __name__ == "__main__":
     _main()
