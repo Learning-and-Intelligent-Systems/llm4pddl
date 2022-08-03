@@ -3,6 +3,7 @@
 import os
 import tempfile
 
+import numpy as np
 import pytest
 
 from llm4pddl import utils
@@ -188,19 +189,20 @@ def test_get_pyperplan_benchmark_task():
 def test_run_planning(domain_file, problem_file, impossible_problem_file):
     """Tests for run_planning()."""
     # Test planning successfully.
+    rng = np.random.default_rng(123)
     task = Task(domain_file, problem_file)
-    plan, metrics = utils.run_planning(task)
+    plan, metrics = utils.run_planning(task, rng)
     assert metrics["nodes_created"] > metrics["nodes_expanded"]
     assert plan is not None
     assert utils.validate_plan(task, plan)
     # Test planning in an impossible problem.
     impossible_task = Task(domain_file, impossible_problem_file)
-    plan, metrics = utils.run_planning(impossible_task)
+    plan, metrics = utils.run_planning(impossible_task, rng)
     assert metrics["nodes_created"] == metrics["nodes_expanded"] == 1
     assert plan is None
     # Test planning in a pyperplan benchmark problem.
     task = utils.get_pyperplan_benchmark_task("blocks", 1)
-    plan, metrics = utils.run_planning(task)
+    plan, metrics = utils.run_planning(task, rng)
     assert metrics["nodes_created"] > metrics["nodes_expanded"]
     assert plan is not None
     assert utils.validate_plan(task, plan)

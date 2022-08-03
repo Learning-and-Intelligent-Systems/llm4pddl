@@ -22,4 +22,4 @@ class PurePlanningApproach(BaseApproach):
         return "pure-planning"
 
     def solve(self, task: Task) -> Tuple[Optional[Plan], TaskMetrics]:
-        return utils.run_planning(task)
+        return utils.run_planning(task, self._rng)

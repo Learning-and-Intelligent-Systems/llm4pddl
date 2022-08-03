@@ -9,6 +9,7 @@ import tempfile
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
+import numpy as np
 from pyperplan.planner import HEURISTICS, SEARCHES, search_plan
 
 from llm4pddl.flags import FLAGS
@@ -39,6 +40,7 @@ def validate_plan(task: Task, plan: Plan) -> bool:
 
 
 def run_planning(task: Task,
+                 rng: np.random.Generator,
                  heuristic: str = "hff",
                  search: str = "gbf") -> Tuple[Optional[Plan], TaskMetrics]:
     """Find a plan with pyperplan."""
@@ -51,6 +53,7 @@ def run_planning(task: Task,
         task.problem_file,
         search_fn,
         heuristic_fn,
+        rng=rng,
     )
     logging.disable(logging.NOTSET)
     if pyperplan_plan is None:
