@@ -100,4 +100,4 @@ def get_git_commit_hash() -> str:
 
 def get_config_path_str() -> str:
     """Get a string identifier for an experiment from FLAGS."""
-    return f"{FLAGS.env}__{FLAGS.approach}__{FLAGS.seed}"
+    return f"{FLAGS.env}__{FLAGS.approach}__{FLAGS.seed}__{FLAGS.experiment_id}"
