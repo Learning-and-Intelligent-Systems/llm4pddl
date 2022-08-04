@@ -10,6 +10,7 @@ def test_pure_planning_approach():
     utils.reset_flags({
         "num_train_tasks": 0,
         "num_eval_tasks": 2,
+        "planner": "pyperplan",
         "planning_timeout": 100
     })
     approach = PurePlanningApproach()
