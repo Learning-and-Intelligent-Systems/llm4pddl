@@ -53,27 +53,27 @@ ENVS:
   psr-small:
     NAME: "pyperplan-psr-small"
     FLAGS: {}
-  rovers:
-    NAME: "pyperplan-rovers"
-    FLAGS: {}
-  satellite:
-    NAME: "pyperplan-satellite"
-    FLAGS: {}
-  scanalyzer:
-    NAME: "pyperplan-scanalyzer"
-    FLAGS: {}
-  sokoban:
-    NAME: "pyperplan-sokoban"
-    FLAGS: {}
-  tpp:
-    NAME: "pyperplan-tpp"
-    FLAGS: {}
-  transport:
-    NAME: "pyperplan-transport"
-    FLAGS: {}
-  woodworking:
-    NAME: "pyperplan-woodworking"
-    FLAGS: {}
+  # rovers:
+  #   NAME: "pyperplan-rovers"
+  #   FLAGS: {}
+  # satellite:
+  #   NAME: "pyperplan-satellite"
+  #   FLAGS: {}
+  # scanalyzer:
+  #   NAME: "pyperplan-scanalyzer"
+  #   FLAGS: {}
+  # sokoban:
+  #   NAME: "pyperplan-sokoban"
+  #   FLAGS: {}
+  # tpp:
+  #   NAME: "pyperplan-tpp"
+  #   FLAGS: {}
+  # transport:
+  #   NAME: "pyperplan-transport"
+  #   FLAGS: {}
+  # woodworking:
+  #   NAME: "pyperplan-woodworking"
+  #   FLAGS: {}
   zenotravel:
     NAME: "pyperplan-zenotravel"
     FLAGS: {}
