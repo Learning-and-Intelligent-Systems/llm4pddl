@@ -54,6 +54,7 @@ def run_planning(task: Task,
         search_fn,
         heuristic_fn,
         rng=rng,
+        max_nodes_created=FLAGS.python_plan_max_nodes_created,
     )
     logging.disable(logging.NOTSET)
     if pyperplan_plan is None:

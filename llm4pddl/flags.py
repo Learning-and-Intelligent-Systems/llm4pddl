@@ -16,6 +16,9 @@ def parse_flags() -> None:
     parser.add_argument("--num_train_tasks", default=5, type=int)
     parser.add_argument("--num_eval_tasks", default=10, type=int)
     parser.add_argument("--results_dir", default="results", type=str)
+    parser.add_argument("--python_plan_max_nodes_created",
+                        default=100000,
+                        type=int)
     parser.add_argument('--debug',
                         action="store_const",
                         dest="loglevel",
