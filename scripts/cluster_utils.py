@@ -1,6 +1,5 @@
 """Utility functions for interacting with clusters."""
 
-import os
 import subprocess
 from dataclasses import dataclass
 from typing import Any, Dict, Iterator, List, Tuple
