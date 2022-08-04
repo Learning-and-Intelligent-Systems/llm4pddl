@@ -10,8 +10,8 @@ The dir flag should point to a directory where the results, logs, and saved_*
 subdirectories will be downloaded.
 
 Usage example:
-    python scripts/openstack/download.py --dir "$PWD" --machines machines.txt \
-        --sshkey ~/.ssh/cloud.key
+    python scripts/download_openstack.py --dir "$PWD" \
+        --machines machines.txt --sshkey ~/.ssh/cloud.key
 """
 
 import argparse
