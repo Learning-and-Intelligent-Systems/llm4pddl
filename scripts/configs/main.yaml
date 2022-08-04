@@ -1,9 +1,14 @@
 # Our main experiments configuration file.
 ---
 APPROACHES:
-  python-planning:
+  pyperplan-only:
     NAME: "pure-planning"
-    FLAGS: {}
+    FLAGS:
+      planner: pyperplan
+  fd-only:
+    NAME: "pure-planning"
+    FLAGS:
+      planner: fastdownward
 ENVS:
   airport:
     NAME: "pyperplan-airport"
