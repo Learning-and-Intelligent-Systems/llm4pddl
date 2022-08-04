@@ -48,6 +48,10 @@ def run_planning(
         return run_pyperplan_planning(task, rng)
     if FLAGS.planner == "fastdownward":  # pragma: no cover
         return run_fastdownward_planning(task)
+    if FLAGS.planner == "fastdownward-hff-gbfs":  # pragma: no cover
+        return run_fastdownward_planning(task,
+                                         alias=None,
+                                         search="eager_greedy([ff()])")
     raise NotImplementedError(f"Unrecognized planner: {FLAGS.planner}")
 
 
@@ -77,7 +81,8 @@ def run_pyperplan_planning(
 
 def run_fastdownward_planning(
     task: Task,
-    alias: str = "lama-first"
+    alias: Optional[str] = "lama-first",
+    search: Optional[str] = None,
 ) -> Tuple[Optional[Plan], TaskMetrics]:  # pragma: no cover
     """Find a plan with fast downward.
 
@@ -87,6 +92,8 @@ def run_fastdownward_planning(
     2) cd downward && ./build.py
     3) export FD_EXEC_PATH="<your path here>/downward"
     """
+    # Specify either a search flag or an alias.
+    assert (search is None) + (alias is None) == 1
     # The SAS file isn't actually used, but it's important that we give it a
     # name, because otherwise Fast Downward uses a fixed default name, which
     # will cause issues if you run multiple processes simultaneously.
@@ -94,13 +101,22 @@ def run_fastdownward_planning(
     # Run Fast Downward followed by cleanup. Capture the output.
     assert "FD_EXEC_PATH" in os.environ, \
         "Please follow the instructions in the docstring of this method!"
-    alias_flag = f"--alias {alias}"
+    if alias is not None:
+        alias_flag = f"--alias {alias}"
+    else:
+        alias_flag = ""
+    if search is not None:
+        search_flag = f"--search '{search}'"
+    else:
+        search_flag = ""
     fd_exec_path = os.environ["FD_EXEC_PATH"]
     exec_str = os.path.join(fd_exec_path, "fast-downward.py")
     int_timeout = int(np.ceil(FLAGS.planning_timeout))
     cmd_str = (f"{exec_str} {alias_flag} "
                f"--search-time-limit {int_timeout} "
-               f"--sas-file {sas_file} {task.domain_file} {task.problem_file}")
+               f"--sas-file {sas_file} "
+               f"{task.domain_file} {task.problem_file} "
+               f"{search_flag}")
     output = subprocess.getoutput(cmd_str)
     cleanup_cmd_str = f"{exec_str} --cleanup"
     subprocess.getoutput(cleanup_cmd_str)
