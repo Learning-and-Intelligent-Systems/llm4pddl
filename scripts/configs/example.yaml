@@ -1,0 +1,20 @@
+# An example configuration file.
+---
+APPROACHES:
+  python-planning:  # used in constructing the experiment ID
+    NAME: "pure-planning"
+    FLAGS: {}
+ENVS:
+  airport:  # used in constructing the experiment ID
+    NAME: "pyperplan-airport"
+    FLAGS: {}
+  blocks:
+    NAME: "pyperplan-blocks"
+    FLAGS: {}
+ARGS:
+  - "debug"
+FLAGS:  # general flags
+  num_train_tasks: 5
+  num_eval_tasks: 10
+START_SEED: 456
+NUM_SEEDS: 2
