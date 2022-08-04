@@ -76,8 +76,9 @@ def run_pyperplan_planning(
 
 
 def run_fastdownward_planning(
-        task: Task,
-        alias: str = "lama-first") -> Tuple[Optional[Plan], TaskMetrics]:
+    task: Task,
+    alias: str = "lama-first"
+) -> Tuple[Optional[Plan], TaskMetrics]:  # pragma: no cover
     """Find a plan with fast downward.
 
     Usage: Build and compile the Fast Downward planner, then set the environment
