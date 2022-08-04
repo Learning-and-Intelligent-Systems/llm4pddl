@@ -188,6 +188,7 @@ def test_get_pyperplan_benchmark_task():
 
 def test_run_planning(domain_file, problem_file, impossible_problem_file):
     """Tests for run_planning()."""
+    utils.reset_flags({"planning_timeout": 100})
     # Test planning successfully.
     rng = np.random.default_rng(123)
     task = Task(domain_file, problem_file)

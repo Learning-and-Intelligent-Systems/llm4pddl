@@ -54,6 +54,7 @@ def run_planning(task: Task,
         search_fn,
         heuristic_fn,
         rng=rng,
+        timeout=FLAGS.planning_timeout,
     )
     logging.disable(logging.NOTSET)
     if pyperplan_plan is None:
