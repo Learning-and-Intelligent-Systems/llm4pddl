@@ -112,6 +112,7 @@ def get_cmds_to_prep_repo(branch: str) -> List[str]:
         "git fetch --all",
         f"git checkout {branch}",
         "git pull",
+        "git submodule update --init --recursive",
         # Remove old results.
         "rm -f results/* logs/* saved_approaches/* saved_datasets/*",
     ]
