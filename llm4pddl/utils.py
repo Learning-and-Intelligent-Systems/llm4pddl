@@ -111,8 +111,8 @@ def run_fastdownward_planning(
         num_nodes_expanded = re.findall(r"Evaluated (\d+) state", output)[0]
         num_nodes_created = re.findall(r"Generated (\d+) state", output)[0]
     metrics = {
-        "nodes_expanded": float(num_nodes_expanded[0]),
-        "nodes_created": float(num_nodes_created[0])
+        "nodes_expanded": float(num_nodes_expanded),
+        "nodes_created": float(num_nodes_created)
     }
     # Extract the plan from the output, if one exists.
     if "Solution found!" not in output:
