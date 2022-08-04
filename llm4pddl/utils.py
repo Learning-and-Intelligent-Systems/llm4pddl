@@ -46,7 +46,7 @@ def run_planning(
     """Find a plan."""
     if FLAGS.planner == "pyperplan":
         return run_pyperplan_planning(task, rng)
-    if FLAGS.planner == "fastdownward":
+    if FLAGS.planner == "fastdownward":  # pragma: no cover
         return run_fastdownward_planning(task)
     raise NotImplementedError(f"Unrecognized planner: {FLAGS.planner}")
 
