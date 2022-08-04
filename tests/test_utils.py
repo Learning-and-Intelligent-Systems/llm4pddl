@@ -187,8 +187,12 @@ def test_get_pyperplan_benchmark_task():
 
 
 def test_run_planning(domain_file, problem_file, impossible_problem_file):
-    """Tests for run_planning()."""
-    utils.reset_flags({"planning_timeout": 100})
+    """Tests for run_planning().
+
+    Fast downward is not tested because it's not easy to install on the
+    github checks server.
+    """
+    utils.reset_flags({"planner": "pyperplan", "planning_timeout": 100})
     # Test planning successfully.
     rng = np.random.default_rng(123)
     task = Task(domain_file, problem_file)
@@ -207,3 +211,8 @@ def test_run_planning(domain_file, problem_file, impossible_problem_file):
     assert metrics["nodes_created"] > metrics["nodes_expanded"]
     assert plan is not None
     assert utils.validate_plan(task, plan)
+    # Test planning with an invalid planner.
+    utils.reset_flags({"planner": "not a real planner"})
+    with pytest.raises(NotImplementedError) as e:
+        utils.run_planning(task, rng)
+    assert "Unrecognized planner" in str(e)
