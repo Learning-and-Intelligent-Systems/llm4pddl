@@ -5,7 +5,7 @@ APPROACHES:
     NAME: "pure-planning"
     FLAGS:
       planner: pyperplan
-  fd-lama-first:
+  fd-only:
     NAME: "pure-planning"
     FLAGS:
       planner: fastdownward
@@ -20,15 +20,15 @@ ENVS:
   blocks:
     NAME: "pyperplan-blocks"
     FLAGS: {}
-  # depot:
-  #   NAME: "pyperplan-depot"
-  #   FLAGS: {}
+  depot:
+    NAME: "pyperplan-depot"
+    FLAGS: {}
   elevators:
     NAME: "pyperplan-elevators"
     FLAGS: {}
-  # freecell:
-  #   NAME: "pyperplan-freecell"
-  #   FLAGS: {}
+  freecell:
+    NAME: "pyperplan-freecell"
+    FLAGS: {}
   gripper:
     NAME: "pyperplan-gripper"
     FLAGS: {}
@@ -53,34 +53,34 @@ ENVS:
   psr-small:
     NAME: "pyperplan-psr-small"
     FLAGS: {}
-  # rovers:
-  #   NAME: "pyperplan-rovers"
-  #   FLAGS: {}
-  # satellite:
-  #   NAME: "pyperplan-satellite"
-  #   FLAGS: {}
-  # scanalyzer:
-  #   NAME: "pyperplan-scanalyzer"
-  #   FLAGS: {}
-  # sokoban:
-  #   NAME: "pyperplan-sokoban"
-  #   FLAGS: {}
-  # tpp:
-  #   NAME: "pyperplan-tpp"
-  #   FLAGS: {}
-  # transport:
-  #   NAME: "pyperplan-transport"
-  #   FLAGS: {}
-  # woodworking:
-  #   NAME: "pyperplan-woodworking"
-  #   FLAGS: {}
+  rovers:
+    NAME: "pyperplan-rovers"
+    FLAGS: {}
+  satellite:
+    NAME: "pyperplan-satellite"
+    FLAGS: {}
+  scanalyzer:
+    NAME: "pyperplan-scanalyzer"
+    FLAGS: {}
+  sokoban:
+    NAME: "pyperplan-sokoban"
+    FLAGS: {}
+  tpp:
+    NAME: "pyperplan-tpp"
+    FLAGS: {}
+  transport:
+    NAME: "pyperplan-transport"
+    FLAGS: {}
+  woodworking:
+    NAME: "pyperplan-woodworking"
+    FLAGS: {}
   zenotravel:
     NAME: "pyperplan-zenotravel"
     FLAGS: {}
 ARGS:
   - "debug"
 FLAGS:
-  num_train_tasks: 0
+  num_train_tasks: 5
   num_eval_tasks: 10
 START_SEED: 456
-NUM_SEEDS: 1
+NUM_SEEDS: 5
