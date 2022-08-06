@@ -39,7 +39,8 @@ def _generate_dressing_problem(num_people: int, num_casual_events: int,
                                num_formal_in_suit: int, num_extra_objects: int,
                                rng: np.random.Generator) -> str:
     """Generates a single problem with the given parmeters."""
-    assert num_people >= num_casual_events + num_formal_in_dress + num_formal_in_suit
+    assert num_people >= (num_casual_events + num_formal_in_dress +
+                          num_formal_in_suit)
     # deciding extra clothing:
     extras = ['ex_p', 'ex_d', 'ex_sp', 'ex_ss', 'ex_np', 'ex_cs', 'ex_sj']
     exs = {ex: 0 for ex in extras}
@@ -194,5 +195,5 @@ if __name__ == "__main__":
         q_num += 1
         file_path = loc + f'/task{str(q_num).zfill(2)}.pddl'
         if not os.path.exists(file_path):
-            with open(file_path, 'w') as f:
+            with open(file_path, 'w', encoding='utf-8') as f:
                 f.write(q)
