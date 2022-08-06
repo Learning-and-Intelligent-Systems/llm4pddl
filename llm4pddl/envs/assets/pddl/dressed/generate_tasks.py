@@ -38,6 +38,7 @@ def _generate_dressing_problem(num_people: int, num_casual_events: int,
                                num_formal_in_dress: int,
                                num_formal_in_suit: int, num_extra_objects: int,
                                rng: np.random.Generator) -> str:
+    """Generates a single problem with the given parmeters."""
     assert num_people >= num_casual_events + num_formal_in_dress + num_formal_in_suit
     # deciding extra clothing:
     extras = ['ex_p', 'ex_d', 'ex_sp', 'ex_ss', 'ex_np', 'ex_cs', 'ex_sj']
@@ -130,6 +131,7 @@ def _generate_dressing_problem(num_people: int, num_casual_events: int,
 
 
 def test_generate_dressing_problems() -> None:
+    """tests the function _generate_dressing_problems."""
     rng = np.random.default_rng(seed=0)
     prob1 = _generate_dressing_problems(2, 3, 2, 3, 0, 1, 0, 1, 0, 1, 1,
                                         rng)[0]
@@ -139,6 +141,7 @@ def test_generate_dressing_problems() -> None:
 
 
 def test_generate_dressing_problem() -> None:
+    """tests the function _generate_dressing_problem."""
     rng = np.random.default_rng(seed=0)
     out = _generate_dressing_problem(2, 2, 0, 0, 0, rng)
     assert out == """(define (problem dressed)
@@ -169,26 +172,27 @@ if __name__ == "__main__":
     test_generate_dressing_problems()
 
     # 4 levels of difficulty:
-    rng = np.random.default_rng(seed=0)
+    rng_default = np.random.default_rng(seed=0)
     thirty: List[str] = []
-    # TODO
     # level one:
-    thirty += _generate_dressing_problems(4, 5, 0, 3, 0, 2, 0, 2, 0, 2, 7, rng)
+    thirty += _generate_dressing_problems(4, 5, 0, 3, 0, 2, 0, 2, 0, 2, 7,
+                                          rng_default)
     # level two:
-    thirty += _generate_dressing_problems(4, 7, 2, 4, 1, 3, 1, 3, 0, 2, 7, rng)
+    thirty += _generate_dressing_problems(4, 7, 2, 4, 1, 3, 1, 3, 0, 2, 7,
+                                          rng_default)
     # level three:
     thirty += _generate_dressing_problems(7, 11, 3, 6, 2, 4, 2, 4, 1, 4, 8,
-                                          rng)
+                                          rng_default)
     # level four:
     thirty += _generate_dressing_problems(10, 14, 4, 7, 3, 5, 3, 5, 2, 5, 8,
-                                          rng)
+                                          rng_default)
     assert len(thirty) == 30
 
     # writing the 30 questions:
     loc = os.path.dirname(os.path.realpath(__file__))
-    for i, q in enumerate(thirty):
-        i += 1
-        file_path = loc + f'/task{str(i).zfill(2)}.pddl'
+    for q_num, q in enumerate(thirty):
+        q_num += 1
+        file_path = loc + f'/task{str(q_num).zfill(2)}.pddl'
         if not os.path.exists(file_path):
             with open(file_path, 'w') as f:
                 f.write(q)
