@@ -56,7 +56,7 @@ def _generate_dressing_problem(num_people: int, num_casual_events: int,
     # making initial predicates:
     init_preds = ''
     for person in persons:
-        init_preds += (f'(wearing-nothing-formal {person})\n         ' 
+        init_preds += (f'(wearing-nothing-formal {person})\n         '
                        + f'(wearing-nothing-casual {person})\n         ')
     for clothing in (dresses + sweatpants + sweatshirts
                      + nicepants + collaredshirt + suitjacket):
@@ -67,7 +67,6 @@ def _generate_dressing_problem(num_people: int, num_casual_events: int,
     rng.shuffle(persons)
     for i in range(num_casual_events):
         goal_predicates.append(f'(attending-casual-event {persons[i]})\n              ')
-     
     for i in range(num_casual_events, (num_casual_events
                                        + num_formal_in_dress
                                        + num_formal_in_suit)):
@@ -115,22 +114,30 @@ def test_generate_dressing_problem() -> None:
 
 if __name__ == "__main__":
     import os
-    rng = np.random.default_rng(seed=0)
     loc = os.path.dirname(os.path.realpath(__file__))
     test_generate_dressing_problem()
     test_generate_dressing_problems()
-    
 
-    # 5 questions at 6 levels of difficulty:
-    thirty = []
-    #TODO
-    
+    # 4 levels of difficulty:
+    rng = np.random.default_rng(seed=0)
+    thirty: List[str] = []
+    # TODO
+    # level one:
+    thirty += _generate_dressing_problems(4, 5, 0, 3, 0, 2, 0, 2, 0, 2, 7, rng)
+    # level two: 
+    thirty += _generate_dressing_problems(4, 7, 2, 4, 1, 3, 1, 3, 0, 2, 7, rng)
+    # level three:
+    thirty += _generate_dressing_problems(7, 11, 3, 6, 2, 4, 2, 4, 1, 4, 8, rng)
+    # level four:
+    thirty += _generate_dressing_problems(10, 14, 4, 7, 3, 5, 3, 5, 2, 5, 8, rng)
+    assert len(thirty) == 30
 
     # writing the 30 questions:
-    # loc = os.path.dirname(os.path.realpath(__file__))
-    # for i,q in enumerate(thirty):
-    #     if i<10: i = '0' + str(i)
-    #     file_path = loc+f'/task{i}.pddl'
-    #     if not os.path.exists(file_path):
-    #         with open(file_path, 'w') as f:
-    #             f.write(q)
+    loc = os.path.dirname(os.path.realpath(__file__))
+    for i,q in enumerate(thirty):
+        i+=1
+        if i<10: i = '0' + str(i)
+        file_path = loc+f'/task{i}.pddl'
+        if not os.path.exists(file_path):
+            with open(file_path, 'w') as f:
+                f.write(q)

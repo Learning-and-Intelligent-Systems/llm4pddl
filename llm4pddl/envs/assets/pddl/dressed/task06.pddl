@@ -1,0 +1,25 @@
+(define (problem dressed)
+  (:domain dressed)
+  (:objects person1 person2 person3 person4 - person
+            sweatpants1 sweatpants2 - sweatpants
+            sweatshirt1 sweatshirt2 - sweatshirt
+            collared-shirt1 - collared-shirt
+            )
+  (:init (wearing-nothing-formal person1)
+         (wearing-nothing-casual person1)
+         (wearing-nothing-formal person2)
+         (wearing-nothing-casual person2)
+         (wearing-nothing-formal person3)
+         (wearing-nothing-casual person3)
+         (wearing-nothing-formal person4)
+         (wearing-nothing-casual person4)
+         (in-closet sweatpants1)
+         (in-closet sweatpants2)
+         (in-closet sweatshirt1)
+         (in-closet sweatshirt2)
+         (in-closet collared-shirt1)
+         )
+  (:goal (and (attending-casual-event person4)
+              (attending-casual-event person1)
+              ))
+  )
