@@ -139,17 +139,58 @@ if __name__ == "__main__":  # pragma: no cover
     rng_default = np.random.default_rng(seed=0)
     generated_tasks: List[str] = []
     # level one:
-    generated_tasks += _generate_dressing_problems(4, 5, 0, 3, 0, 2, 0, 2, 0,
-                                                   2, 7, rng_default)
+    generated_tasks += _generate_dressing_problems(min_people=4,
+                                                   max_people=5,
+                                                   min_casual=0,
+                                                   max_casual=3,
+                                                   min_formal_dress=0,
+                                                   max_formal_dress=2,
+                                                   min_formal_suit=0,
+                                                   max_formal_suit=2,
+                                                   min_extra_clothes=0,
+                                                   max_extra_clothes=2,
+                                                   num_probs=7,
+                                                   rng=rng_default)
     # level two:
-    generated_tasks += _generate_dressing_problems(4, 7, 2, 4, 1, 3, 1, 3, 0,
-                                                   2, 7, rng_default)
+    generated_tasks += _generate_dressing_problems(min_people=4,
+                                                   max_people=7,
+                                                   min_casual=2,
+                                                   max_casual=4,
+                                                   min_formal_dress=1,
+                                                   max_formal_dress=3,
+                                                   min_formal_suit=1,
+                                                   max_formal_suit=3,
+                                                   min_extra_clothes=0,
+                                                   max_extra_clothes=2,
+                                                   num_probs=7,
+                                                   rng=rng_default)
+
     # level three:
-    generated_tasks += _generate_dressing_problems(7, 11, 3, 6, 2, 4, 2, 4, 1,
-                                                   4, 8, rng_default)
+    generated_tasks += _generate_dressing_problems(min_people=7,
+                                                   max_people=11,
+                                                   min_casual=3,
+                                                   max_casual=6,
+                                                   min_formal_dress=2,
+                                                   max_formal_dress=4,
+                                                   min_formal_suit=2,
+                                                   max_formal_suit=4,
+                                                   min_extra_clothes=1,
+                                                   max_extra_clothes=4,
+                                                   num_probs=8,
+                                                   rng=rng_default)
     # level four:
-    generated_tasks += _generate_dressing_problems(10, 14, 4, 7, 3, 5, 3, 5, 2,
-                                                   5, 8, rng_default)
+    generated_tasks += _generate_dressing_problems(min_people=10,
+                                                   max_people=14,
+                                                   min_casual=4,
+                                                   max_casual=7,
+                                                   min_formal_dress=3,
+                                                   max_formal_dress=5,
+                                                   min_formal_suit=3,
+                                                   max_formal_suit=5,
+                                                   min_extra_clothes=2,
+                                                   max_extra_clothes=5,
+                                                   num_probs=8,
+                                                   rng=rng_default)
     assert len(generated_tasks) == 30
 
     # writing the 30 questions:
