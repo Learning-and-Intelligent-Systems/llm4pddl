@@ -131,30 +131,30 @@ def _generate_dressing_problem(num_people: int, num_casual_events: int,
     return problem_string
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     import os
     loc = os.path.dirname(os.path.realpath(__file__))
 
     # 4 levels of difficulty:
     rng_default = np.random.default_rng(seed=0)
-    problems: List[str] = []
+    generated_tasks: List[str] = []
     # level one:
-    problems += _generate_dressing_problems(4, 5, 0, 3, 0, 2, 0, 2, 0, 2, 7,
-                                            rng_default)
+    generated_tasks += _generate_dressing_problems(4, 5, 0, 3, 0, 2, 0, 2, 0,
+                                                   2, 7, rng_default)
     # level two:
-    problems += _generate_dressing_problems(4, 7, 2, 4, 1, 3, 1, 3, 0, 2, 7,
-                                            rng_default)
+    generated_tasks += _generate_dressing_problems(4, 7, 2, 4, 1, 3, 1, 3, 0,
+                                                   2, 7, rng_default)
     # level three:
-    problems += _generate_dressing_problems(7, 11, 3, 6, 2, 4, 2, 4, 1, 4, 8,
-                                            rng_default)
+    generated_tasks += _generate_dressing_problems(7, 11, 3, 6, 2, 4, 2, 4, 1,
+                                                   4, 8, rng_default)
     # level four:
-    problems += _generate_dressing_problems(10, 14, 4, 7, 3, 5, 3, 5, 2, 5, 8,
-                                            rng_default)
-    assert len(problems) == 30
+    generated_tasks += _generate_dressing_problems(10, 14, 4, 7, 3, 5, 3, 5, 2,
+                                                   5, 8, rng_default)
+    assert len(generated_tasks) == 30
 
     # writing the 30 questions:
     loc = os.path.dirname(os.path.realpath(__file__))
-    for q_num, q in enumerate(problems):
+    for q_num, q in enumerate(generated_tasks):
         q_num += 1
         file_path = loc + f'/task{str(q_num).zfill(2)}.pddl'
         if not os.path.exists(file_path):
