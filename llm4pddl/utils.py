@@ -64,7 +64,7 @@ def run_pyperplan_planning(
     search_fn = SEARCHES[search]
     heuristic_fn = HEURISTICS[heuristic]
     # Quiet the pyperplan logging.
-    # logging.disable(logging.ERROR)
+    logging.disable(logging.ERROR)
     pyperplan_plan, metrics = search_plan(
         task.domain_file,
         task.problem_file,
@@ -73,7 +73,7 @@ def run_pyperplan_planning(
         rng=rng,
         timeout=FLAGS.planning_timeout,
     )
-    # logging.disable(logging.NOTSET)
+    logging.disable(logging.NOTSET)
     if pyperplan_plan is None:
         return None, metrics
     return [a.name for a in pyperplan_plan], metrics
