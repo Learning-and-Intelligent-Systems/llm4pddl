@@ -1,7 +1,8 @@
-"""Tests custom_env.py"""
+"""Tests custom_env.py."""
 
 from llm4pddl import utils
 from llm4pddl.envs.custom_env import CustomEnv
+
 
 def test_custom_env():
     """Tests for CustomEnv()"""
@@ -16,4 +17,5 @@ def test_custom_env():
         assert len(eval_tasks) == 10
         for task_num, train_task in enumerate(training_tasks):
             task_num += 1
-            assert train_task.domain_file == utils.get_custom_task(env, task_num).domain_file
+            assert train_task.domain_file == utils.get_custom_task(
+                env, task_num).domain_file
