@@ -165,13 +165,14 @@ def get_pyperplan_benchmark_task(benchmark_name: str, task_num: int) -> Task:
 
 def get_custom_task(benchmark_name: str, task_num: int) -> Task:
     """Get the paths to the custom domain and problem files."""
-    domain_dir = Path(__file__).parent / "envs" / "assets" / "pddl" / benchmark_name
+    domain_dir = Path(
+        __file__).parent / "envs" / "assets" / "pddl" / benchmark_name
     domain_file = domain_dir / "domain.pddl"
     if not os.path.exists(domain_file):
         raise FileNotFoundError(f"Domain not found: {domain_file}")
     problem_file = domain_dir / f"task{str(task_num).zfill(2)}.pddl"
     if not os.path.exists(problem_file):
-        raise FileNotFoundError(f"Task{str(task_num).zfill(2)} not found: {problem_file}")
+        raise FileNotFoundError(f"Task not found: {problem_file}")
     return Task(domain_file, problem_file)
 
 
@@ -196,10 +197,3 @@ def get_git_commit_hash() -> str:
 def get_config_path_str() -> str:
     """Get a string identifier for an experiment from FLAGS."""
     return f"{FLAGS.env}__{FLAGS.approach}__{FLAGS.seed}__{FLAGS.experiment_id}"
-
-if __name__ == "__main__":
-    print(__file__)
-    print('----')
-    print(Path(__file__))
-    print('----')
-    print(Path(__file__).parent)
