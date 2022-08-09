@@ -7,6 +7,7 @@ import pytest
 
 from llm4pddl import utils
 from llm4pddl.llm_interface import LargeLanguageModel, OpenAILLM
+from llm4pddl.structs import LLMResponse
 
 
 class _DummyLLM(LargeLanguageModel):
@@ -19,12 +20,16 @@ class _DummyLLM(LargeLanguageModel):
                             temperature,
                             seed,
                             num_completions=1):
-        completions = []
+        responses = []
         for _ in range(num_completions):
-            completion = (f"Prompt was: {prompt}. Seed: {seed}. "
-                          f"Temp: {temperature:.1f}.")
-            completions.append(completion)
-        return completions
+            text = (f"Prompt was: {prompt}. Seed: {seed}. "
+                    f"Temp: {temperature:.1f}.")
+            tokens = [text]
+            logprobs = [0.0]
+            additional_info = {"seed": seed}
+            response = LLMResponse(text, tokens, logprobs, additional_info)
+            responses.append(response)
+        return responses
 
 
 def test_large_language_model():
@@ -40,14 +45,17 @@ def test_large_language_model():
     # Query a dummy LLM.
     llm = _DummyLLM()
     assert llm.get_id() == "dummy"
-    completions = llm.sample_completions("Hello world!", 0.5, 123, 3)
+    responses = llm.sample_completions("Hello world!", 0.5, 123, 3)
+    completions = [r.text for r in responses]
     expected_completion = "Prompt was: Hello world!. Seed: 123. Temp: 0.5."
     assert completions == [expected_completion] * 3
     # Query it again, covering the case where we load from disk.
-    completions = llm.sample_completions("Hello world!", 0.5, 123, 3)
+    responses = llm.sample_completions("Hello world!", 0.5, 123, 3)
+    completions = [r.text for r in responses]
     assert completions == [expected_completion] * 3
     # Query with temperature 0.
-    completions = llm.sample_completions("Hello world!", 0.0, 123, 3)
+    responses = llm.sample_completions("Hello world!", 0.0, 123, 3)
+    completions = [r.text for r in responses]
     expected_completion = "Prompt was: Hello world!. Seed: 123. Temp: 0.0."
     assert completions == [expected_completion] * 3
     # Clean up the cache dir.

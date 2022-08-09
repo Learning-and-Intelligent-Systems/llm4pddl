@@ -5,13 +5,12 @@ import logging
 import os
 import pickle
 from pathlib import Path
-from typing import List
+from typing import Any, Dict, List
 
 import openai
 
 from llm4pddl.flags import FLAGS
-
-# TODO: get and cache probabilities
+from llm4pddl.structs import LLMResponse
 
 
 class LargeLanguageModel(abc.ABC):
@@ -32,7 +31,7 @@ class LargeLanguageModel(abc.ABC):
                             prompt: str,
                             temperature: float,
                             seed: int,
-                            num_completions: int = 1) -> List[str]:
+                            num_completions: int = 1) -> List[LLMResponse]:
         """This is the main method that subclasses must implement.
 
         This helper method is called by sample_completions(), which
@@ -44,7 +43,7 @@ class LargeLanguageModel(abc.ABC):
                            prompt: str,
                            temperature: float,
                            seed: int,
-                           num_completions: int = 1) -> List[str]:
+                           num_completions: int = 1) -> List[LLMResponse]:
         """Sample one or more completions from a prompt.
 
         Higher temperatures will increase the variance in the responses.
@@ -108,16 +107,22 @@ class OpenAILLM(LargeLanguageModel):
             prompt: str,
             temperature: float,
             seed: int,
-            num_completions: int = 1) -> List[str]:  # pragma: no cover
+            num_completions: int = 1) -> List[LLMResponse]:  # pragma: no cover
         del seed  # unused
         response = openai.Completion.create(
             model=self._model_name,  # type: ignore
             prompt=prompt,
             temperature=temperature,
             max_tokens=self._max_tokens,
+            logprobs=1,
             n=num_completions)
         assert len(response["choices"]) == num_completions
-        text_responses = [
-            response["choices"][i]["text"] for i in range(num_completions)
-        ]
-        return text_responses
+        return [self._raw_to_llm_response(r) for r in response["choices"]]
+
+    @staticmethod
+    def _raw_to_llm_response(raw_response: Dict[str, Any]) -> LLMResponse:
+        text = raw_response["text"]
+        tokens = raw_response["logprobs"]["tokens"]
+        token_logprobs = raw_response["logprobs"]["token_logprobs"]
+        assert len(tokens) == len(token_logprobs)
+        return LLMResponse(text, tokens, token_logprobs, raw_response)
