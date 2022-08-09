@@ -32,7 +32,8 @@ def validate_plan(task: Task, plan: Plan) -> bool:
         assert sys.platform.startswith("linux")
         platform_dir = "linux64"
     val = val_dir / platform_dir / "Validate"
-    cmd_str = f"{val} -v {task.domain_file} {task.problem_file} {plan_file}"
+    cmd_str = (f'"{val}" -v "{task.domain_file}" "{task.problem_file}" '
+               f'"{plan_file}"')
     output = subprocess.getoutput(cmd_str)
     os.remove(plan_file)
     if "Plan valid" in output:
@@ -90,7 +91,7 @@ def run_fastdownward_planning(
     variable FD_EXEC_PATH to point to the `downward` directory. For example:
     1) git clone https://github.com/ronuchit/downward.git
     2) cd downward && ./build.py
-    3) export FD_EXEC_PATH="<your path here>/downward"
+    3) export FD_EXEC_PATH="<your absolute path here>/downward"
     """
     # Specify either a search flag or an alias.
     assert (search is None) + (alias is None) == 1
@@ -112,11 +113,11 @@ def run_fastdownward_planning(
     fd_exec_path = os.environ["FD_EXEC_PATH"]
     exec_str = os.path.join(fd_exec_path, "fast-downward.py")
     int_timeout = int(np.ceil(FLAGS.planning_timeout))
-    cmd_str = (f"{exec_str} {alias_flag} "
-               f"--search-time-limit {int_timeout} "
-               f"--sas-file {sas_file} "
-               f"{task.domain_file} {task.problem_file} "
-               f"{search_flag}")
+    cmd_str = (f'"{exec_str}" {alias_flag} '
+               f'--search-time-limit {int_timeout} '
+               f'--sas-file {sas_file} '
+               f'"{task.domain_file}" "{task.problem_file}" '
+               f'{search_flag}')
     output = subprocess.getoutput(cmd_str)
     cleanup_cmd_str = f"{exec_str} --cleanup"
     subprocess.getoutput(cleanup_cmd_str)
