@@ -196,7 +196,7 @@ def test_get_custom_task():
     with pytest.raises(FileNotFoundError) as f:
         task = utils.get_custom_task("nonsense", 1)
     assert "Domain not found" in str(f)
-    #Problem doesn't exist:
+    # Problem doesn't exist:
     with pytest.raises(FileNotFoundError) as f:
         task = utils.get_custom_task("dressed", 100)
     assert "Task not found" in str(f)

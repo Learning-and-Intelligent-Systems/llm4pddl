@@ -8,14 +8,14 @@ def test_custom_env():
     """Tests for CustomEnv()"""
     utils.reset_flags({"num_train_tasks": 5, "num_eval_tasks": 10})
     custom_envs = ['dressed']
-    for env in custom_envs:
-        Env = CustomEnv(env)
-        assert Env.get_name() == f'custom-{env}'
-        training_tasks = Env.get_train_tasks()
+    for env_name in custom_envs:
+        env = CustomEnv(env_name)
+        assert env.get_name() == f'custom-{env_name}'
+        training_tasks = env.get_train_tasks()
         assert len(training_tasks) == 5
-        eval_tasks = Env.get_eval_tasks()
+        eval_tasks = env.get_eval_tasks()
         assert len(eval_tasks) == 10
         for task_num, train_task in enumerate(training_tasks):
             task_num += 1
             assert train_task.domain_file == utils.get_custom_task(
-                env, task_num).domain_file
+                env_name, task_num).domain_file
