@@ -19,7 +19,7 @@ def parse_flags() -> None:
     parser.add_argument("--planning_timeout", default=100.0, type=float)
     parser.add_argument("--results_dir", default="results", type=str)
     parser.add_argument("--llm_cache_dir", default="llm_cache", type=str)
-    parser.add_argument("--llm_use_cache_only", action="store_true", type=bool)
+    parser.add_argument("--llm_use_cache_only", action="store_true")
     parser.add_argument("--llm_openai_max_response_tokens",
                         default=700,
                         required=False)
