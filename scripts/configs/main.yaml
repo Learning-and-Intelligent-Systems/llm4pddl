@@ -9,10 +9,6 @@ APPROACHES:
     NAME: "pure-planning"
     FLAGS:
       planner: fastdownward
-  fd-hff-gbfs:
-    NAME: "pure-planning"
-    FLAGS:
-      planner: fastdownward-hff-gbfs
 ENVS:
   airport:
     NAME: "pyperplan-airport"
