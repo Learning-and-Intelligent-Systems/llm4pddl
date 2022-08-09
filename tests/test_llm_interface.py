@@ -84,6 +84,18 @@ def test_openai_llm():
     # Create an OpenAILLM with the curie model.
     llm = OpenAILLM("text-curie-001")
     assert llm.get_id() == "openai-text-curie-001"
+    # Test _raw_to_llm_response().
+    raw_response = {
+        "text": "Hello world",
+        "logprobs": {
+            "tokens": ["Hello", "world"],
+            "token_logprobs": [-1.0, -2.0]
+        }
+    }
+    llm_response = llm._raw_to_llm_response(raw_response)  # pylint: disable=protected-access
+    assert llm_response.text == "Hello world"
+    assert llm_response.tokens == ["Hello", "world"]
+    assert llm_response.token_logprobs == [-1.0, -2.0]
     # Uncomment this to test manually, but do NOT uncomment in master, because
     # each query costs money.
     # completions = llm.sample_completions("Hello", 0.5, 123, 2)
