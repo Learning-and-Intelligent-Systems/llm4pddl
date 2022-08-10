@@ -12,9 +12,10 @@ from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
 from pyperplan.planner import HEURISTICS, SEARCHES, search_plan
+from pyperplan.pddl.parser import Parser
 
 from llm4pddl.flags import FLAGS
-from llm4pddl.structs import Plan, Task, TaskMetrics
+from llm4pddl.structs import Plan, Task, TaskMetrics, PyperplanDomain, PyperplanProblem, PyperplanPredicate
 
 
 def validate_plan(task: Task, plan: Plan) -> bool:
@@ -174,6 +175,20 @@ def get_custom_task(benchmark_name: str, task_num: int) -> Task:
     if not os.path.exists(problem_file):
         raise FileNotFoundError(f"Task not found: {problem_file}")
     return Task(domain_file, problem_file)
+
+
+def parse_task(task: Task) -> Tuple[PyperplanDomain, PyperplanProblem]:
+    """Parse a task into Pyperplan structs."""
+    parser = Parser(task.domain_file, task.problem_file)
+    domain = parser.parse_domain()
+    problem = parser.parse_problem(domain)
+    return (domain, problem)
+
+
+def pred_to_str(pred: PyperplanPredicate) -> str:
+    """Create a string representation of a Pyperplan predicate (atom)."""
+    arg_str = " ".join(str(o) for o, _ in pred.signature)
+    return f"{pred.name}({arg_str})"
 
 
 def reset_flags(args: Dict[str, Any], default_seed: int = 123) -> None:

@@ -6,7 +6,7 @@ from typing import Optional, Sequence, Tuple
 import numpy as np
 
 from llm4pddl.flags import FLAGS
-from llm4pddl.structs import Plan, Task, TaskMetrics
+from llm4pddl.structs import Dataset, Plan, Task, TaskMetrics
 
 
 class BaseApproach(abc.ABC):
@@ -37,5 +37,5 @@ class BaseApproach(abc.ABC):
         """Return a plan, or None if no plan can be found."""
         raise NotImplementedError("Override me!")
 
-    def train(self, train_tasks: Sequence[Task]) -> None:
+    def train(self, dataset: Dataset) -> None:
         """Optionally train the approach from train tasks."""
