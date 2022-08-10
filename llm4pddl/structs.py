@@ -11,6 +11,17 @@ class Task:
     problem_file: Path
 
 
+@dataclass(frozen=True)
+class LLMResponse:
+    """A single response from a LargeLanguageModel."""
+    prompt_text: str
+    response_text: str
+    tokens: List[str]
+    token_logprobs: List[float]
+    prompt_info: Dict
+    other_info: Dict
+
+
 # A plan is currently just a list of strings, where each string is one ground
 # operator, e.g., (unstack a b). We may change this later.
 Plan = List[str]
