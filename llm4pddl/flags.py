@@ -24,7 +24,7 @@ def parse_flags() -> None:
     parser.add_argument("--llm_model_name", default="code-davinci-002")
     # Note that this temperature is only used by the multi LLM approaches,
     # not by the standard (single response) approach, which always uses 0.0.
-    parser.add_argument("--llm_multi_temperature", default=0.0, type=float)
+    parser.add_argument("--llm_multi_temperature", default=0.5, type=float)
     # Note that this num_completions is only used by the multi LLM approaches,
     # not by the standard (single response) approach, which always uses 1.
     parser.add_argument("--llm_multi_num_completions", default=5, type=int)
