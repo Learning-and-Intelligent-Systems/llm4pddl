@@ -22,7 +22,7 @@ def parse_flags() -> None:
     parser.add_argument("--llm_use_cache_only", action="store_true")
     parser.add_argument("--llm_openai_max_response_tokens",
                         default=700,
-                        required=False)
+                        type=int)
     parser.add_argument('--debug',
                         action="store_const",
                         dest="loglevel",
