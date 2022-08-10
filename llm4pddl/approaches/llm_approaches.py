@@ -1,5 +1,6 @@
 """Approaches that use a large language model to solve tasks.."""
 
+import logging
 from typing import Dict, List, Optional, Tuple
 
 from llm4pddl import utils
@@ -36,6 +37,7 @@ class LLMOpenLoopApproach(BaseApproach):
     def solve(self, task: Task) -> Tuple[Optional[Plan], TaskMetrics]:
         new_prompt = self._create_prompt(task, [])  # empty partial plan
         prompt = self._prompt_prefix + new_prompt
+        logging.debug(f"Querying with prompt suffix:\n{new_prompt}")
         responses = self._llm.sample_completions(
             prompt=prompt,
             temperature=self._temperature,
@@ -49,6 +51,7 @@ class LLMOpenLoopApproach(BaseApproach):
             prompt = self._create_prompt(datum.task, datum.solution)
             prompts.append(prompt)
         self._prompt_prefix = "\n\n".join(prompts) + "\n\n"
+        logging.debug(f"Created prompt prefix:\n{self._prompt_prefix}")
 
     @staticmethod
     def _create_prompt(task: Task, plan: Plan) -> str:
@@ -98,6 +101,7 @@ solution:
         # By default, this class doesn't plan, so there are no metrics.
         metrics: TaskMetrics = {}
         for response in responses:
+            logging.debug(f"Processing response:\n{response.response_text}")
             plan = self._llm_response_to_plan(response, task)
             if utils.validate_plan(task, plan):
                 return plan, metrics

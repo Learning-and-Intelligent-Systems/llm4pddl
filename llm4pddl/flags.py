@@ -28,9 +28,7 @@ def parse_flags() -> None:
     # Note that this num_completions is only used by the multi LLM approaches,
     # not by the standard (single response) approach, which always uses 1.
     parser.add_argument("--llm_multi_num_completions", default=5, type=int)
-    parser.add_argument("--llm_openai_max_response_tokens",
-                        default=700,
-                        type=int)
+    parser.add_argument("--llm_max_total_tokens", default=4096, type=int)
     parser.add_argument('--debug',
                         action="store_const",
                         dest="loglevel",

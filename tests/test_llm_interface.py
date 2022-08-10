@@ -44,7 +44,7 @@ def test_large_language_model():
     utils.reset_flags({
         "llm_cache_dir": cache_dir,
         "llm_use_cache_only": False,
-        "llm_openai_max_response_tokens": 700
+        "llm_max_total_tokens": 700
     })
     # Remove the fake cache dir in case it's lying around from old tests.
     shutil.rmtree(cache_dir, ignore_errors=True)
@@ -70,7 +70,7 @@ def test_large_language_model():
     utils.reset_flags({
         "llm_cache_dir": cache_dir,
         "llm_use_cache_only": True,
-        "llm_openai_max_response_tokens": 700
+        "llm_max_total_tokens": 700
     })
     with pytest.raises(ValueError) as e:
         completions = llm.sample_completions("Hello world!", 0.5, 123, 3)
@@ -83,7 +83,7 @@ def test_openai_llm():
     utils.reset_flags({
         "llm_cache_dir": cache_dir,
         "llm_use_cache_only": False,
-        "llm_openai_max_response_tokens": 700
+        "llm_max_total_tokens": 700
     })
     if "OPENAI_API_KEY" not in os.environ:
         os.environ["OPENAI_API_KEY"] = "dummy API key"

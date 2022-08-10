@@ -46,7 +46,7 @@ def test_llm_standard_approach(env_name):
         "num_eval_tasks": 1,
         "llm_model_name": "code-davinci-002",  # should not matter for test
         "llm_use_cache_only": False,
-        "llm_openai_max_response_tokens": 700,
+        "llm_max_total_tokens": 700,
         "planner": "pyperplan",
         "planning_timeout": 100,
     })
@@ -88,7 +88,7 @@ def test_llm_standard_approach_failure_cases():
         "num_eval_tasks": 1,
         "llm_model_name": "code-davinci-002",  # should not matter for test
         "llm_use_cache_only": False,
-        "llm_openai_max_response_tokens": 700,
+        "llm_max_total_tokens": 700,
         "planner": "pyperplan",
         "planning_timeout": 100,
     })

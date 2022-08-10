@@ -8,9 +8,14 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 import openai
+from transformers import GPT2TokenizerFast
 
 from llm4pddl.flags import FLAGS
 from llm4pddl.structs import LLMResponse
+
+# Turn off a warning about parallelism.
+# See https://stackoverflow.com/questions/62691279
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 
 class LargeLanguageModel(abc.ABC):
@@ -92,12 +97,10 @@ class OpenAILLM(LargeLanguageModel):
         """See https://beta.openai.com/docs/models/gpt-3 for the list of
         available model names."""
         self._model_name = model_name
-        # Note that max_tokens is the maximum response length (not prompt).
-        # From OpenAI docs: "The token count of your prompt plus max_tokens
-        # cannot exceed the model's context length."
-        self._max_tokens = FLAGS.llm_openai_max_response_tokens
         assert "OPENAI_API_KEY" in os.environ
         openai.api_key = os.getenv("OPENAI_API_KEY")
+        # Create a tokenizer for counting the number of tokens in the prompts.
+        self._tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
 
     def get_id(self) -> str:
         return f"openai-{self._model_name}"
@@ -108,11 +111,18 @@ class OpenAILLM(LargeLanguageModel):
             temperature: float,
             seed: int,
             num_completions: int = 1) -> List[LLMResponse]:  # pragma: no cover
+        # Always max out the max tokens to get the longest possible responses.
+        num_prompt_tokens = len(self._tokenizer(prompt)["input_ids"])
+        # If the prompt is too long, warn and give up.
+        max_response_tokens = FLAGS.llm_max_total_tokens - num_prompt_tokens
+        if max_response_tokens <= 0:
+            logging.warning("Prompt length exceeded token budget, skipping!")
+            return []
         response = openai.Completion.create(
             model=self._model_name,  # type: ignore
             prompt=prompt,
             temperature=temperature,
-            max_tokens=self._max_tokens,
+            max_tokens=max_response_tokens,
             logprobs=1,
             n=num_completions)
         assert len(response["choices"]) == num_completions
