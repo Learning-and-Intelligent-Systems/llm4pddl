@@ -6,15 +6,17 @@ from llm4pddl import utils
 from llm4pddl.approaches.base_approach import BaseApproach
 from llm4pddl.flags import FLAGS
 from llm4pddl.llm_interface import OpenAILLM
-from llm4pddl.structs import Dataset, Plan, Task, TaskMetrics
+from llm4pddl.structs import Dataset, LLMResponse, Plan, Task, TaskMetrics
 
 
 class LLMOpenLoopApproach(BaseApproach):
     """An approach that simply queries the LLM to solve tasks."""
 
-    def __init__(self) -> None:
+    def __init__(self, num_completions: int, temperature: float) -> None:
         super().__init__()
         # Set up the LLM.
+        self._num_completions = num_completions
+        self._temperature = temperature
         self._llm = OpenAILLM(FLAGS.llm_model_name)
         # Set after learning.
         self._prompt_prefix = ""
@@ -31,7 +33,14 @@ class LLMOpenLoopApproach(BaseApproach):
         return "llm-open-loop"
 
     def solve(self, task: Task) -> Tuple[Optional[Plan], TaskMetrics]:
-        import ipdb; ipdb.set_trace()
+        new_prompt = self._create_prompt(task, [])  # empty partial plan
+        prompt = self._prompt_prefix + new_prompt
+        responses = self._llm.sample_completions(
+            prompt=prompt,
+            temperature=self._temperature,
+            seed=FLAGS.seed,
+            num_completions=self._num_completions)
+        return self._llm_responses_to_plan(responses, task)
 
     def train(self, dataset: Dataset) -> None:
         prompts = []
@@ -80,3 +89,47 @@ class LLMOpenLoopApproach(BaseApproach):
 solution:
   {solution_str}"""
         return prompt
+
+    def _llm_responses_to_plan(self, responses: List[LLMResponse], task: Task) -> Plan:
+        for response in responses:
+            plan = self._llm_response_to_plan(response, task)
+            # TODO validate
+            import ipdb; ipdb.set_trace()
+
+    @staticmethod
+    def _llm_response_to_plan(response: LLMResponse, task: Task) -> Plan:
+        # We assume the LLM's output is such that each line contains
+        # (operator-name object1-name object2-name ...) with optional
+        # whitespace allowed everywhere. As soon as this assumption is
+        # violated, we stop parsing and return whatever plan has been parsed
+        # up to that point.
+        domain, problem = utils.parse_task(task)
+        operator_names = set(domain.actions)
+        object_names = set(problem.objects) | set(domain.constants)
+        plan: Plan = []
+        unparsed = response.response_text
+        while "(" in unparsed:
+            left_parens_idx = unparsed.index("(")
+            right_parens_idx = unparsed.index(")")
+            # If a ) appears before a (, the response is malformed.
+            if right_parens_idx < left_parens_idx:
+                break
+            # Get the words in between the parentheses.
+            words = unparsed[left_parens_idx+1:right_parens_idx].split()
+            # If there's nothing in between, the response is malformed.
+            if not words:
+                break
+            # The first word should be an operator.
+            operator, objects = words[0], words[1:]
+            if operator not in operator_names:
+                break
+            # The remaining words should be objects.
+            if any(o not in object_names for o in objects):
+                break
+            # Otherwise, we found a good plan step.
+            objects_str = " ".join(objects)
+            action = f"({operator} {objects_str})"
+            plan.append(action)
+            # Update the unparsed response.
+            unparsed = unparsed[right_parens_idx+1:]
+        return plan

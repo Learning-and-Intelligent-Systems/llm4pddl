@@ -9,6 +9,6 @@ def create_approach(approach_name: str) -> BaseApproach:
     """Create an approach."""
     if approach_name == "pure-planning":
         return PurePlanningApproach()
-    if approach_name == "llm-open-loop":
-        return LLMOpenLoopApproach()
+    if approach_name == "llm-standard":
+        return LLMOpenLoopApproach(num_completions=1, temperature=0.0)
     raise NotImplementedError(f"Unrecognized approach name: {approach_name}")

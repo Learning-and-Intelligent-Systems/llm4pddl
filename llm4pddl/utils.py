@@ -177,6 +177,7 @@ def get_custom_task(benchmark_name: str, task_num: int) -> Task:
     return Task(domain_file, problem_file)
 
 
+@functools.lru_cache(maxsize=None)
 def parse_task(task: Task) -> Tuple[PyperplanDomain, PyperplanProblem]:
     """Parse a task into Pyperplan structs."""
     parser = Parser(task.domain_file, task.problem_file)
