@@ -53,9 +53,6 @@ class LLMOpenLoopApproach(BaseApproach):
     @staticmethod
     def _create_prompt(task: Task, plan: Plan) -> str:
         """Create a prompt entry for a single task and (maybe partial) plan."""
-        with open(task.problem_file, "r", encoding="utf-8") as f:
-            problem_str = f.read()
-        solution_str = "\n  ".join(plan)
         # Extract only the objects, init, and goal from the problem file,
         # stripping out any comments or other extraneous text.
         domain, problem = utils.parse_task(task)
@@ -79,6 +76,8 @@ class LLMOpenLoopApproach(BaseApproach):
             utils.pred_to_str(p) for p in problem.initial_state)
         # Create the goal string.
         goal_str = " ".join(utils.pred_to_str(p) for p in problem.goal)
+        # Create the solution string.
+        solution_str = "\n  ".join(plan)
         prompt = f"""(:objects
   {objects_str}
 )
