@@ -56,9 +56,6 @@ class LLMOpenLoopApproach(BaseApproach):
         with open(task.problem_file, "r", encoding="utf-8") as f:
             problem_str = f.read()
         solution_str = "\n  ".join(plan)
-        # Make everything lowercase, just in case that's more natural.
-        problem_str = problem_str.lower()
-        solution_str = solution_str.lower()
         # Extract only the objects, init, and goal from the problem file,
         # stripping out any comments or other extraneous text.
         domain, problem = utils.parse_task(task)
