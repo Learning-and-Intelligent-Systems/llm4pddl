@@ -11,10 +11,12 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
+from pyperplan.pddl.parser import Parser
 from pyperplan.planner import HEURISTICS, SEARCHES, search_plan
 
 from llm4pddl.flags import FLAGS
-from llm4pddl.structs import Plan, Task, TaskMetrics
+from llm4pddl.structs import Plan, PyperplanDomain, PyperplanPredicate, \
+    PyperplanProblem, PyperplanType, Task, TaskMetrics
 
 
 def validate_plan(task: Task, plan: Plan) -> bool:
@@ -43,17 +45,18 @@ def validate_plan(task: Task, plan: Plan) -> bool:
 
 def run_planning(
         task: Task,
-        rng: np.random.Generator) -> Tuple[Optional[Plan], TaskMetrics]:
+        rng: np.random.Generator,
+        planner: str = "pyperplan") -> Tuple[Optional[Plan], TaskMetrics]:
     """Find a plan."""
-    if FLAGS.planner == "pyperplan":
+    if planner == "pyperplan":
         return run_pyperplan_planning(task, rng)
-    if FLAGS.planner == "fastdownward":  # pragma: no cover
+    if planner == "fastdownward":  # pragma: no cover
         return run_fastdownward_planning(task)
-    if FLAGS.planner == "fastdownward-hff-gbfs":  # pragma: no cover
+    if planner == "fastdownward-hff-gbfs":  # pragma: no cover
         return run_fastdownward_planning(task,
                                          alias=None,
                                          search="eager_greedy([ff()])")
-    raise NotImplementedError(f"Unrecognized planner: {FLAGS.planner}")
+    raise NotImplementedError(f"Unrecognized planner: {planner}")
 
 
 def run_pyperplan_planning(
@@ -174,6 +177,30 @@ def get_custom_task(benchmark_name: str, task_num: int) -> Task:
     if not os.path.exists(problem_file):
         raise FileNotFoundError(f"Task not found: {problem_file}")
     return Task(domain_file, problem_file)
+
+
+@functools.lru_cache(maxsize=None)
+def parse_task(task: Task) -> Tuple[PyperplanDomain, PyperplanProblem]:
+    """Parse a task into Pyperplan structs."""
+    parser = Parser(task.domain_file, task.problem_file)
+    domain = parser.parse_domain()
+    problem = parser.parse_problem(domain)
+    return (domain, problem)
+
+
+def pred_to_str(pred: PyperplanPredicate) -> str:
+    """Create a string representation of a Pyperplan predicate (atom)."""
+    arg_str = " ".join(str(o) for o, _ in pred.signature)
+    return f"{pred.name}({arg_str})"
+
+
+def is_subtype(type1: PyperplanType, type2: PyperplanType) -> bool:
+    """Checks whether type1 inherits from type2."""
+    while type1 is not None:
+        if type1 == type2:
+            return True
+        type1 = type1.parent
+    return False
 
 
 def reset_flags(args: Dict[str, Any], default_seed: int = 123) -> None:
