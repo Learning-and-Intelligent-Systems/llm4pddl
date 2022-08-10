@@ -28,7 +28,7 @@ def parse_flags() -> None:
     parser.add_argument("--llm_multi_temperature", default=0.5, type=float)
     # Note that this num_completions is only used by the multi LLM approaches,
     # not by the standard (single response) approach, which always uses 1.
-    parser.add_argument("--llm_multi_num_completions", default=5, type=int)
+    parser.add_argument("--llm_multi_num_completions", default=10, type=int)
     parser.add_argument("--llm_max_total_tokens", default=4096, type=int)
     parser.add_argument('--debug',
                         action="store_const",

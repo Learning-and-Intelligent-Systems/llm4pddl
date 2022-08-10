@@ -149,3 +149,25 @@ def test_llm_standard_approach_failure_cases():
     assert not plan
 
     shutil.rmtree(cache_dir)
+
+
+def test_llm_multi_approach():
+    """Tests for the LLM multi approach."""
+    cache_dir = "_fake_llm_cache_dir"
+    utils.reset_flags({
+        "llm_cache_dir": cache_dir,
+        "num_train_tasks": 1,
+        "num_eval_tasks": 1,
+        "llm_model_name": "code-davinci-002",  # should not matter for test
+        "llm_max_total_tokens": 700,
+        "llm_multi_temperature": 0.3,
+        "llm_multi_num_completions": 3,
+        "planning_timeout": 100,
+    })
+    env = create_env("pyperplan-blocks")
+    approach = create_approach("llm-multi")
+    assert approach.get_name() == "llm-open-loop"
+    assert approach.is_learning_based
+    assert not approach.is_planning_based
+    assert approach._num_completions == 3  # pylint: disable=protected-access
+    assert approach._temperature == 0.3  # pylint: disable=protected-access

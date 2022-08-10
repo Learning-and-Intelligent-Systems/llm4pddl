@@ -3,6 +3,7 @@
 from llm4pddl.approaches.base_approach import BaseApproach
 from llm4pddl.approaches.llm_approaches import LLMOpenLoopApproach
 from llm4pddl.approaches.pure_planning_approach import PurePlanningApproach
+from llm4pddl.flags import FLAGS
 
 
 def create_approach(approach_name: str) -> BaseApproach:
@@ -11,4 +12,8 @@ def create_approach(approach_name: str) -> BaseApproach:
         return PurePlanningApproach()
     if approach_name == "llm-standard":
         return LLMOpenLoopApproach(num_completions=1, temperature=0.0)
+    if approach_name == "llm-multi":
+        return LLMOpenLoopApproach(
+            num_completions=FLAGS.llm_multi_num_completions,
+            temperature=FLAGS.llm_multi_temperature)
     raise NotImplementedError(f"Unrecognized approach name: {approach_name}")

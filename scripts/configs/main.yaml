@@ -12,6 +12,9 @@ APPROACHES:
   llm-standard:
     NAME: "llm-standard"
     FLAGS: {}
+  llm-multi:
+    NAME: "llm-multi"
+    FLAGS: {}
 ENVS:
   airport:
     NAME: "pyperplan-airport"
