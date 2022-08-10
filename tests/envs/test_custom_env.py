@@ -2,13 +2,13 @@
 
 from llm4pddl import utils
 from llm4pddl.envs.custom_env import CustomEnv
+from llm4pddl.envs import CUSTOM_BENCHMARKS
 
 
 def test_custom_env():
     """Tests for CustomEnv()"""
     utils.reset_flags({"num_train_tasks": 5, "num_eval_tasks": 10})
-    custom_envs = ['dressed']
-    for env_name in custom_envs:
+    for env_name in CUSTOM_BENCHMARKS:
         env = CustomEnv(env_name)
         assert env.get_name() == f'custom-{env_name}'
         training_tasks = env.get_train_tasks()

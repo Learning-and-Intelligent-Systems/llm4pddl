@@ -102,13 +102,14 @@ solution:
             plan = self._llm_response_to_plan(response, task)
             if utils.validate_plan(task, plan):
                 return plan, metrics
-        return plan, metrics
+        return None, metrics
 
     @staticmethod
     def _llm_response_to_plan(response: LLMResponse, task: Task) -> Plan:
         # We assume the LLM's output is such that each line contains
         # (operator-name object1-name object2-name ...) with optional
-        # whitespace allowed everywhere. As soon as this assumption is
+        # whitespace allowed everywhere. Furthermore, the signature of the
+        # objects should match the operator. As soon as these assumptions are
         # violated, we stop parsing and return whatever plan has been parsed
         # up to that point.
         domain, problem = utils.parse_task(task)
@@ -128,15 +129,20 @@ solution:
             if not words:
                 break
             # The first word should be an operator.
-            operator, objects = words[0], words[1:]
-            if operator not in operator_names:
+            op, objects = words[0], words[1:]
+            if op not in operator_names:
                 break
             # The remaining words should be objects.
             if any(o not in object_names for o in objects):
                 break
+            # The signature of the objects should match that of the operator.
+            op_sig = [t for _, (t,) in domain.actions[op].signature]
+            objs_sig = [problem.objects[o] for o in objects]
+            if op_sig != objs_sig:
+                break
             # Otherwise, we found a good plan step.
             objects_str = " ".join(objects)
-            action = f"({operator} {objects_str})"
+            action = f"({op} {objects_str})"
             plan.append(action)
             # Update the unparsed response.
             unparsed = unparsed[right_parens_idx + 1:]

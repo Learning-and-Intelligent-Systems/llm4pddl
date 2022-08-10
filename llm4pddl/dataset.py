@@ -9,7 +9,7 @@ from llm4pddl.flags import FLAGS
 from llm4pddl.structs import Dataset, Datum, Task
 
 
-def collect_dataset(train_tasks: Sequence[Task]) -> Dataset:
+def create_dataset(train_tasks: Sequence[Task]) -> Dataset:
     """Run planning on the train tasks to create training data."""
     dataset: Dataset = []
     rng = np.random.default_rng(FLAGS.seed)

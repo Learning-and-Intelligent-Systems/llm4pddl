@@ -12,7 +12,7 @@ import numpy as np
 from llm4pddl import utils
 from llm4pddl.approaches import create_approach
 from llm4pddl.approaches.base_approach import BaseApproach
-from llm4pddl.dataset import collect_dataset
+from llm4pddl.dataset import create_dataset
 from llm4pddl.envs import create_env
 from llm4pddl.envs.base_env import BaseEnv
 from llm4pddl.flags import FLAGS, parse_flags
@@ -48,7 +48,7 @@ def _run_pipeline(approach: BaseApproach, env: BaseEnv) -> None:
     # Run training for learning-based approaches.
     if approach.is_learning_based:
         train_tasks = env.get_train_tasks()
-        dataset = collect_dataset(train_tasks)
+        dataset = create_dataset(train_tasks)
         approach.train(dataset)
     # Run evaluation for all approaches.
     eval_tasks = env.get_eval_tasks()
