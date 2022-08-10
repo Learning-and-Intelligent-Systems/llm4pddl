@@ -1,12 +1,13 @@
 """Approaches that use a large language model to solve tasks.."""
 
-from typing import Optional, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from llm4pddl import utils
 from llm4pddl.approaches.base_approach import BaseApproach
 from llm4pddl.flags import FLAGS
 from llm4pddl.llm_interface import OpenAILLM
-from llm4pddl.structs import Dataset, LLMResponse, Plan, Task, TaskMetrics
+from llm4pddl.structs import Dataset, LLMResponse, Plan, PyperplanObject, \
+    PyperplanType, Task, TaskMetrics
 
 
 class LLMOpenLoopApproach(BaseApproach):
@@ -62,7 +63,10 @@ class LLMOpenLoopApproach(BaseApproach):
         # stripping out any comments or other extraneous text.
         domain, problem = utils.parse_task(task)
         # Create the objects string.
-        type_to_objs = {t: [] for t in domain.types.values()}
+        type_to_objs: Dict[PyperplanType, List[PyperplanObject]] = {
+            t: []
+            for t in domain.types.values()
+        }
         for obj in sorted(problem.objects):
             obj_type = problem.objects[obj]
             type_to_objs[obj_type].append(obj)
@@ -74,7 +78,8 @@ class LLMOpenLoopApproach(BaseApproach):
             objects_strs.append(typ_str)
         objects_str = "\n  ".join(objects_strs)
         # Create the init string.
-        init_str = " ".join(utils.pred_to_str(p) for p in problem.initial_state)
+        init_str = " ".join(
+            utils.pred_to_str(p) for p in problem.initial_state)
         # Create the goal string.
         goal_str = " ".join(utils.pred_to_str(p) for p in problem.goal)
         prompt = f"""(:objects
@@ -90,7 +95,9 @@ solution:
   {solution_str}"""
         return prompt
 
-    def _llm_responses_to_plan(self, responses: List[LLMResponse], task: Task) -> Tuple[Optional[Plan], TaskMetrics]:
+    def _llm_responses_to_plan(
+            self, responses: List[LLMResponse],
+            task: Task) -> Tuple[Optional[Plan], TaskMetrics]:
         # Return the first plan that succeeds. Subclasses may override.
         # By default, this class doesn't plan, so there are no metrics.
         metrics: TaskMetrics = {}
@@ -119,7 +126,7 @@ solution:
             if right_parens_idx < left_parens_idx:
                 break
             # Get the words in between the parentheses.
-            words = unparsed[left_parens_idx+1:right_parens_idx].split()
+            words = unparsed[left_parens_idx + 1:right_parens_idx].split()
             # If there's nothing in between, the response is malformed.
             if not words:
                 break
@@ -135,5 +142,5 @@ solution:
             action = f"({operator} {objects_str})"
             plan.append(action)
             # Update the unparsed response.
-            unparsed = unparsed[right_parens_idx+1:]
+            unparsed = unparsed[right_parens_idx + 1:]
         return plan

@@ -1,8 +1,8 @@
 """Approaches module."""
 
 from llm4pddl.approaches.base_approach import BaseApproach
-from llm4pddl.approaches.pure_planning_approach import PurePlanningApproach
 from llm4pddl.approaches.llm_approaches import LLMOpenLoopApproach
+from llm4pddl.approaches.pure_planning_approach import PurePlanningApproach
 
 
 def create_approach(approach_name: str) -> BaseApproach:

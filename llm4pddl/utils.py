@@ -11,11 +11,12 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
-from pyperplan.planner import HEURISTICS, SEARCHES, search_plan
 from pyperplan.pddl.parser import Parser
+from pyperplan.planner import HEURISTICS, SEARCHES, search_plan
 
 from llm4pddl.flags import FLAGS
-from llm4pddl.structs import Plan, Task, TaskMetrics, PyperplanDomain, PyperplanProblem, PyperplanPredicate
+from llm4pddl.structs import Plan, PyperplanDomain, PyperplanPredicate, \
+    PyperplanProblem, Task, TaskMetrics
 
 
 def validate_plan(task: Task, plan: Plan) -> bool:

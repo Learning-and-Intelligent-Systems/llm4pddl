@@ -4,9 +4,9 @@ from typing import Sequence
 
 import numpy as np
 
+from llm4pddl import utils
 from llm4pddl.flags import FLAGS
 from llm4pddl.structs import Dataset, Datum, Task
-from llm4pddl import utils
 
 
 def collect_dataset(train_tasks: Sequence[Task]) -> Dataset:
