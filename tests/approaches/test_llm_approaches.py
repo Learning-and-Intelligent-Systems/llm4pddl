@@ -164,7 +164,6 @@ def test_llm_multi_approach():
         "llm_multi_num_completions": 3,
         "planning_timeout": 100,
     })
-    env = create_env("pyperplan-blocks")
     approach = create_approach("llm-multi")
     assert approach.get_name() == "llm-open-loop"
     assert approach.is_learning_based
