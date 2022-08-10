@@ -67,7 +67,7 @@ class LargeLanguageModel(abc.ABC):
             config_id = f"most_likely_{num_completions}"
         else:
             config_id = f"{temperature}_{seed}_{num_completions}"
-        cache_filename = f"{llm_id}_{config_id}_{prompt_id}.txt"
+        cache_filename = f"{llm_id}_{config_id}_{prompt_id}.pkl"
         cache_filepath = Path(FLAGS.llm_cache_dir) / cache_filename
         if not os.path.exists(cache_filepath):
             if FLAGS.llm_use_cache_only:
