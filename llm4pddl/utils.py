@@ -176,6 +176,33 @@ def get_custom_task(benchmark_name: str, task_num: int) -> Task:
     return Task(domain_file, problem_file)
 
 
+def prep_problem(problem: str) -> str:
+    """Maps a string of a problem file to a new string.
+
+    This new string has had all space removed between grounded atoms.
+    This is for use before querying llm in order to reduce tokens.
+    """
+    # Gets rid of leading and trailing spaces in every line:
+    new = [piece.strip() for piece in problem.split('\n')]
+    # Moves ')' characters to previous line.
+    new.reverse()
+    for i in range(len(new)):
+        piece = new[i]
+        while len(piece) > 0:
+            if piece[0] == ')':
+                new[i] = piece[1:]
+                piece = piece[1:]
+                new[i + 1] = new[i + 1] + ')'
+            else:
+                print('entered!!!!!!!!!!!!')
+                break
+    new.reverse()
+    # Removes lines with empty space
+    new = [line for line in new if line.strip() != '']
+    new_problem = '\n'.join(new)
+    return new_problem
+
+
 def reset_flags(args: Dict[str, Any], default_seed: int = 123) -> None:
     """Resets FLAGS for use in unit tests.
 
@@ -197,3 +224,40 @@ def get_git_commit_hash() -> str:
 def get_config_path_str() -> str:
     """Get a string identifier for an experiment from FLAGS."""
     return f"{FLAGS.env}__{FLAGS.approach}__{FLAGS.seed}__{FLAGS.experiment_id}"
+
+if __name__ == "__main__": # pragma: no cover
+    task01 = """(define (problem dressed)
+  (:domain dressed)
+  (:objects person1 person2 person3 person4 - person
+            dress1 - dress
+            sweatpants1 sweatpants2 - sweatpants
+            sweatshirt1 sweatshirt2 - sweatshirt
+            nice-pants1 - nice-pants
+            collared-shirt1 - collared-shirt
+            suit-jacket1 - suit-jacket
+            )
+  (:init (wearing-nothing-formal person1)
+         (wearing-nothing-casual person1)
+         (wearing-nothing-formal person2)
+         (wearing-nothing-casual person2)
+         (wearing-nothing-formal person3)
+         (wearing-nothing-casual person3)
+         (wearing-nothing-formal person4)
+         (wearing-nothing-casual person4)
+         (in-closet dress1)
+         (in-closet sweatpants1)
+         (in-closet sweatpants2)
+         (in-closet sweatshirt1)
+         (in-closet sweatshirt2)
+         (in-closet nice-pants1)
+         (in-closet collared-shirt1)
+         (in-closet suit-jacket1)
+         )
+  (:goal (and (attending-casual-event person3)
+              (attending-formal-event person1)
+              (attending-casual-event person4)
+              (attending-formal-event person2)
+              ))
+  )"""
+    ans = prep_problem(task01)
+    import pdb; pdb.set_trace()
