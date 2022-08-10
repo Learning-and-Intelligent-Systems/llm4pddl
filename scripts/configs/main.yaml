@@ -9,6 +9,9 @@ APPROACHES:
     NAME: "pure-planning"
     FLAGS:
       planner: fastdownward
+  llm-standard:
+    NAME: "llm-standard"
+    FLAGS: {}
 ENVS:
   airport:
     NAME: "pyperplan-airport"
