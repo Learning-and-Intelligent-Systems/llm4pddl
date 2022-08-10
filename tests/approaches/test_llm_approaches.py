@@ -48,6 +48,7 @@ def test_llm_standard_approach(env_name):
         "llm_use_cache_only": False,
         "llm_max_total_tokens": 700,
         "planner": "pyperplan",
+        "data_gen_planner": "pyperplan",
         "planning_timeout": 100,
     })
     env = create_env(env_name)
@@ -90,6 +91,7 @@ def test_llm_standard_approach_failure_cases():
         "llm_use_cache_only": False,
         "llm_max_total_tokens": 700,
         "planner": "pyperplan",
+        "data_gen_planner": "pyperplan",
         "planning_timeout": 100,
     })
     env = create_env("pyperplan-miconic")

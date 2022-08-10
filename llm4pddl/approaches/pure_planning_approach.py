@@ -4,6 +4,7 @@ from typing import Optional, Tuple
 
 from llm4pddl import utils
 from llm4pddl.approaches.base_approach import BaseApproach
+from llm4pddl.flags import FLAGS
 from llm4pddl.structs import Plan, Task, TaskMetrics
 
 
@@ -22,4 +23,4 @@ class PurePlanningApproach(BaseApproach):
         return "pure-planning"
 
     def solve(self, task: Task) -> Tuple[Optional[Plan], TaskMetrics]:
-        return utils.run_planning(task, self._rng)
+        return utils.run_planning(task, self._rng, planner=FLAGS.planner)

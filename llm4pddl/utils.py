@@ -45,17 +45,18 @@ def validate_plan(task: Task, plan: Plan) -> bool:
 
 def run_planning(
         task: Task,
-        rng: np.random.Generator) -> Tuple[Optional[Plan], TaskMetrics]:
+        rng: np.random.Generator,
+        planner: str = "pyperplan") -> Tuple[Optional[Plan], TaskMetrics]:
     """Find a plan."""
-    if FLAGS.planner == "pyperplan":
+    if planner == "pyperplan":
         return run_pyperplan_planning(task, rng)
-    if FLAGS.planner == "fastdownward":  # pragma: no cover
+    if planner == "fastdownward":  # pragma: no cover
         return run_fastdownward_planning(task)
-    if FLAGS.planner == "fastdownward-hff-gbfs":  # pragma: no cover
+    if planner == "fastdownward-hff-gbfs":  # pragma: no cover
         return run_fastdownward_planning(task,
                                          alias=None,
                                          search="eager_greedy([ff()])")
-    raise NotImplementedError(f"Unrecognized planner: {FLAGS.planner}")
+    raise NotImplementedError(f"Unrecognized planner: {planner}")
 
 
 def run_pyperplan_planning(

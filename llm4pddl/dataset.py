@@ -14,7 +14,9 @@ def create_dataset(train_tasks: Sequence[Task]) -> Dataset:
     dataset: Dataset = []
     rng = np.random.default_rng(FLAGS.seed)
     for task in train_tasks:
-        solution, _ = utils.run_planning(task, rng)
+        solution, _ = utils.run_planning(task,
+                                         rng,
+                                         planner=FLAGS.data_gen_planner)
         assert solution is not None
         datum = Datum(task, solution)
         dataset.append(datum)
