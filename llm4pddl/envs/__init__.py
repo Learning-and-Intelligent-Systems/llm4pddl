@@ -4,7 +4,6 @@ from llm4pddl.envs.base_env import BaseEnv
 from llm4pddl.envs.custom_env import CustomEnv
 from llm4pddl.envs.pyperplan_env import PyperplanEnv
 
-
 PYPERPLAN_BENCHMARKS = [
     "airport",
     "blocks",
@@ -29,11 +28,10 @@ PYPERPLAN_BENCHMARKS = [
     "zenotravel",
 ]
 
-CUSTOM_BENCHMARKS = [
-    "dressed"
-]
+CUSTOM_BENCHMARKS = ["dressed"]
 
-ALL_ENVS = [f"pyperplan-{b}" for b in PYPERPLAN_BENCHMARKS] + [f"custom-{b}" for b in CUSTOM_BENCHMARKS]
+ALL_ENVS = [f"pyperplan-{b}" for b in PYPERPLAN_BENCHMARKS
+            ] + [f"custom-{b}" for b in CUSTOM_BENCHMARKS]
 
 
 def create_env(env_name: str) -> BaseEnv:

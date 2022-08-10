@@ -1,8 +1,8 @@
 """Tests for PyperplanEnv()."""
 
 from llm4pddl import utils
-from llm4pddl.envs.pyperplan_env import PyperplanEnv
 from llm4pddl.envs import PYPERPLAN_BENCHMARKS
+from llm4pddl.envs.pyperplan_env import PyperplanEnv
 
 
 def test_pyperplan_env():

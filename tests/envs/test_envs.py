@@ -3,7 +3,7 @@
 import pytest
 
 from llm4pddl import utils
-from llm4pddl.envs import create_env, ALL_ENVS
+from llm4pddl.envs import ALL_ENVS, create_env
 
 
 @pytest.mark.parametrize("env_name", ALL_ENVS)

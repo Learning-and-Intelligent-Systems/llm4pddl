@@ -1,8 +1,8 @@
 """Tests custom_env.py."""
 
 from llm4pddl import utils
-from llm4pddl.envs.custom_env import CustomEnv
 from llm4pddl.envs import CUSTOM_BENCHMARKS
+from llm4pddl.envs.custom_env import CustomEnv
 
 
 def test_custom_env():

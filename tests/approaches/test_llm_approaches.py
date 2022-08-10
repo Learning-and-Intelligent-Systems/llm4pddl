@@ -8,15 +8,15 @@ import pytest
 from llm4pddl import utils
 from llm4pddl.approaches import create_approach
 from llm4pddl.dataset import create_dataset
-from llm4pddl.envs import create_env, ALL_ENVS
+from llm4pddl.envs import ALL_ENVS, create_env
 from llm4pddl.llm_interface import LargeLanguageModel
 from llm4pddl.structs import LLMResponse
-
 
 # Wrap text responses into LLMResponses with dummy entries.
 wrap_response = lambda text: LLMResponse("", text, [], [], {}, {})
 
 # Create a mock LLM so that we can control the outputs.
+
 
 class _MockLLM(LargeLanguageModel):
 
@@ -54,6 +54,8 @@ def test_llm_standard_approach(env_name):
     train_tasks = env.get_train_tasks()
     approach = create_approach("llm-standard")
     assert approach.get_name() == "llm-open-loop"
+    assert approach.is_learning_based
+    assert not approach.is_planning_based
     # Test "learning", i.e., constructing the prompt prefix.
     dataset = create_dataset(train_tasks)
     assert not approach._prompt_prefix  # pylint: disable=protected-access
@@ -90,7 +92,7 @@ def test_llm_standard_approach_failure_cases():
         "planner": "pyperplan",
         "planning_timeout": 100,
     })
-    env = create_env("pyperplan-blocks")
+    env = create_env("pyperplan-miconic")
     train_tasks = env.get_train_tasks()
     approach = create_approach("llm-standard")
     dataset = create_dataset(train_tasks)
@@ -110,23 +112,30 @@ def test_llm_standard_approach_failure_cases():
 
     # Test failure cases of _llm_response_to_plan().
     assert approach._llm_response_to_plan(wrap_response(ideal_response), task)  # pylint: disable=protected-access
-    # Case where a line contains malformed parentheses.
+    # Cases where a line contains malformed parentheses.
+    response = "()\n" + ideal_response
+    plan = approach._llm_response_to_plan(wrap_response(response), task)  # pylint: disable=protected-access
+    assert not plan
     response = ")(\n" + ideal_response
     plan = approach._llm_response_to_plan(wrap_response(response), task)  # pylint: disable=protected-access
     assert not plan
     # Case where object names are incorrect.
-    assert "(pick-up d)" in ideal_response
-    response = ideal_response.replace("(pick-up d)", "(pick-up dummy)")
+    assert "(up f0 f1)" in ideal_response
+    response = ideal_response.replace("(up f0 f1)", "(up dummy f1)")
     plan = approach._llm_response_to_plan(wrap_response(response), task)  # pylint: disable=protected-access
     assert not plan
     # Case where operator names are incorrect.
-    assert "(pick-up d)" in ideal_response
-    response = ideal_response.replace("(pick-up d)", "(pick-up-dummy d)")
+    response = ideal_response.replace("(up f0 f1)", "(up-dummy f0 f1)")
     plan = approach._llm_response_to_plan(wrap_response(response), task)  # pylint: disable=protected-access
     assert not plan
-    # Case where the type signature of the operator is wrong.
-    assert "(pick-up d)" in ideal_response
-    response = ideal_response.replace("(pick-up d)", "(pick-up d b)")
+    # Cases where the type signature of the operator is wrong.
+    response = ideal_response.replace("(up f0 f1)", "(up f0)")
+    plan = approach._llm_response_to_plan(wrap_response(response), task)  # pylint: disable=protected-access
+    assert not plan
+    response = ideal_response.replace("(up f0 f1)", "(up p0 f1)")
+    plan = approach._llm_response_to_plan(wrap_response(response), task)  # pylint: disable=protected-access
+    assert not plan
+    response = ideal_response.replace("(up f0 f1)", "(up f0 f1 f1)")
     plan = approach._llm_response_to_plan(wrap_response(response), task)  # pylint: disable=protected-access
     assert not plan
 
