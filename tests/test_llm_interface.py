@@ -110,8 +110,8 @@ def test_openai_llm():
     temperature = 0.5
     seed = 123
     num_completions = 1
-    llm_response = llm._raw_to_llm_response(raw_response, prompt, temperature,  # pylint: disable=protected-access
-                                            seed, num_completions)
+    llm_response = llm._raw_to_llm_response(  # pylint: disable=protected-access
+        raw_response, prompt, temperature, seed, num_completions)
     assert llm_response.prompt_text == "Dummy prompt"
     assert llm_response.response_text == "Hello world"
     assert llm_response.tokens == ["Hello", "world"]
