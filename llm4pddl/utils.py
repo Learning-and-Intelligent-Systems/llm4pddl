@@ -16,7 +16,7 @@ from pyperplan.planner import HEURISTICS, SEARCHES, search_plan
 
 from llm4pddl.flags import FLAGS
 from llm4pddl.structs import Plan, PyperplanDomain, PyperplanPredicate, \
-    PyperplanProblem, Task, TaskMetrics
+    PyperplanProblem, PyperplanType, Task, TaskMetrics
 
 
 def validate_plan(task: Task, plan: Plan) -> bool:
@@ -191,6 +191,15 @@ def pred_to_str(pred: PyperplanPredicate) -> str:
     """Create a string representation of a Pyperplan predicate (atom)."""
     arg_str = " ".join(str(o) for o, _ in pred.signature)
     return f"{pred.name}({arg_str})"
+
+
+def is_subtype(type1: PyperplanType, type2: PyperplanType) -> bool:
+    """Checks whether type1 inherits from type2."""
+    while type1 is not None:
+        if type1 == type2:
+            return True
+        type1 = type1.parent
+    return False
 
 
 def reset_flags(args: Dict[str, Any], default_seed: int = 123) -> None:

@@ -115,6 +115,7 @@ solution:
         domain, problem = utils.parse_task(task)
         operator_names = set(domain.actions)
         object_names = set(problem.objects) | set(domain.constants)
+        obj_to_type = {**problem.objects, **domain.constants}
         plan: Plan = []
         unparsed = response.response_text
         while "(" in unparsed:
@@ -137,8 +138,10 @@ solution:
                 break
             # The signature of the objects should match that of the operator.
             op_sig = [t for _, (t,) in domain.actions[op].signature]
-            objs_sig = [problem.objects[o] for o in objects]
-            if op_sig != objs_sig:
+            objs_sig = [obj_to_type[o] for o in objects]
+            if len(op_sig) != len(objs_sig) or not all(
+                utils.is_subtype(t1, t2) for (t1, t2) in zip(objs_sig, op_sig)
+            ):
                 break
             # Otherwise, we found a good plan step.
             objects_str = " ".join(objects)
