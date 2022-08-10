@@ -90,11 +90,15 @@ solution:
   {solution_str}"""
         return prompt
 
-    def _llm_responses_to_plan(self, responses: List[LLMResponse], task: Task) -> Plan:
+    def _llm_responses_to_plan(self, responses: List[LLMResponse], task: Task) -> Tuple[Optional[Plan], TaskMetrics]:
+        # Return the first plan that succeeds. Subclasses may override.
+        # By default, this class doesn't plan, so there are no metrics.
+        metrics: TaskMetrics = {}
         for response in responses:
             plan = self._llm_response_to_plan(response, task)
-            # TODO validate
-            import ipdb; ipdb.set_trace()
+            if utils.validate_plan(task, plan):
+                return plan, metrics
+        return plan, metrics
 
     @staticmethod
     def _llm_response_to_plan(response: LLMResponse, task: Task) -> Plan:
