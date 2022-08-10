@@ -119,6 +119,9 @@ solution:
         unparsed = response.response_text
         while "(" in unparsed:
             left_parens_idx = unparsed.index("(")
+            # If there is no matching ), the response is malformed.
+            if ")" not in unparsed:
+                break
             right_parens_idx = unparsed.index(")")
             # If a ) appears before a (, the response is malformed.
             if right_parens_idx < left_parens_idx:

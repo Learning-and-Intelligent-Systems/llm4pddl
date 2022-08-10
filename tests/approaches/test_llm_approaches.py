@@ -102,8 +102,8 @@ def test_llm_standard_approach_failure_cases():
     task_idx = 0
     task = train_tasks[task_idx]
     rng = np.random.default_rng(123)
-    plan, _ = utils.run_planning(task, rng)
-    ideal_response = "\n".join(plan)
+    ideal_plan, _ = utils.run_planning(task, rng)
+    ideal_response = "\n".join(ideal_plan)
 
     # Test general approach failure.
     llm.response = "garbage"
@@ -117,6 +117,13 @@ def test_llm_standard_approach_failure_cases():
     plan = approach._llm_response_to_plan(wrap_response(response), task)  # pylint: disable=protected-access
     assert not plan
     response = ")(\n" + ideal_response
+    plan = approach._llm_response_to_plan(wrap_response(response), task)  # pylint: disable=protected-access
+    assert not plan
+    # Case where there is an unmatched left parenthesis.
+    response = ideal_response + "\n("
+    plan = approach._llm_response_to_plan(wrap_response(response), task)  # pylint: disable=protected-access
+    assert len(plan) == len(ideal_plan)
+    response = "()\n" + ideal_response
     plan = approach._llm_response_to_plan(wrap_response(response), task)  # pylint: disable=protected-access
     assert not plan
     # Case where object names are incorrect.
