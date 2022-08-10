@@ -186,6 +186,22 @@ def test_get_pyperplan_benchmark_task():
     assert "Problem not found" in str(e)
 
 
+def test_get_custom_task():
+    """Tests get_custom_task()"""
+    # Dressed:
+    task = utils.get_custom_task("dressed", 1)
+    assert os.path.exists(task.domain_file)
+    assert os.path.exists(task.problem_file)
+    # Domain doesn't exist:
+    with pytest.raises(FileNotFoundError) as f:
+        task = utils.get_custom_task("nonsense", 1)
+    assert "Domain not found" in str(f)
+    # Problem doesn't exist:
+    with pytest.raises(FileNotFoundError) as f:
+        task = utils.get_custom_task("dressed", 100)
+    assert "Task not found" in str(f)
+
+
 def test_run_planning(domain_file, problem_file, impossible_problem_file):
     """Tests for run_planning().
 
