@@ -6,7 +6,7 @@ from typing import Any, Dict, Iterator, List, Tuple
 
 import yaml
 
-SAVE_DIRS = ["results", "logs", "saved_datasets", "saved_approaches"]
+SAVE_DIRS = ["results", "logs", "llm_cache"]
 SUPERCLOUD_IP = "txe1-login.mit.edu"
 DEFAULT_BRANCH = "main"
 
