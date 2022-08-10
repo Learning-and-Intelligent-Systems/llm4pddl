@@ -21,13 +21,19 @@ class _DummyLLM(LargeLanguageModel):
                             seed,
                             num_completions=1):
         responses = []
+        prompt_info = {
+            "temperature": temperature,
+            "seed": seed,
+            "num_completions": num_completions
+        }
         for _ in range(num_completions):
             text = (f"Prompt was: {prompt}. Seed: {seed}. "
                     f"Temp: {temperature:.1f}.")
             tokens = [text]
             logprobs = [0.0]
-            additional_info = {"seed": seed}
-            response = LLMResponse(text, tokens, logprobs, additional_info)
+            other_info = {"dummy": 0}
+            response = LLMResponse(prompt, text, tokens, logprobs,
+                                   prompt_info.copy(), other_info)
             responses.append(response)
         return responses
 
@@ -46,16 +52,16 @@ def test_large_language_model():
     llm = _DummyLLM()
     assert llm.get_id() == "dummy"
     responses = llm.sample_completions("Hello world!", 0.5, 123, 3)
-    completions = [r.text for r in responses]
+    completions = [r.response_text for r in responses]
     expected_completion = "Prompt was: Hello world!. Seed: 123. Temp: 0.5."
     assert completions == [expected_completion] * 3
     # Query it again, covering the case where we load from disk.
     responses = llm.sample_completions("Hello world!", 0.5, 123, 3)
-    completions = [r.text for r in responses]
+    completions = [r.response_text for r in responses]
     assert completions == [expected_completion] * 3
     # Query with temperature 0.
     responses = llm.sample_completions("Hello world!", 0.0, 123, 3)
-    completions = [r.text for r in responses]
+    completions = [r.response_text for r in responses]
     expected_completion = "Prompt was: Hello world!. Seed: 123. Temp: 0.0."
     assert completions == [expected_completion] * 3
     # Clean up the cache dir.
@@ -84,6 +90,14 @@ def test_openai_llm():
     # Create an OpenAILLM with the curie model.
     llm = OpenAILLM("text-curie-001")
     assert llm.get_id() == "openai-text-curie-001"
+    # Uncomment this to test manually, but do NOT uncomment in master, because
+    # each query costs money.
+    # completions = llm.sample_completions("Hello", 0.5, 123, 2)
+    # assert len(completions) == 2
+    # completions2 = llm.sample_completions("Hello", 0.5, 123, 2)
+    # assert completions == completions2
+    # shutil.rmtree(cache_dir)
+
     # Test _raw_to_llm_response().
     raw_response = {
         "text": "Hello world",
@@ -92,14 +106,16 @@ def test_openai_llm():
             "token_logprobs": [-1.0, -2.0]
         }
     }
-    llm_response = llm._raw_to_llm_response(raw_response)  # pylint: disable=protected-access
-    assert llm_response.text == "Hello world"
+    prompt = "Dummy prompt"
+    temperature = 0.5
+    seed = 123
+    num_completions = 1
+    llm_response = llm._raw_to_llm_response(raw_response, prompt, temperature,  # pylint: disable=protected-access
+                                            seed, num_completions)
+    assert llm_response.prompt_text == "Dummy prompt"
+    assert llm_response.response_text == "Hello world"
     assert llm_response.tokens == ["Hello", "world"]
     assert llm_response.token_logprobs == [-1.0, -2.0]
-    # Uncomment this to test manually, but do NOT uncomment in master, because
-    # each query costs money.
-    # completions = llm.sample_completions("Hello", 0.5, 123, 2)
-    # assert len(completions) == 2
-    # completions2 = llm.sample_completions("Hello", 0.5, 123, 2)
-    # assert completions == completions2
-    # shutil.rmtree(cache_dir)
+    assert llm_response.prompt_info["temperature"] == temperature
+    assert llm_response.prompt_info["seed"] == seed
+    assert llm_response.prompt_info["num_completions"] == num_completions

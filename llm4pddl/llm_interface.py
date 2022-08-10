@@ -108,7 +108,6 @@ class OpenAILLM(LargeLanguageModel):
             temperature: float,
             seed: int,
             num_completions: int = 1) -> List[LLMResponse]:  # pragma: no cover
-        del seed  # unused
         response = openai.Completion.create(
             model=self._model_name,  # type: ignore
             prompt=prompt,
@@ -117,12 +116,28 @@ class OpenAILLM(LargeLanguageModel):
             logprobs=1,
             n=num_completions)
         assert len(response["choices"]) == num_completions
-        return [self._raw_to_llm_response(r) for r in response["choices"]]
+        return [
+            self._raw_to_llm_response(r, prompt, temperature, seed,
+                                      num_completions)
+            for r in response["choices"]
+        ]
 
     @staticmethod
-    def _raw_to_llm_response(raw_response: Dict[str, Any]) -> LLMResponse:
+    def _raw_to_llm_response(raw_response: Dict[str, Any], prompt: str,
+                             temperature: float, seed: int,
+                             num_completions: int) -> LLMResponse:
         text = raw_response["text"]
         tokens = raw_response["logprobs"]["tokens"]
         token_logprobs = raw_response["logprobs"]["token_logprobs"]
         assert len(tokens) == len(token_logprobs)
-        return LLMResponse(text, tokens, token_logprobs, raw_response)
+        prompt_info = {
+            "temperature": temperature,
+            "seed": seed,
+            "num_completions": num_completions
+        }
+        return LLMResponse(prompt,
+                           text,
+                           tokens,
+                           token_logprobs,
+                           prompt_info=prompt_info,
+                           other_info=raw_response.copy())

@@ -14,9 +14,11 @@ class Task:
 @dataclass(frozen=True)
 class LLMResponse:
     """A single response from a LargeLanguageModel."""
-    text: str
+    prompt_text: str
+    response_text: str
     tokens: List[str]
     token_logprobs: List[float]
+    prompt_info: Dict
     other_info: Dict
 
 
