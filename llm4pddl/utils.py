@@ -129,8 +129,8 @@ def run_fastdownward_planning(
         num_nodes_expanded = re.findall(r"(\d+) expanded", output)[-1]
         num_nodes_created = re.findall(r"(\d+) evaluated", output)[-1]
     else:
-        num_nodes_expanded = re.findall(r"Evaluated (\d+) state", output)[0]
-        num_nodes_created = re.findall(r"Generated (\d+) state", output)[0]
+        num_nodes_expanded = re.findall(r"Expanded (\d+) state", output)[0]
+        num_nodes_created = re.findall(r"Evaluated (\d+) state", output)[0]
     metrics = {
         "nodes_expanded": float(num_nodes_expanded),
         "nodes_created": float(num_nodes_created)
