@@ -3,6 +3,18 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List
 
+from pyperplan.pddl.pddl import Domain as _PyperplanDomain
+from pyperplan.pddl.pddl import Predicate as _PyperplanPredicate
+from pyperplan.pddl.pddl import Problem as _PyperplanProblem
+from pyperplan.pddl.pddl import Type as _PyperplanType
+
+# Explicitly list the pyperplan data structures that we use.
+PyperplanDomain = _PyperplanDomain
+PyperplanPredicate = _PyperplanPredicate
+PyperplanProblem = _PyperplanProblem
+PyperplanType = _PyperplanType
+PyperplanObject = str
+
 
 @dataclass(frozen=True)
 class Task:
@@ -30,3 +42,14 @@ Plan = List[str]
 TaskMetrics = Dict[str, Any]
 # Maps a task string identifier to task metrics.
 Metrics = Dict[str, TaskMetrics]
+
+
+@dataclass(frozen=True)
+class Datum:
+    """A single entry in a training dataset."""
+    task: Task
+    solution: Plan
+
+
+# A training dataset.
+Dataset = List[Datum]
