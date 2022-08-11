@@ -234,14 +234,21 @@ def get_all_ground_operators(task: Task) -> Dict[str, PyperplanAction]:
 
 
 @functools.lru_cache(maxsize=None)
-def parse_plan_step(action_str: str, task: Task) -> PyperplanAction:
-    """Parse a string action into a Pyperplan action (ground operator)."""
+def parse_plan_step(action_str: str, task: Task) -> Optional[PyperplanAction]:
+    """Parse a string action into a Pyperplan action (ground operator).
+
+    If the ground operator is invalid, returns None. This can be the
+    case when the ground operator has a static precondition that is not
+    in the initial state of the task, or if the operator is deemed
+    irrelevant for the task based on the relevance analysis in pyperplan
+    grounding.
+    """
     # Match the action to a ground operator in the set of all ground operators
     # from pyperplan. Note that the grounding is cached for efficiency. We
     # do it this way, rather than reconstructing the operators, because
     # pyperplan grounding removes static preconditions.
     ground_ops = get_all_ground_operators(task)
-    return ground_ops[action_str]
+    return ground_ops.get(action_str, None)
 
 
 def pred_to_str(pred: PyperplanPredicate) -> str:
