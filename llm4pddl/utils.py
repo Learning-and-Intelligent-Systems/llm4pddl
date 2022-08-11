@@ -45,11 +45,10 @@ def validate_plan(task: Task, plan: Plan) -> bool:
 
 def run_planning(
         task: Task,
-        rng: np.random.Generator,
         planner: str = "pyperplan") -> Tuple[Optional[Plan], TaskMetrics]:
     """Find a plan."""
     if planner == "pyperplan":
-        return run_pyperplan_planning(task, rng)
+        return run_pyperplan_planning(task)
     if planner == "fastdownward":  # pragma: no cover
         return run_fastdownward_planning(task)
     if planner == "fastdownward-hff-gbfs":  # pragma: no cover
@@ -61,7 +60,6 @@ def run_planning(
 
 def run_pyperplan_planning(
         task: Task,
-        rng: np.random.Generator,
         heuristic: str = "hff",
         search: str = "gbf") -> Tuple[Optional[Plan], TaskMetrics]:
     """Find a plan with pyperplan."""
@@ -74,7 +72,6 @@ def run_pyperplan_planning(
         task.problem_file,
         search_fn,
         heuristic_fn,
-        rng=rng,
         timeout=FLAGS.planning_timeout,
     )
     logging.disable(logging.NOTSET)

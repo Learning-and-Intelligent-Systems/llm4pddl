@@ -2,7 +2,6 @@
 
 import shutil
 
-import numpy as np
 import pytest
 
 from llm4pddl import utils
@@ -67,8 +66,7 @@ def test_llm_standard_approach(env_name):
     # Test successful usage, where the LLM output corresponds to a plan.
     task_idx = 0
     task = train_tasks[task_idx]
-    rng = np.random.default_rng(123)
-    plan, _ = utils.run_planning(task, rng)
+    plan, _ = utils.run_planning(task)
     ideal_response = "\n".join(plan)
     # Add an empty line to the ideal response, should be no problem.
     ideal_response = "\n" + ideal_response
@@ -103,8 +101,7 @@ def test_llm_standard_approach_failure_cases():
     approach._llm = llm  # pylint: disable=protected-access
     task_idx = 0
     task = train_tasks[task_idx]
-    rng = np.random.default_rng(123)
-    ideal_plan, _ = utils.run_planning(task, rng)
+    ideal_plan, _ = utils.run_planning(task)
     ideal_response = "\n".join(ideal_plan)
 
     # Test general approach failure.

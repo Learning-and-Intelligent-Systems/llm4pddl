@@ -3,7 +3,6 @@
 import os
 import tempfile
 
-import numpy as np
 import pytest
 
 from llm4pddl import utils
@@ -307,24 +306,23 @@ def test_run_planning(domain_file, problem_file, impossible_problem_file):
     """
     utils.reset_flags({"planning_timeout": 100})
     # Test planning successfully.
-    rng = np.random.default_rng(123)
     task = Task(domain_file, problem_file)
-    plan, metrics = utils.run_planning(task, rng)
+    plan, metrics = utils.run_planning(task)
     assert metrics["nodes_created"] > metrics["nodes_expanded"]
     assert plan is not None
     assert utils.validate_plan(task, plan)
     # Test planning in an impossible problem.
     impossible_task = Task(domain_file, impossible_problem_file)
-    plan, metrics = utils.run_planning(impossible_task, rng)
+    plan, metrics = utils.run_planning(impossible_task)
     assert metrics["nodes_created"] == metrics["nodes_expanded"] == 1
     assert plan is None
     # Test planning in a pyperplan benchmark problem.
     task = utils.get_pyperplan_benchmark_task("blocks", 1)
-    plan, metrics = utils.run_planning(task, rng)
+    plan, metrics = utils.run_planning(task)
     assert metrics["nodes_created"] > metrics["nodes_expanded"]
     assert plan is not None
     assert utils.validate_plan(task, plan)
     # Test planning with an invalid planner.
     with pytest.raises(NotImplementedError) as e:
-        utils.run_planning(task, rng, planner="not a real planner")
+        utils.run_planning(task, planner="not a real planner")
     assert "Unrecognized planner" in str(e)
