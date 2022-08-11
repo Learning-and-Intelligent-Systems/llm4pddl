@@ -88,6 +88,8 @@ def test_llm_standard_approach_failure_cases():
         "llm_model_name": "code-davinci-002",  # should not matter for test
         "llm_use_cache_only": False,
         "llm_max_total_tokens": 700,
+        "llm_multi_num_completions": 5,
+        "llm_multi_temperature": 0.5,
         "planner": "pyperplan",
         "data_gen_planner": "pyperplan",
         "planning_timeout": 100,
