@@ -227,7 +227,9 @@ def get_all_ground_operators(task: Task) -> Dict[str, PyperplanAction]:
     parser = Parser(task.domain_file, task.problem_file)
     domain = parser.parse_domain()
     problem = parser.parse_problem(domain)
+    logging.disable(logging.ERROR)
     pyperplan_task = pyperplan_ground(problem)
+    logging.disable(logging.NOTSET)
     return {o.name: o for o in pyperplan_task.operators}
 
 
