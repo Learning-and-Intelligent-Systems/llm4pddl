@@ -11,6 +11,10 @@ Usage example:
         --machines machines.txt --sshkey ~/.ssh/cloud.key
 
 The default branch can be overridden with the --branch flag.
+
+To run all commands on one machine, in sequence, rather than across multiple
+machines in parallel, use --single_machine. The first machine in machines.txt
+will be used.
 """
 
 import argparse
@@ -28,6 +32,7 @@ def _main() -> None:
     parser.add_argument("--machines", required=True, type=str)
     parser.add_argument("--sshkey", required=True, type=str)
     parser.add_argument("--branch", type=str, default=DEFAULT_BRANCH)
+    parser.add_argument("--single_machine", action="store_true")
     args = parser.parse_args()
     # Load the machine IPs.
     with open(args.machines, "r", encoding="utf-8") as f:
@@ -38,26 +43,39 @@ def _main() -> None:
     # machines to run them all.
     run_configs = list(generate_run_configs(args.config))
     num_machines = len(machines)
-    assert num_machines >= len(run_configs)
-    # Launch the runs.
-    for machine, cfg in zip(machines, run_configs):
+    if not args.single_machine:
+        assert num_machines >= len(run_configs)
+    else:
+        assert num_machines >= 1
+    # Prepare the commands.
+    cmds = ["cd ~/llm4pddl"] + get_cmds_to_prep_repo(args.branch)
+    main_cmds = []
+    for cfg in run_configs:
         assert isinstance(cfg, SingleSeedRunConfig)
         logfile = os.path.join("logs", config_to_logfile(cfg))
         cmd_flags = config_to_cmd_flags(cfg)
-        cmd = f"python3.8 llm4pddl/main.py {cmd_flags}"
-        _launch_experiment(cmd, machine, logfile, args.sshkey, args.branch)
-
-
-def _launch_experiment(cmd: str, machine: str, logfile: str, ssh_key: str,
-                       branch: str) -> None:
-    print(f"Launching on machine {machine}: {cmd}")
-    # Enter the repo.
-    server_cmds = ["cd ~/llm4pddl"]
-    # Prepare the repo.
-    server_cmds.extend(get_cmds_to_prep_repo(branch))
-    # Run the main command.
-    server_cmds.append(f"{cmd} &> {logfile} &")
-    run_cmds_on_machine(server_cmds, "ubuntu", machine, ssh_key=ssh_key)
+        cmd = f"python3.8 llm4pddl/main.py {cmd_flags} &> {logfile}"
+        main_cmds.append(cmd)
+    # Launch across multiple machines.
+    if not args.single_machine:
+        for machine, machine_main_cmd in zip(machines, main_cmds):
+            print(f"Launching on machine {machine}: {machine_main_cmd}")
+            background_cmd = machine_main_cmd + " &"
+            machine_cmds = cmds + [background_cmd]
+            run_cmds_on_machine(machine_cmds,
+                                "ubuntu",
+                                machine,
+                                ssh_key=args.sshkey)
+    # Launch sequentially on one machine.
+    else:
+        machine = machines[0]
+        sequential_cmd = "{ " + ("; ".join(main_cmds)) + " } &"
+        print(f"Launching on machine {machine}: {sequential_cmd}")
+        machine_cmds = cmds + [sequential_cmd]
+        run_cmds_on_machine(machine_cmds,
+                            "ubuntu",
+                            machine,
+                            ssh_key=args.sshkey)
 
 
 if __name__ == "__main__":
