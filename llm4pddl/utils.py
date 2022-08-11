@@ -181,8 +181,8 @@ def minify_pddl_problem(problem: str) -> str:
 
     This is for use before querying llm in order to reduce tokens.
     This works by:
-    1. Gettign rid of space between right parentheses.
-    2. Getting rid of space between left parentheses.
+    1. Getting rid of space between right parentheses[') )' -> '))'].
+    2. Getting rid of space between left parentheses['( (' -> '(('].
     3. Getting rid of leading and trailing whitespace and extra lines after ')'.
     4. Getting rid of '\n' before ')', which are unnecessary.
     """
