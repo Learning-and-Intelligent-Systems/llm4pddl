@@ -1,20 +1,20 @@
 # Our main experiments configuration file.
 ---
 APPROACHES:
-  pyperplan-only:
-    NAME: "pure-planning"
-    FLAGS:
-      planner: pyperplan
-  fd-only:
-    NAME: "pure-planning"
-    FLAGS:
-      planner: fastdownward
+  # pyperplan-only:
+  #   NAME: "pure-planning"
+  #   FLAGS:
+  #     planner: pyperplan
+  # fd-only:
+  #   NAME: "pure-planning"
+  #   FLAGS:
+  #     planner: fastdownward
   llm-standard:
     NAME: "llm-standard"
     FLAGS: {}
-  llm-multi:
-    NAME: "llm-multi"
-    FLAGS: {}
+  # llm-multi:
+  #   NAME: "llm-multi"
+  #   FLAGS: {}
 ENVS:
   airport:
     NAME: "pyperplan-airport"
@@ -85,4 +85,4 @@ FLAGS:
   num_train_tasks: 5
   num_eval_tasks: 10
 START_SEED: 456
-NUM_SEEDS: 5
+NUM_SEEDS: 1
