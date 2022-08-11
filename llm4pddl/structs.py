@@ -3,17 +3,19 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List
 
+from pyperplan.pddl.pddl import Action as _PyperplanAction
 from pyperplan.pddl.pddl import Domain as _PyperplanDomain
 from pyperplan.pddl.pddl import Predicate as _PyperplanPredicate
 from pyperplan.pddl.pddl import Problem as _PyperplanProblem
 from pyperplan.pddl.pddl import Type as _PyperplanType
 
 # Explicitly list the pyperplan data structures that we use.
+PyperplanAction = _PyperplanAction
 PyperplanDomain = _PyperplanDomain
+PyperplanObject = str
 PyperplanPredicate = _PyperplanPredicate
 PyperplanProblem = _PyperplanProblem
 PyperplanType = _PyperplanType
-PyperplanObject = str
 
 
 @dataclass(frozen=True)

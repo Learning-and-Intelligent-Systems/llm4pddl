@@ -8,15 +8,16 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Sequence, Tuple
 
 import numpy as np
+from pyperplan.grounding import ground as pyperplan_ground
 from pyperplan.pddl.parser import Parser
 from pyperplan.planner import HEURISTICS, SEARCHES, search_plan
 
 from llm4pddl.flags import FLAGS
-from llm4pddl.structs import Plan, PyperplanDomain, PyperplanPredicate, \
-    PyperplanProblem, PyperplanType, Task, TaskMetrics
+from llm4pddl.structs import Plan, PyperplanAction, PyperplanDomain, \
+    PyperplanPredicate, PyperplanProblem, PyperplanType, Task, TaskMetrics
 
 
 def validate_plan(task: Task, plan: Plan) -> bool:
@@ -59,9 +60,11 @@ def run_planning(
 
 
 def run_pyperplan_planning(
-        task: Task,
-        heuristic: str = "hff",
-        search: str = "gbf") -> Tuple[Optional[Plan], TaskMetrics]:
+    task: Task,
+    heuristic: str = "hff",
+    search: str = "gbf",
+    partial_plans: Optional[Sequence[Sequence[PyperplanAction]]] = None,
+) -> Tuple[Optional[Plan], TaskMetrics]:
     """Find a plan with pyperplan."""
     search_fn = SEARCHES[search]
     heuristic_fn = HEURISTICS[heuristic]
@@ -73,6 +76,7 @@ def run_pyperplan_planning(
         search_fn,
         heuristic_fn,
         timeout=FLAGS.planning_timeout,
+        partial_plans=partial_plans,
     )
     logging.disable(logging.NOTSET)
     if pyperplan_plan is None:
@@ -211,6 +215,33 @@ def parse_task(task: Task) -> Tuple[PyperplanDomain, PyperplanProblem]:
     domain = parser.parse_domain()
     problem = parser.parse_problem(domain)
     return (domain, problem)
+
+
+@functools.lru_cache(maxsize=None)
+def get_all_ground_operators(task: Task) -> Dict[str, PyperplanAction]:
+    """Ground all operators in a task.
+
+    Returns a dict mapping the string name of the operator to the
+    operator.
+    """
+    parser = Parser(task.domain_file, task.problem_file)
+    domain = parser.parse_domain()
+    problem = parser.parse_problem(domain)
+    logging.disable(logging.ERROR)
+    pyperplan_task = pyperplan_ground(problem)
+    logging.disable(logging.NOTSET)
+    return {o.name: o for o in pyperplan_task.operators}
+
+
+@functools.lru_cache(maxsize=None)
+def parse_plan_step(action_str: str, task: Task) -> PyperplanAction:
+    """Parse a string action into a Pyperplan action (ground operator)."""
+    # Match the action to a ground operator in the set of all ground operators
+    # from pyperplan. Note that the grounding is cached for efficiency. We
+    # do it this way, rather than reconstructing the operators, because
+    # pyperplan grounding removes static preconditions.
+    ground_ops = get_all_ground_operators(task)
+    return ground_ops[action_str]
 
 
 def pred_to_str(pred: PyperplanPredicate) -> str:
