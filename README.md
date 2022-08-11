@@ -20,9 +20,9 @@ Please make sure to `export PYTHONHASHSEED=0` when running the code. You can add
 - Clone this repository with submodules: `git clone --recursive https://github.com/Learning-and-Intelligent-Systems/llm4pddl.git`
 - Run `pip install -e .[develop]` to install the main dependencies for development.
   - If you encounter issues with the `transformers` dependency on MacOS, we recommend the doing the following:
-  1. Run `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh` in terminal.
-  2. Restart the terminal.
-  3. Run `pip install transformers==2.5.1`.
+    1. Run `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh` in terminal.
+    2. Restart the terminal.
+    3. Run `pip install transformers==2.5.1`.
   - If problems persist, see https://github.com/huggingface/transformers/issues/2831.
 - Run `pip install -e llm4pddl/third_party/pyperplan` to install our fork of pyperplan.
 - You can't push directly to master. Make a new branch in this repository (don't use a fork, since that will not properly trigger the checks when you make a PR). When your code is ready for review, make a PR and request reviews from the appropriate people.
