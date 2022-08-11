@@ -1,4 +1,4 @@
-"""Approaches that use a large language model to solve tasks.."""
+"""An approach that use a large language model to solve tasks."""
 
 import logging
 from typing import Dict, List, Optional, Tuple
