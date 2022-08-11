@@ -75,10 +75,10 @@ class LLMOpenLoopApproach(BaseApproach):
             objects_strs.append(typ_str)
         objects_str = "\n  ".join(objects_strs)
         # Create the init string.
-        init_str = " ".join(
+        init_str = "\n".join(
             utils.pred_to_str(p) for p in problem.initial_state)
         # Create the goal string.
-        goal_str = " ".join(utils.pred_to_str(p) for p in problem.goal)
+        goal_str = "\n".join(utils.pred_to_str(p) for p in problem.goal)
         # Create the solution string.
         solution_str = "\n  ".join(plan)
         prompt = f"""(:objects
@@ -92,6 +92,8 @@ class LLMOpenLoopApproach(BaseApproach):
 )
 solution:
   {solution_str}"""
+        # Minify the prompt to reduce tokens.
+        prompt = utils.minify_pddl_problem(prompt)
         return prompt
 
     def _llm_responses_to_plan(
