@@ -305,7 +305,7 @@ def test_run_planning(domain_file, problem_file, impossible_problem_file):
     Fast downward is not tested because it's not easy to install on the
     github checks server.
     """
-    utils.reset_flags({"planner": "pyperplan", "planning_timeout": 100})
+    utils.reset_flags({"planning_timeout": 100})
     # Test planning successfully.
     rng = np.random.default_rng(123)
     task = Task(domain_file, problem_file)
@@ -325,7 +325,6 @@ def test_run_planning(domain_file, problem_file, impossible_problem_file):
     assert plan is not None
     assert utils.validate_plan(task, plan)
     # Test planning with an invalid planner.
-    utils.reset_flags({"planner": "not a real planner"})
     with pytest.raises(NotImplementedError) as e:
-        utils.run_planning(task, rng)
+        utils.run_planning(task, rng, planner="not a real planner")
     assert "Unrecognized planner" in str(e)

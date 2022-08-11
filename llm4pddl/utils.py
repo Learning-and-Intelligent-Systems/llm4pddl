@@ -11,10 +11,12 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
+from pyperplan.pddl.parser import Parser
 from pyperplan.planner import HEURISTICS, SEARCHES, search_plan
 
 from llm4pddl.flags import FLAGS
-from llm4pddl.structs import Plan, Task, TaskMetrics
+from llm4pddl.structs import Plan, PyperplanDomain, PyperplanPredicate, \
+    PyperplanProblem, PyperplanType, Task, TaskMetrics
 
 
 def validate_plan(task: Task, plan: Plan) -> bool:
@@ -43,17 +45,18 @@ def validate_plan(task: Task, plan: Plan) -> bool:
 
 def run_planning(
         task: Task,
-        rng: np.random.Generator) -> Tuple[Optional[Plan], TaskMetrics]:
+        rng: np.random.Generator,
+        planner: str = "pyperplan") -> Tuple[Optional[Plan], TaskMetrics]:
     """Find a plan."""
-    if FLAGS.planner == "pyperplan":
+    if planner == "pyperplan":
         return run_pyperplan_planning(task, rng)
-    if FLAGS.planner == "fastdownward":  # pragma: no cover
+    if planner == "fastdownward":  # pragma: no cover
         return run_fastdownward_planning(task)
-    if FLAGS.planner == "fastdownward-hff-gbfs":  # pragma: no cover
+    if planner == "fastdownward-hff-gbfs":  # pragma: no cover
         return run_fastdownward_planning(task,
                                          alias=None,
                                          search="eager_greedy([ff()])")
-    raise NotImplementedError(f"Unrecognized planner: {FLAGS.planner}")
+    raise NotImplementedError(f"Unrecognized planner: {planner}")
 
 
 def run_pyperplan_planning(
@@ -126,8 +129,8 @@ def run_fastdownward_planning(
         num_nodes_expanded = re.findall(r"(\d+) expanded", output)[-1]
         num_nodes_created = re.findall(r"(\d+) evaluated", output)[-1]
     else:
-        num_nodes_expanded = re.findall(r"Evaluated (\d+) state", output)[0]
-        num_nodes_created = re.findall(r"Generated (\d+) state", output)[0]
+        num_nodes_expanded = re.findall(r"Expanded (\d+) state", output)[0]
+        num_nodes_created = re.findall(r"Evaluated (\d+) state", output)[0]
     metrics = {
         "nodes_expanded": float(num_nodes_expanded),
         "nodes_created": float(num_nodes_created)
@@ -202,6 +205,30 @@ def minify_pddl_problem(problem: str) -> str:
     # Getting rid of '\n' before ')', which are unnecessary.
     new_problem = prob_wo_whitespace.replace('\n)', ')')
     return new_problem
+
+
+@functools.lru_cache(maxsize=None)
+def parse_task(task: Task) -> Tuple[PyperplanDomain, PyperplanProblem]:
+    """Parse a task into Pyperplan structs."""
+    parser = Parser(task.domain_file, task.problem_file)
+    domain = parser.parse_domain()
+    problem = parser.parse_problem(domain)
+    return (domain, problem)
+
+
+def pred_to_str(pred: PyperplanPredicate) -> str:
+    """Create a string representation of a Pyperplan predicate (atom)."""
+    arg_str = " ".join(str(o) for o, _ in pred.signature)
+    return f"{pred.name}({arg_str})"
+
+
+def is_subtype(type1: PyperplanType, type2: PyperplanType) -> bool:
+    """Checks whether type1 inherits from type2."""
+    while type1 is not None:
+        if type1 == type2:
+            return True
+        type1 = type1.parent
+    return False
 
 
 def reset_flags(args: Dict[str, Any], default_seed: int = 123) -> None:
