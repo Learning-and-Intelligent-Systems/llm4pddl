@@ -202,16 +202,17 @@ def test_get_custom_task():
     assert "Task not found" in str(f)
 
 
-def test_prep_problem():
-    """Tests prep_problem().
+def test_minify_pddl_problem():
+    """Tests minify_pddl_problem().
 
     Note: I separately ran prep_problem() and then planned with the
     new problem. Pyperplan still planned correctly with it.
     """
+    # Testing big example #1:
     task01_path = utils.get_custom_task('dressed', 1).problem_file
     with open(task01_path, 'r', encoding='utf-8') as f:
         task01 = f.read()
-    assert utils.prep_problem(task01) == """(define (problem dressed)
+    answer01 = """(define (problem dressed)
 (:domain dressed)
 (:objects person1 person2 person3 person4 - person
 dress1 - dress
@@ -240,6 +241,62 @@ suit-jacket1 - suit-jacket)
 (attending-formal-event person1)
 (attending-casual-event person4)
 (attending-formal-event person2))))"""
+    assert utils.minify_pddl_problem(task01) == answer01
+    #Testing big example #2(same as above but with noise added):
+    initial = """(define (problem dressed)
+
+
+(:domain dressed)
+(:objects person1 person2 person3 person4 - person
+dress1 - dress
+    sweatpants1 sweatpants2 - sweatpants
+sweatshirt1 sweatshirt2 - sweatshirt   
+        nice-pants1 - nice-pants
+collared-shirt1 - collared-shirt   
+    suit-jacket1 - suit-jacket)
+(:init (wearing-nothing-formal person1)
+(wearing-nothing-casual person1)
+
+
+(wearing-nothing-formal person2)
+(wearing-nothing-casual person2)
+  (wearing-nothing-formal person3)
+(wearing-nothing-casual person3)
+
+(wearing-nothing-formal person4)
+(wearing-nothing-casual person4)
+(in-closet dress1)
+(in-closet sweatpants1)
+(in-closet sweatpants2)
+  (in-closet sweatshirt1)   
+  (in-closet sweatshirt2)
+  (in-closet nice-pants1)
+(in-closet collared-shirt1)
+(in-closet suit-jacket1))
+
+(:goal (and (attending-casual-event person3)
+(attending-formal-event person1)
+(attending-casual-event person4)  
+(attending-formal-event person2) )  )   )"""
+    assert utils.minify_pddl_problem(initial) == answer01
+    # Testing many blank lines:
+    example01 = """(in-closet sweatshirt2)
+
+
+(in-closet nice-pants1)"""
+    assert utils.minify_pddl_problem(example01) == """(in-closet sweatshirt2)
+(in-closet nice-pants1)"""
+    # Testing odd spaces between right parentheses and multiple on a line:
+    example02 = """(:goal (and (attending-casual-event person3)
+)   ) """
+    assert utils.minify_pddl_problem(
+        example02) == """(:goal (and (attending-casual-event person3)))"""
+    # Testing both:
+    example03 = """
+    (  (in-closet sweatpants1) )
+    """
+    assert utils.minify_pddl_problem(
+        example03) == """((in-closet sweatpants1))"""
 
 
 def test_run_planning(domain_file, problem_file, impossible_problem_file):

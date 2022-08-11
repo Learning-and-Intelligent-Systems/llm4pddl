@@ -176,30 +176,31 @@ def get_custom_task(benchmark_name: str, task_num: int) -> Task:
     return Task(domain_file, problem_file)
 
 
-def prep_problem(problem: str) -> str:
+def minify_pddl_problem(problem: str) -> str:
     """Maps a string of a problem file to a new string.
 
-    This new string has had all space removed between grounded atoms.
     This is for use before querying llm in order to reduce tokens.
+    This works by:
+    1. Gettign rid of space between right parentheses.
+    2. Getting rid of space between left parentheses.
+    3. Getting rid of leading and trailing whitespace and extra lines after ')'.
+    4. Getting rid of '\n' before ')', which are unnecessary.
     """
-    # Gets rid of leading and trailing spaces in every line:
-    new = [piece.strip() for piece in problem.split('\n')]
-    # Moves ')' characters to previous line.
-    new.reverse()
-    for i in range(len(new)):
-        piece = new[i]
-        while len(piece) > 0:
-            if piece[0] == ')':
-                new[i] = piece[1:]
-                piece = piece[1:]
-                new[i + 1] = new[i + 1] + ')'
-            else:
-                print('entered!!!!!!!!!!!!')
-                break
-    new.reverse()
-    # Removes lines with empty space
-    new = [line for line in new if line.strip() != '']
-    new_problem = '\n'.join(new)
+    # Getting rid of space between right parentheses:
+    prob_wo_space = ')'.join(
+        [piece.strip(' ') for piece in problem.split(')')])
+    # Getting rid of space between left parentheses:
+    prob_wo_space = '('.join([
+        piece.strip(' ') if piece.strip(' ') == '' else piece
+        for piece in prob_wo_space.split('(')
+    ])
+    # Getting rid of leading and trailing whitespace and extra lines after ')':
+    prob_wo_whitespace = '\n'.join([
+        piece.strip() for piece in prob_wo_space.split('\n')
+        if piece.strip() != ''
+    ])
+    # Getting rid of '\n' before ')', which are unnecessary.
+    new_problem = prob_wo_whitespace.replace('\n)', ')')
     return new_problem
 
 
