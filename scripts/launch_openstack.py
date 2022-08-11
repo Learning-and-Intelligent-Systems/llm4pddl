@@ -69,7 +69,7 @@ def _main() -> None:
     # Launch sequentially on one machine.
     else:
         machine = machines[0]
-        sequential_cmd = "{ " + ("; ".join(main_cmds)) + " } &"
+        sequential_cmd = "{ " + ("; ".join(main_cmds)) + "; } &"
         print(f"Launching on machine {machine}: {sequential_cmd}")
         machine_cmds = cmds + [sequential_cmd]
         run_cmds_on_machine(machine_cmds,
