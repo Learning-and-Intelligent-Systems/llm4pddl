@@ -107,6 +107,7 @@ def get_cmds_to_prep_repo(branch: str) -> List[str]:
     """Get the commands that should be run while already in the repository but
     before launching the experiments."""
     return [
+        "export PYTHONHASHSEED=0",
         "mkdir -p logs",
         "git stash",
         "git fetch --all",
