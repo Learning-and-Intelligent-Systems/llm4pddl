@@ -18,6 +18,9 @@ from llm4pddl.envs.base_env import BaseEnv
 from llm4pddl.flags import FLAGS, parse_flags
 from llm4pddl.structs import Metrics, TaskMetrics
 
+assert os.environ.get("PYTHONHASHSEED") == "0", \
+        "Please add `export PYTHONHASHSEED=0` to your bash profile!"
+
 
 def _main() -> None:
     """The main entry point."""
