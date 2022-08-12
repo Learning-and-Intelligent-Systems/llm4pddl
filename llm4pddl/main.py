@@ -69,6 +69,7 @@ def _run_evaluation(approach, eval_tasks, env_name) -> Metrics:
     """Evaluate the approach in the evaluation tasks."""
     results: Metrics = {}
     num_eval_tasks = len(eval_tasks)
+    num_solved = 0
     for i, task in enumerate(eval_tasks):
         # Save metrics for this task.
         task_metrics: TaskMetrics = {}
@@ -101,6 +102,8 @@ def _run_evaluation(approach, eval_tasks, env_name) -> Metrics:
         else:
             logging.info(f"Task {i+1} / {num_eval_tasks}: SOLVED")
             task_metrics["result"] = "success"
+            num_solved += 1
+    logging.info(f"FINAL RESULT: {num_solved} / {num_eval_tasks} solved.")
     return results
 
 

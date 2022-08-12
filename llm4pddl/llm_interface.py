@@ -125,7 +125,7 @@ class OpenAILLM(LargeLanguageModel):
             temperature=temperature,
             max_tokens=max_response_tokens,
             logprobs=1,
-            stop=utils.LLM_STOP_PHRASE,
+            stop=utils.LLM_QUESTION_TOKEN,  # stop at start of next question
             n=num_completions)
         assert len(response["choices"]) == num_completions
         return [
