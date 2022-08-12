@@ -4,6 +4,7 @@ from typing import List, Optional, Tuple
 
 from llm4pddl import utils
 from llm4pddl.approaches.llm_open_loop_approach import LLMOpenLoopApproach
+from llm4pddl.flags import FLAGS
 from llm4pddl.structs import LLMResponse, Plan, Task, TaskMetrics
 
 
@@ -39,4 +40,7 @@ class LLMPlanningApproach(LLMOpenLoopApproach):
                 partial_plan.append(action)
             partial_plans.append(partial_plan)
         # Use the partial plans to guide the planner.
-        return utils.run_pyperplan_planning(task, partial_plans=partial_plans)
+        return utils.run_pyperplan_planning(
+            task,
+            partial_plans=partial_plans,
+            partial_plan_guidance_method=FLAGS.llm_plan_guidance_method)
