@@ -73,25 +73,52 @@ class LLMOpenLoopApproach(BaseApproach):
                 continue
             typ_str = " ".join(objs) + " - " + str(typ)
             objects_strs.append(typ_str)
-        objects_str = "\n  ".join(objects_strs)
-        # Create the init string.
-        init_str = "\n".join(
-            utils.pred_to_str(p) for p in problem.initial_state)
-        # Create the goal string.
-        goal_str = "\n".join(utils.pred_to_str(p) for p in problem.goal)
-        # Create the solution string.
-        solution_str = "\n  ".join(plan)
-        prompt = f"""(:objects
-  {objects_str}
-)
-(:init
-  {init_str}
-)
-(:goal
-  {goal_str}
-)
-solution:
-  {solution_str}"""
+        if FLAGS.llm_prompt_method == "standard":
+            objects_str = "\n  ".join(objects_strs)
+            # Create the init string.
+            init_strs = [utils.pred_to_str(p) for p in problem.initial_state]
+            init_str = "\n".join(init_strs)
+            # Create the goal string.
+            goal_strs = [utils.pred_to_str(p) for p in problem.goal]
+            goal_str = "\n".join(goal_strs)
+            # Create the solution string.
+            solution_str = "\n  ".join(plan)
+            prompt = f"""(:objects
+    {objects_str}
+    )
+    (:init
+    {init_str}
+    )
+    (:goal
+    {goal_str}
+    )
+    solution:
+    {solution_str}"""
+
+        elif FLAGS.llm_prompt_method == "group-by-predicate":
+            objects_str = "\n  ".join(objects_strs)
+            # Create the init string.
+            init_str_groups = utils.group_by_predicate(problem.initial_state)
+            init_str = "\n".join(sorted(init_str_groups))
+            # Create the goal string.
+            goal_str_groups = utils.group_by_predicate(problem.goal)
+            goal_str = "\n".join(sorted(goal_str_groups))
+            # Create the solution string.
+            solution_str = "\n  ".join(plan)
+            prompt = f"""(:objects
+    {objects_str}
+    )
+    (:init
+    {init_str}
+    )
+    (:goal
+    {goal_str}
+    )
+    solution:
+    {solution_str}"""
+        else:
+            raise NotImplementedError("Unrecognized prompt method: "
+                                      f"{FLAGS.llm_prompt_method}")
         # Minify the prompt to reduce tokens.
         prompt = utils.minify_pddl_problem(prompt)
         return prompt

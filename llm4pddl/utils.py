@@ -8,8 +8,9 @@ import re
 import subprocess
 import sys
 import tempfile
+from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, Optional, Sequence, Tuple
+from typing import Any, Collection, Dict, Optional, Sequence, Set, Tuple
 
 import numpy as np
 from pyperplan.grounding import ground as pyperplan_ground
@@ -256,6 +257,30 @@ def pred_to_str(pred: PyperplanPredicate) -> str:
     """Create a string representation of a Pyperplan predicate (atom)."""
     arg_str = " ".join(str(o) for o, _ in pred.signature)
     return f"{pred.name}({arg_str})"
+
+
+def group_by_predicate(preds: Collection[PyperplanPredicate]) -> Set[str]:
+    """Create a set of strings of the form.
+
+    unary-predicate1: (obj1) (obj2) ...
+
+    or
+
+    binary-predicate2: (obj1, obj2) (obj4, obj3) ...
+
+    etc.
+    """
+    pred_to_args = defaultdict(set)
+    for pred in preds:
+        pred_to_args[pred.name].add(tuple(o for o, _ in pred.signature))
+    groups = set()
+    args_to_str = lambda a: "(" + ",".join(a) + ")"
+    for pred in pred_to_args:
+        sorted_args = sorted(pred_to_args[pred])
+        args_str = " ".join(map(args_to_str, sorted_args))
+        group = f"{pred}: {args_str}"
+        groups.add(group)
+    return groups
 
 
 def is_subtype(type1: PyperplanType, type2: PyperplanType) -> bool:

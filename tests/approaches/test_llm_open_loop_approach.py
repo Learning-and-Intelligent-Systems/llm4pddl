@@ -46,6 +46,7 @@ def test_llm_standard_approach(env_name):
         "llm_model_name": "code-davinci-002",  # should not matter for test
         "llm_use_cache_only": False,
         "llm_max_total_tokens": 700,
+        "llm_prompt_method": "standard",
         "planner": "pyperplan",
         "data_gen_planner": "pyperplan",
         "planning_timeout": 100,
@@ -78,7 +79,8 @@ def test_llm_standard_approach(env_name):
     shutil.rmtree(cache_dir)
 
 
-def test_llm_standard_approach_failure_cases():
+@pytest.mark.parametrize("llm_prompt_method", ["standard", "group-by-predicate"])
+def test_llm_standard_approach_failure_cases(llm_prompt_method):
     """Tests failure cases for the LLM standard approach."""
     cache_dir = "_fake_llm_cache_dir"
     utils.reset_flags({
@@ -90,6 +92,7 @@ def test_llm_standard_approach_failure_cases():
         "llm_max_total_tokens": 700,
         "llm_multi_num_completions": 5,
         "llm_multi_temperature": 0.5,
+        "llm_prompt_method": llm_prompt_method,
         "planner": "pyperplan",
         "data_gen_planner": "pyperplan",
         "planning_timeout": 100,
@@ -161,6 +164,7 @@ def test_llm_multi_approach():
         "llm_max_total_tokens": 700,
         "llm_multi_temperature": 0.3,
         "llm_multi_num_completions": 3,
+        "llm_prompt_method": "standard",
         "planning_timeout": 100,
     })
     approach = create_approach("llm-multi")
