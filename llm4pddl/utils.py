@@ -66,6 +66,7 @@ def run_pyperplan_planning(
     heuristic: str = "hff",
     search: str = "gbf",
     partial_plans: Optional[Sequence[Sequence[PyperplanAction]]] = None,
+    partial_plan_guidance_method: Optional[str] = None,
 ) -> Tuple[Optional[Plan], TaskMetrics]:
     """Find a plan with pyperplan."""
     search_fn = SEARCHES[search]
@@ -79,6 +80,7 @@ def run_pyperplan_planning(
         heuristic_fn,
         timeout=FLAGS.planning_timeout,
         partial_plans=partial_plans,
+        partial_plan_guidance_method=partial_plan_guidance_method,
     )
     logging.disable(logging.NOTSET)
     if pyperplan_plan is None:

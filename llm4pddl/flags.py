@@ -31,6 +31,9 @@ def parse_flags() -> None:
     parser.add_argument("--llm_multi_num_completions", default=10, type=int)
     parser.add_argument("--llm_max_total_tokens", default=4096, type=int)
     parser.add_argument("--llm_prompt_method", default="standard", type=str)
+    parser.add_argument("--llm_plan_guidance_method",
+                        default="init-queue",
+                        type=str)
     parser.add_argument('--debug',
                         action="store_const",
                         dest="loglevel",
