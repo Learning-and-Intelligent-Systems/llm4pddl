@@ -85,6 +85,24 @@ ENVS:
   zenotravel:
     NAME: "pyperplan-zenotravel"
     FLAGS: {}
+  easy-blocks:
+    NAME: "custom-easy_blocks"
+    FLAGS: {}
+  medium-blocks:
+    NAME: "custom-medium_blocks"
+    FLAGS: {}
+  easy-delivery:
+    NAME: "custom-easy_delivery"
+    FLAGS: {}
+  medium-delivery:
+    NAME: "custom-medium_delivery"
+    FLAGS: {}
+  easy-spanner:
+    NAME: "custom-easy_spanner"
+    FLAGS: {}
+  medium-spanner:
+    NAME: "custom-medium_spanner"
+    FLAGS: {}
 ARGS:
   - "debug"
 FLAGS:

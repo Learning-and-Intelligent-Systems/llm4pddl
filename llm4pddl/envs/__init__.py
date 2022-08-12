@@ -28,7 +28,10 @@ PYPERPLAN_BENCHMARKS = [
     "zenotravel",
 ]
 
-CUSTOM_BENCHMARKS = ["dressed"]
+CUSTOM_BENCHMARKS = [
+    "dressed", "easy_blocks", "medium_blocks", "easy_delivery",
+    "medium_delivery", "easy_spanner", "medium_spanner"
+]
 
 ALL_ENVS = [f"pyperplan-{b}" for b in PYPERPLAN_BENCHMARKS
             ] + [f"custom-{b}" for b in CUSTOM_BENCHMARKS]
