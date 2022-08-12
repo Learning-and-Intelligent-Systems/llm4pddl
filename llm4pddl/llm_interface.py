@@ -10,6 +10,7 @@ from typing import Any, Dict, List
 import openai
 from transformers import GPT2TokenizerFast
 
+from llm4pddl import utils
 from llm4pddl.flags import FLAGS
 from llm4pddl.structs import LLMResponse
 
@@ -60,7 +61,7 @@ class LargeLanguageModel(abc.ABC):
         # Set up the cache file.
         os.makedirs(FLAGS.llm_cache_dir, exist_ok=True)
         llm_id = self.get_id()
-        prompt_id = hash(prompt)
+        prompt_id = utils.str_to_identifier(prompt)
         # If the temperature is 0, the seed does not matter.
         if temperature == 0.0:
             config_id = f"most_likely_{num_completions}"

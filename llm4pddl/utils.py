@@ -1,6 +1,7 @@
 """Utility functions."""
 
 import functools
+import hashlib
 import logging
 import os
 import re
@@ -287,3 +288,18 @@ def get_git_commit_hash() -> str:
 def get_config_path_str() -> str:
     """Get a string identifier for an experiment from FLAGS."""
     return f"{FLAGS.env}__{FLAGS.approach}__{FLAGS.seed}__{FLAGS.experiment_id}"
+
+
+def str_to_identifier(x: str) -> str:
+    """Convert a string to a small string with negligible collision probability
+    and where the smaller string can be used to identifier the larger string in
+    file names.
+
+    Importantly, this function is deterministic between runs and between
+    platforms, unlike python's built-in hash function.
+
+    References:
+        https://stackoverflow.com/questions/45015180
+        https://stackoverflow.com/questions/5297448
+    """
+    return hashlib.md5(x.encode('utf-8')).hexdigest()
