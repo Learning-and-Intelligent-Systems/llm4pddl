@@ -132,7 +132,8 @@ class OpenAILLM(LargeLanguageModel):
                     n=num_completions)
                 # Successfully queried, so break.
                 break
-            except openai.error.RateLimitError:
+            except (openai.error.RateLimitError,
+                    openai.error.APIConnectionError):
                 # Wait for 60 seconds if this limit is reached. Hopefully rare.
                 time.sleep(60)
         assert len(response["choices"]) == num_completions
