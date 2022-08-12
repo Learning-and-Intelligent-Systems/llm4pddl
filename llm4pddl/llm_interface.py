@@ -4,6 +4,7 @@ import abc
 import logging
 import os
 import pickle
+import time
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -119,14 +120,21 @@ class OpenAILLM(LargeLanguageModel):
         if max_response_tokens <= 0:
             logging.warning("Prompt length exceeded token budget, skipping!")
             return []
-        response = openai.Completion.create(
-            model=self._model_name,  # type: ignore
-            prompt=prompt,
-            temperature=temperature,
-            max_tokens=max_response_tokens,
-            logprobs=1,
-            stop=utils.LLM_QUESTION_TOKEN,  # stop at start of next question
-            n=num_completions)
+        while True:
+            try:
+                response = openai.Completion.create(  # type: ignore
+                    model=self._model_name,
+                    prompt=prompt,
+                    temperature=temperature,
+                    max_tokens=max_response_tokens,
+                    logprobs=1,
+                    stop=utils.LLM_QUESTION_TOKEN,  # start of next question
+                    n=num_completions)
+                # Successfully queried, so break.
+                break
+            except openai.error.RateLimitError:
+                # Wait for 60 seconds if this limit is reached. Hopefully rare.
+                time.sleep(60)
         assert len(response["choices"]) == num_completions
         return [
             self._raw_to_llm_response(r, prompt, temperature, seed,
