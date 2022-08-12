@@ -21,6 +21,9 @@ from llm4pddl.flags import FLAGS
 from llm4pddl.structs import Plan, PyperplanAction, PyperplanDomain, \
     PyperplanPredicate, PyperplanProblem, PyperplanType, Task, TaskMetrics
 
+LLM_SOLUTION_START_PHRASE = "<PLAN>"
+LLM_STOP_PHRASE = "</PLAN>"
+
 
 def validate_plan(task: Task, plan: Plan) -> bool:
     """Use VAL to check if a plan solves a PDDL problem."""
