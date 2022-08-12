@@ -95,7 +95,8 @@ class LLMOpenLoopApproach(BaseApproach):
     solution:
     {solution_str}"""
 
-        elif FLAGS.llm_prompt_method == "group-by-predicate":
+        else:
+            assert FLAGS.llm_prompt_method == "group-by-predicate"
             objects_str = "\n  ".join(objects_strs)
             # Create the init string.
             init_str_groups = utils.group_by_predicate(problem.initial_state)
@@ -116,9 +117,6 @@ class LLMOpenLoopApproach(BaseApproach):
     )
     solution:
     {solution_str}"""
-        else:
-            raise NotImplementedError("Unrecognized prompt method: "
-                                      f"{FLAGS.llm_prompt_method}")
         # Minify the prompt to reduce tokens.
         prompt = utils.minify_pddl_problem(prompt)
         return prompt

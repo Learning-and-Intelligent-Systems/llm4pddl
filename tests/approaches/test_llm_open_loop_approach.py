@@ -79,7 +79,8 @@ def test_llm_standard_approach(env_name):
     shutil.rmtree(cache_dir)
 
 
-@pytest.mark.parametrize("llm_prompt_method", ["standard", "group-by-predicate"])
+@pytest.mark.parametrize("llm_prompt_method",
+                         ["standard", "group-by-predicate"])
 def test_llm_standard_approach_failure_cases(llm_prompt_method):
     """Tests failure cases for the LLM standard approach."""
     cache_dir = "_fake_llm_cache_dir"
