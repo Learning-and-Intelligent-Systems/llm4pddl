@@ -35,7 +35,7 @@ class LLMOpenLoopApproach(BaseApproach):
         return "llm-open-loop"
 
     def solve(self, task: Task) -> Tuple[Optional[Plan], TaskMetrics]:
-        new_prompt = self._create_prompt(task, [])  # empty partial plan
+        new_prompt = self._create_prompt(task)
         prompt = self._prompt_prefix + new_prompt
         logging.debug(f"Querying with prompt suffix:\n{new_prompt}")
         responses = self._llm.sample_completions(
@@ -54,7 +54,7 @@ class LLMOpenLoopApproach(BaseApproach):
         logging.debug(f"Created prompt prefix:\n{self._prompt_prefix}")
 
     @staticmethod
-    def _create_prompt(task: Task, plan: Plan) -> str:
+    def _create_prompt(task: Task, plan: Optional[Plan] = None) -> str:
         """Create a prompt entry for a single task and (maybe partial) plan."""
         # Extract only the objects, init, and goal from the problem file,
         # stripping out any comments or other extraneous text.
@@ -73,40 +73,32 @@ class LLMOpenLoopApproach(BaseApproach):
                 continue
             typ_str = " ".join(objs) + " - " + str(typ)
             objects_strs.append(typ_str)
+        # Create the objects string.
+        objects_str = "\n  ".join(objects_strs)
+        # Create the solution string.
+        if plan is None:
+            solution_str = utils.LLM_SOLUTION_START_PHRASE
+        else:
+            plan_str = "\n  ".join(plan)
+            solution_str = utils.LLM_SOLUTION_START_PHRASE + "\n" + \
+                            plan_str + "\n" + utils.LLM_STOP_PHRASE
         if FLAGS.llm_prompt_method == "standard":
-            objects_str = "\n  ".join(objects_strs)
             # Create the init string.
             init_strs = [utils.pred_to_str(p) for p in problem.initial_state]
             init_str = "\n".join(init_strs)
             # Create the goal string.
             goal_strs = [utils.pred_to_str(p) for p in problem.goal]
             goal_str = "\n".join(goal_strs)
-            # Create the solution string.
-            solution_str = "\n  ".join(plan)
-            prompt = f"""(:objects
-    {objects_str}
-    )
-    (:init
-    {init_str}
-    )
-    (:goal
-    {goal_str}
-    )
-    solution:
-    {solution_str}"""
-
         else:
             assert FLAGS.llm_prompt_method == "group-by-predicate"
-            objects_str = "\n  ".join(objects_strs)
             # Create the init string.
             init_str_groups = utils.group_by_predicate(problem.initial_state)
             init_str = "\n".join(sorted(init_str_groups))
             # Create the goal string.
             goal_str_groups = utils.group_by_predicate(problem.goal)
             goal_str = "\n".join(sorted(goal_str_groups))
-            # Create the solution string.
-            solution_str = "\n  ".join(plan)
-            prompt = f"""(:objects
+        # Create the prompt.
+        prompt = f"""(:objects
     {objects_str}
     )
     (:init
@@ -115,7 +107,6 @@ class LLMOpenLoopApproach(BaseApproach):
     (:goal
     {goal_str}
     )
-    solution:
     {solution_str}"""
         # Minify the prompt to reduce tokens.
         prompt = utils.minify_pddl_problem(prompt)

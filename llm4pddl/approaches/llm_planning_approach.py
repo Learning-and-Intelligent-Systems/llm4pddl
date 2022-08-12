@@ -1,5 +1,6 @@
 """An approach that uses the output of an LLM to guide planning."""
 
+import logging
 from typing import List, Optional, Tuple
 
 from llm4pddl import utils
@@ -25,6 +26,7 @@ class LLMPlanningApproach(LLMOpenLoopApproach):
         # preconditions of the actions; rely on the planner to do that.
         partial_plans = []
         for response in responses:
+            logging.debug(f"Processing response:\n{response.response_text}")
             action_str_plan = self._llm_response_to_plan(response, task)
             partial_plan = []
             for action_str in action_str_plan:
