@@ -1,6 +1,9 @@
 (define (domain medium_spanner)
   (:requirements :typing)
-  (:types locatable location man nut spanner)
+  (:types
+      location locatable - object
+      man nut spanner - locatable
+  )
 
   (:predicates
     (at ?x0 - locatable ?x1 - location)

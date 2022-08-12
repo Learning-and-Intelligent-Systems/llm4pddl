@@ -108,7 +108,7 @@ def get_cmds_to_prep_repo(branch: str) -> List[str]:
     before launching the experiments."""
     return [
         "mkdir -p logs",
-        "git stash",
+        # "git stash",
         "git fetch --all",
         f"git checkout {branch}",
         "git pull",

@@ -43,6 +43,7 @@ def validate_plan(task: Task, plan: Plan) -> bool:
     cmd_str = (f'"{val}" -v "{task.domain_file}" "{task.problem_file}" '
                f'"{plan_file}"')
     output = subprocess.getoutput(cmd_str)
+    print(output)
     os.remove(plan_file)
     if "Plan valid" in output:
         return True
