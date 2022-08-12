@@ -35,7 +35,7 @@ class _MockLLM(LargeLanguageModel):
         return [response]
 
 
-@pytest.mark.parametrize('env_name', ["custom-medium_spanner"]) #ALL_ENVS)
+@pytest.mark.parametrize('env_name', ALL_ENVS)
 def test_llm_standard_approach(env_name):
     """Tests for the LLM standard approach."""
     cache_dir = "_fake_llm_cache_dir"
