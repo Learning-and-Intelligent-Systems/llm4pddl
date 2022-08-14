@@ -120,7 +120,9 @@ class OpenAILLM(LargeLanguageModel):
         if max_response_tokens <= 0:
             logging.warning("Prompt length exceeded token budget, skipping!")
             return []
-        while True:
+        # Retry 10 times before giving up. In some rare cases, a particular
+        # prompt may always lead to an error.
+        for _ in range(10):
             try:
                 response = openai.Completion.create(  # type: ignore
                     model=self._model_name,
@@ -136,6 +138,10 @@ class OpenAILLM(LargeLanguageModel):
                     openai.error.APIConnectionError):
                 # Wait for 60 seconds if this limit is reached. Hopefully rare.
                 time.sleep(60)
+        else:
+            # If we tried 10 times and still failed, return no responses.
+            logging.warning("Max query attempts exceeded, skipping!")
+            return []
         assert len(response["choices"]) == num_completions
         return [
             self._raw_to_llm_response(r, prompt, temperature, seed,
