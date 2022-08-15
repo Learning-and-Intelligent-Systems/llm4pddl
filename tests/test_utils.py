@@ -298,6 +298,48 @@ collared-shirt1 - collared-shirt
         example03) == """((in-closet sweatpants1))"""
 
 
+def test_flatten_pddl_problem():
+    """Tests flatten_pddl_problem()."""
+    example01 = """(:init
+(pred a b)
+(pred a)
+(pred  c)"""
+    assert utils.minify_pddl_problem(example01) == example01
+    assert utils.flatten_pddl_problem(
+        example01) == """(:init (pred a b)(pred a)(pred  c)"""
+    example02 = """(:objects
+thing1 thing2 - thing
+d d d - d
+purple - color"""
+    assert utils.flatten_pddl_problem(
+        example02
+    ) == """(:objects thing1 thing2 - thing d d d - d purple - color"""
+    example03 = """(:goal
+(no touch)
+(no touch)"""
+    assert utils.flatten_pddl_problem(
+        example03) == """(:goal (no touch)(no touch)"""
+    big_example = """(define (problem dressed)
+(:domain dressed)
+(:objects
+a b c - letters
+one two - numbers)
+(:init
+(yes a)
+(yes b))
+(:goal (and
+(yes a)
+(yes b)
+(yes c))))"""
+    assert utils.minify_pddl_problem(big_example) == big_example
+
+    assert utils.flatten_pddl_problem(
+        big_example
+    ) == """(define (problem dressed)(:domain dressed)\
+(:objects a b c - letters one two - numbers)(:init (yes a)(yes b))\
+(:goal (and (yes a)(yes b)(yes c))))"""
+
+
 def test_run_planning(domain_file, problem_file, impossible_problem_file):
     """Tests for run_planning().
 

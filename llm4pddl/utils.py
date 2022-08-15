@@ -215,6 +215,20 @@ def minify_pddl_problem(problem: str) -> str:
     return new_problem
 
 
+def flatten_pddl_problem(problem: str) -> str:
+    """Flattens pddl problem.
+
+    You *MUST* only run this after minify_pddl_problem(). Otherwise, it
+    will not work.
+    """
+    assert problem == minify_pddl_problem(problem)
+    # Removing new lines for everything except in init
+    partially_flattened = problem.replace(')\n(', ')(')
+    # Removing new lines in init, a space is needed between
+    flattened_problem = partially_flattened.replace('\n', ' ')
+    return flattened_problem
+
+
 @functools.lru_cache(maxsize=None)
 def parse_task(task: Task) -> Tuple[PyperplanDomain, PyperplanProblem]:
     """Parse a task into Pyperplan structs."""
