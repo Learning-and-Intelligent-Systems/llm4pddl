@@ -304,7 +304,6 @@ def test_flatten_pddl_problem():
 (pred a b)
 (pred a)
 (pred  c)"""
-    assert utils.minify_pddl_problem(example01) == example01
     assert utils.flatten_pddl_problem(
         example01) == """(:init (pred a b)(pred a)(pred  c)"""
     example02 = """(:objects
@@ -331,8 +330,6 @@ one two - numbers)
 (yes a)
 (yes b)
 (yes c))))"""
-    assert utils.minify_pddl_problem(big_example) == big_example
-
     assert utils.flatten_pddl_problem(
         big_example) == """(define (problem dressed)(:domain dressed)\
 (:objects a b c - letters one two - numbers)(:init (yes a)(yes b))\
