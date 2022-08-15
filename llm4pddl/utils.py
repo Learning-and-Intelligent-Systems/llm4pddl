@@ -216,7 +216,7 @@ def minify_pddl_problem(problem: str) -> str:
 
 
 def flatten_pddl_problem(problem: str) -> str:
-    """Flattens pddl problem.
+    """Flattens PDDL problem.
 
     You *MUST* only run this after minify_pddl_problem(). Otherwise, it
     will not work.
