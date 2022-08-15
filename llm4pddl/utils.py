@@ -196,6 +196,9 @@ def minify_pddl_problem(problem: str) -> str:
     2. Getting rid of space between left parentheses['( (' -> '(('].
     3. Getting rid of leading and trailing whitespace and extra lines after ')'.
     4. Getting rid of '\n' before ')', which are unnecessary.
+    This also optionally flattens the problem afterwards by doing:
+    5. Getting rid of '\n' between ground atoms, actions, etc.
+    6. Getting rid of '\n' between other things and adding a space.
     """
     # Getting rid of space between right parentheses:
     prob_wo_space = ')'.join(
@@ -218,20 +221,6 @@ def minify_pddl_problem(problem: str) -> str:
         # Removing new lines in init, a space is needed between
         new_problem = partially_flattened.replace('\n', ' ')
     return new_problem
-
-
-# def flatten_pddl_problem(problem: str) -> str:
-#     """Flattens PDDL problem.
-
-#     You *MUST* only run this after minify_pddl_problem(). Otherwise, it
-#     will not work.
-#     """
-#     assert problem == minify_pddl_problem(problem)
-#     # Removing new lines for everything except in init
-#     partially_flattened = problem.replace(')\n(', ')(')
-#     # Removing new lines in init, a space is needed between
-#     flattened_problem = partially_flattened.replace('\n', ' ')
-#     return flattened_problem
 
 
 @functools.lru_cache(maxsize=None)
@@ -352,11 +341,3 @@ def str_to_identifier(x: str) -> str:
         https://stackoverflow.com/questions/5297448
     """
     return hashlib.md5(x.encode('utf-8')).hexdigest()
-
-# if __name__ == "__main__":
-#     task01_path = get_custom_task('dressed', 1).problem_file
-#     with open(task01_path, 'r', encoding='utf-8') as f:
-#         task01 = f.read()
-#     mini_task01 = minify_pddl_problem(task01)
-#     flattened_task01 = flatten_pddl_problem(mini_task01)
-#     print(flattened_task01)
