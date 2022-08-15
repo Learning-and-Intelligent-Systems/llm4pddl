@@ -207,6 +207,9 @@ def test_minify_pddl_problem():
     Note: I separately ran prep_problem() and then planned with the
     new problem. Pyperplan still planned correctly with it.
     """
+    utils.reset_flags({
+        "llm_prompt_flatten_pddl": False
+    })
     # Testing big example #1:
     task01_path = utils.get_custom_task('dressed', 1).problem_file
     with open(task01_path, 'r', encoding='utf-8') as f:
@@ -296,29 +299,29 @@ collared-shirt1 - collared-shirt
     """
     assert utils.minify_pddl_problem(
         example03) == """((in-closet sweatpants1))"""
-
-
-def test_flatten_pddl_problem():
-    """Tests flatten_pddl_problem()."""
-    example01 = """(:init
+    # --------- From flatten: ---------
+    utils.reset_flags({
+        "llm_prompt_flatten_pddl": True
+    })
+    flatten_example01 = """(:init
 (pred a b)
 (pred a)
 (pred  c)"""
-    assert utils.flatten_pddl_problem(
-        example01) == """(:init (pred a b)(pred a)(pred  c)"""
-    example02 = """(:objects
+    assert utils.minify_pddl_problem(
+        flatten_example01) == """(:init (pred a b)(pred a)(pred  c)"""
+    flatten_example02 = """(:objects
 thing1 thing2 - thing
 d d d - d
 purple - color"""
-    assert utils.flatten_pddl_problem(
-        example02
+    assert utils.minify_pddl_problem(
+        flatten_example02
     ) == """(:objects thing1 thing2 - thing d d d - d purple - color"""
-    example03 = """(:goal
+    flatten_example03 = """(:goal
 (no touch)
 (no touch)"""
-    assert utils.flatten_pddl_problem(
-        example03) == """(:goal (no touch)(no touch)"""
-    big_example = """(define (problem dressed)
+    assert utils.minify_pddl_problem(
+        flatten_example03) == """(:goal (no touch)(no touch)"""
+    flatten_big_example = """(define (problem dressed)
 (:domain dressed)
 (:objects
 a b c - letters
@@ -330,10 +333,48 @@ one two - numbers)
 (yes a)
 (yes b)
 (yes c))))"""
-    assert utils.flatten_pddl_problem(
-        big_example) == """(define (problem dressed)(:domain dressed)\
+    assert utils.minify_pddl_problem(
+        flatten_big_example) == """(define (problem dressed)(:domain dressed)\
 (:objects a b c - letters one two - numbers)(:init (yes a)(yes b))\
 (:goal (and (yes a)(yes b)(yes c))))"""
+
+
+# def test_flatten_pddl_problem():
+#     """Tests flatten_pddl_problem()."""
+#     flatten_example01 = """(:init
+# (pred a b)
+# (pred a)
+# (pred  c)"""
+#     assert utils.flatten_pddl_problem(
+#         flatten_example01) == """(:init (pred a b)(pred a)(pred  c)"""
+#     flatten_example02 = """(:objects
+# thing1 thing2 - thing
+# d d d - d
+# purple - color"""
+#     assert utils.flatten_pddl_problem(
+#         flatten_example02
+#     ) == """(:objects thing1 thing2 - thing d d d - d purple - color"""
+#     flatten_example03 = """(:goal
+# (no touch)
+# (no touch)"""
+#     assert utils.flatten_pddl_problem(
+#         flatten_example03) == """(:goal (no touch)(no touch)"""
+#     flatten_big_example = """(define (problem dressed)
+# (:domain dressed)
+# (:objects
+# a b c - letters
+# one two - numbers)
+# (:init
+# (yes a)
+# (yes b))
+# (:goal (and
+# (yes a)
+# (yes b)
+# (yes c))))"""
+#     assert utils.flatten_pddl_problem(
+#         flatten_big_example) == """(define (problem dressed)(:domain dressed)\
+# (:objects a b c - letters one two - numbers)(:init (yes a)(yes b))\
+# (:goal (and (yes a)(yes b)(yes c))))"""
 
 
 def test_run_planning(domain_file, problem_file, impossible_problem_file):

@@ -50,6 +50,7 @@ def test_llm_standard_approach(env_name):
         "planner": "pyperplan",
         "data_gen_planner": "pyperplan",
         "planning_timeout": 100,
+        "llm_prompt_flatten_pddl": False
     })
     env = create_env(env_name)
     train_tasks = env.get_train_tasks()
@@ -97,6 +98,7 @@ def test_llm_standard_approach_failure_cases(llm_prompt_method):
         "planner": "pyperplan",
         "data_gen_planner": "pyperplan",
         "planning_timeout": 100,
+        "llm_prompt_flatten_pddl": False
     })
     env = create_env("pyperplan-miconic")
     train_tasks = env.get_train_tasks()
@@ -167,6 +169,7 @@ def test_llm_multi_approach():
         "llm_multi_num_completions": 3,
         "llm_prompt_method": "standard",
         "planning_timeout": 100,
+        "llm_prompt_flatten_pddl": False
     })
     approach = create_approach("llm-multi")
     assert approach.get_name() == "llm-open-loop"

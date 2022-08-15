@@ -212,21 +212,26 @@ def minify_pddl_problem(problem: str) -> str:
     ])
     # Getting rid of '\n' before ')', which are unnecessary.
     new_problem = prob_wo_whitespace.replace('\n)', ')')
+    if FLAGS.llm_prompt_flatten_pddl:
+        # Removing new lines for everything except in init
+        partially_flattened = new_problem.replace(')\n(', ')(')
+        # Removing new lines in init, a space is needed between
+        new_problem = partially_flattened.replace('\n', ' ')
     return new_problem
 
 
-def flatten_pddl_problem(problem: str) -> str:
-    """Flattens PDDL problem.
+# def flatten_pddl_problem(problem: str) -> str:
+#     """Flattens PDDL problem.
 
-    You *MUST* only run this after minify_pddl_problem(). Otherwise, it
-    will not work.
-    """
-    assert problem == minify_pddl_problem(problem)
-    # Removing new lines for everything except in init
-    partially_flattened = problem.replace(')\n(', ')(')
-    # Removing new lines in init, a space is needed between
-    flattened_problem = partially_flattened.replace('\n', ' ')
-    return flattened_problem
+#     You *MUST* only run this after minify_pddl_problem(). Otherwise, it
+#     will not work.
+#     """
+#     assert problem == minify_pddl_problem(problem)
+#     # Removing new lines for everything except in init
+#     partially_flattened = problem.replace(')\n(', ')(')
+#     # Removing new lines in init, a space is needed between
+#     flattened_problem = partially_flattened.replace('\n', ' ')
+#     return flattened_problem
 
 
 @functools.lru_cache(maxsize=None)
@@ -347,3 +352,11 @@ def str_to_identifier(x: str) -> str:
         https://stackoverflow.com/questions/5297448
     """
     return hashlib.md5(x.encode('utf-8')).hexdigest()
+
+# if __name__ == "__main__":
+#     task01_path = get_custom_task('dressed', 1).problem_file
+#     with open(task01_path, 'r', encoding='utf-8') as f:
+#         task01 = f.read()
+#     mini_task01 = minify_pddl_problem(task01)
+#     flattened_task01 = flatten_pddl_problem(mini_task01)
+#     print(flattened_task01)

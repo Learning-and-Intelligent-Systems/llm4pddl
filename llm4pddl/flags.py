@@ -39,5 +39,6 @@ def parse_flags() -> None:
                         dest="loglevel",
                         const=logging.DEBUG,
                         default=logging.INFO)
+    parser.add_argument('--llm_prompt_flatten_pddl', action='store_true')
     args = parser.parse_args()
     FLAGS.__dict__.update(args.__dict__)
