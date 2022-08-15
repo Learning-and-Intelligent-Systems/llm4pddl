@@ -334,8 +334,7 @@ one two - numbers)
     assert utils.minify_pddl_problem(big_example) == big_example
 
     assert utils.flatten_pddl_problem(
-        big_example
-    ) == """(define (problem dressed)(:domain dressed)\
+        big_example) == """(define (problem dressed)(:domain dressed)\
 (:objects a b c - letters one two - numbers)(:init (yes a)(yes b))\
 (:goal (and (yes a)(yes b)(yes c))))"""
 
