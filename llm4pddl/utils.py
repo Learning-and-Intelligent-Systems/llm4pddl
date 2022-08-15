@@ -196,6 +196,9 @@ def minify_pddl_problem(problem: str) -> str:
     2. Getting rid of space between left parentheses['( (' -> '(('].
     3. Getting rid of leading and trailing whitespace and extra lines after ')'.
     4. Getting rid of '\n' before ')', which are unnecessary.
+    This also optionally flattens the problem afterwards by doing:
+    5. Getting rid of '\n' between ground atoms, actions, etc.
+    6. Getting rid of '\n' between other things and adding a space.
     """
     # Getting rid of space between right parentheses:
     prob_wo_space = ')'.join(
@@ -212,6 +215,11 @@ def minify_pddl_problem(problem: str) -> str:
     ])
     # Getting rid of '\n' before ')', which are unnecessary.
     new_problem = prob_wo_whitespace.replace('\n)', ')')
+    if FLAGS.llm_prompt_flatten_pddl:
+        # Removing new lines for everything except in init
+        partially_flattened = new_problem.replace(')\n(', ')(')
+        # Removing new lines in init, a space is needed between
+        new_problem = partially_flattened.replace('\n', ' ')
     return new_problem
 
 

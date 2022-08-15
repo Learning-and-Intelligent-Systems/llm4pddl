@@ -27,6 +27,7 @@ def test_llm_planning_planning_approach():
         "planner": "pyperplan",
         "data_gen_planner": "pyperplan",
         "planning_timeout": 100,
+        "llm_prompt_flatten_pddl": False
     })
     env = create_env("pyperplan-gripper")
     train_tasks = env.get_train_tasks()
