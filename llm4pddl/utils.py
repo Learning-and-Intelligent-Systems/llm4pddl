@@ -220,6 +220,15 @@ def minify_pddl_problem(problem: str) -> str:
         partially_flattened = new_problem.replace(')\n(', ')(')
         # Removing new lines in init, a space is needed between
         new_problem = partially_flattened.replace('\n', ' ')
+        # Add new lines for the question and answer tokens
+        new_problem = new_problem.replace('Q: ', 'Q:')
+        new_problem = new_problem.replace('A: ', 'A:')
+        new_problem = new_problem.replace(' Q:', 'Q:')
+        new_problem = new_problem.replace(' A:', 'A:')
+        new_problem = new_problem.replace('Q:', '\nQ:\n')
+        new_problem = new_problem.replace('A:', '\nA:\n')
+        if new_problem[0] == '\n':
+            new_problem = new_problem[1:]
     return new_problem
 
 

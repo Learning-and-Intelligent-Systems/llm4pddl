@@ -77,10 +77,10 @@ class LLMOpenLoopApproach(BaseApproach):
         objects_str = "\n  ".join(objects_strs)
         # Create the solution string.
         if plan is None:
-            solution_str = utils.LLM_ANSWER_TOKEN
+            solution_str = utils.LLM_ANSWER_TOKEN + ":"
         else:
             plan_str = "\n  ".join(plan)
-            solution_str = utils.LLM_ANSWER_TOKEN + "\n" + plan_str
+            solution_str = utils.LLM_ANSWER_TOKEN + ":\n" + plan_str
         if FLAGS.llm_prompt_method == "standard":
             # Create the init string.
             init_strs = [utils.pred_to_str(p) for p in problem.initial_state]
@@ -97,7 +97,7 @@ class LLMOpenLoopApproach(BaseApproach):
             goal_str_groups = utils.group_by_predicate(problem.goal)
             goal_str = "\n".join(sorted(goal_str_groups))
         # Create the prompt.
-        prompt = f"""{utils.LLM_QUESTION_TOKEN}
+        prompt = f"""{utils.LLM_QUESTION_TOKEN}:
     (:objects
     {objects_str}
     )
