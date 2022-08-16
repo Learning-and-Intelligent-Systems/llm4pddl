@@ -220,6 +220,21 @@ def minify_pddl_problem(problem: str) -> str:
         partially_flattened = new_problem.replace(')\n(', ')(')
         # Removing new lines in init, a space is needed between
         new_problem = partially_flattened.replace('\n', ' ')
+        # Add new lines for the question and answer tokens
+        new_problem = new_problem.replace(f'{LLM_ANSWER_TOKEN} ',
+                                          f'{LLM_ANSWER_TOKEN}')
+        new_problem = new_problem.replace(f' {LLM_ANSWER_TOKEN}',
+                                          f'{LLM_ANSWER_TOKEN}')
+        new_problem = new_problem.replace(f'{LLM_ANSWER_TOKEN}',
+                                          f'\n{LLM_ANSWER_TOKEN}\n')
+        new_problem = new_problem.replace(f'{LLM_QUESTION_TOKEN} ',
+                                          f'{LLM_QUESTION_TOKEN}')
+        new_problem = new_problem.replace(f' {LLM_QUESTION_TOKEN}',
+                                          f'{LLM_QUESTION_TOKEN}')
+        new_problem = new_problem.replace(f'{LLM_QUESTION_TOKEN}',
+                                          f'\n{LLM_QUESTION_TOKEN}\n')
+        if new_problem[0] == '\n':
+            new_problem = new_problem[1:]
     return new_problem
 
 

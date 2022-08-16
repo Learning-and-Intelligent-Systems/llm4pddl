@@ -297,6 +297,29 @@ collared-shirt1 - collared-shirt
     """
     assert utils.minify_pddl_problem(
         example03) == """((in-closet sweatpants1))"""
+    q_a_example_no_flatten = """Q:
+(:objects
+red blue - color
+)
+(:init
+(here red)
+)
+(:goal
+(and (here red) (here blue))
+)
+A:
+(make blue)
+(end)"""
+    assert utils.minify_pddl_problem(q_a_example_no_flatten) == """Q:
+(:objects
+red blue - color)
+(:init
+(here red))
+(:goal
+(and (here red)(here blue)))
+A:
+(make blue)
+(end)"""
     # --------- From flatten: ---------
     utils.reset_flags({"llm_prompt_flatten_pddl": True})
     flatten_example01 = """(:init
@@ -333,6 +356,23 @@ one two - numbers)
         flatten_big_example) == """(define (problem dressed)(:domain dressed)\
 (:objects a b c - letters one two - numbers)(:init (yes a)(yes b))\
 (:goal (and (yes a)(yes b)(yes c))))"""
+    q_a_example = """Q:
+(:objects
+red blue - color
+)
+(:init
+(here red)
+)
+(:goal
+(and (here red) (here blue))
+)
+A:
+(make blue)
+(end)"""
+    assert utils.minify_pddl_problem(q_a_example) == """Q:
+(:objects red blue - color)(:init (here red))(:goal (and (here red)(here blue)))
+A:
+(make blue)(end)"""
 
 
 def test_run_planning(domain_file, problem_file, impossible_problem_file):
