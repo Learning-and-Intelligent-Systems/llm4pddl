@@ -1,10 +1,10 @@
 (define (problem dressed)
   (:domain dressed)
-  (:objects person1 person2 person3 person4 person5 person6 person7 person8 person9 person10 - person
-            dress1 dress2 dress3 - dress
+  (:objects person1 person2 person3 person4 person5 person6 person7 person8 person9 person10 person11 - person
+            dress1 dress2 - dress
             sweatpants1 sweatpants2 sweatpants3 - sweatpants
-            sweatshirt1 sweatshirt2 sweatshirt3 sweatshirt4 - sweatshirt
-            nice-pants1 nice-pants2 nice-pants3 - nice-pants
+            sweatshirt1 sweatshirt2 sweatshirt3 - sweatshirt
+            nice-pants1 nice-pants2 - nice-pants
             collared-shirt1 collared-shirt2 - collared-shirt
             suit-jacket1 suit-jacket2 - suit-jacket
             )
@@ -28,31 +28,29 @@
          (wearing-nothing-casual person9)
          (wearing-nothing-formal person10)
          (wearing-nothing-casual person10)
+         (wearing-nothing-formal person11)
+         (wearing-nothing-casual person11)
          (in-closet dress1)
          (in-closet dress2)
-         (in-closet dress3)
          (in-closet sweatpants1)
          (in-closet sweatpants2)
          (in-closet sweatpants3)
          (in-closet sweatshirt1)
          (in-closet sweatshirt2)
          (in-closet sweatshirt3)
-         (in-closet sweatshirt4)
          (in-closet nice-pants1)
          (in-closet nice-pants2)
-         (in-closet nice-pants3)
          (in-closet collared-shirt1)
          (in-closet collared-shirt2)
          (in-closet suit-jacket1)
          (in-closet suit-jacket2)
          )
-  (:goal (and (attending-formal-event person4)
-              (attending-casual-event person6)
-              (attending-formal-event person10)
-              (attending-formal-event person3)
-              (attending-formal-event person7)
+  (:goal (and (attending-formal-event person10)
               (attending-casual-event person9)
-              (attending-casual-event person5)
+              (attending-formal-event person1)
+              (attending-formal-event person8)
               (attending-formal-event person2)
+              (attending-casual-event person4)
+              (attending-casual-event person3)
               ))
   )

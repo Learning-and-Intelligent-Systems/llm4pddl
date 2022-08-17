@@ -2,7 +2,7 @@
   (:domain dressed)
   (:objects person1 person2 person3 person4 person5 person6 person7 person8 person9 person10 - person
             dress1 dress2 dress3 - dress
-            sweatpants1 sweatpants2 sweatpants3 sweatpants4 - sweatpants
+            sweatpants1 sweatpants2 sweatpants3 sweatpants4 sweatpants5 - sweatpants
             sweatshirt1 sweatshirt2 sweatshirt3 sweatshirt4 sweatshirt5 - sweatshirt
             nice-pants1 nice-pants2 nice-pants3 - nice-pants
             collared-shirt1 collared-shirt2 collared-shirt3 - collared-shirt
@@ -35,6 +35,7 @@
          (in-closet sweatpants2)
          (in-closet sweatpants3)
          (in-closet sweatpants4)
+         (in-closet sweatpants5)
          (in-closet sweatshirt1)
          (in-closet sweatshirt2)
          (in-closet sweatshirt3)
@@ -50,15 +51,15 @@
          (in-closet suit-jacket2)
          (in-closet suit-jacket3)
          )
-  (:goal (and (attending-casual-event person9)
-              (attending-casual-event person8)
-              (attending-formal-event person6)
+  (:goal (and (attending-formal-event person2)
               (attending-formal-event person5)
-              (attending-formal-event person7)
-              (attending-casual-event person10)
-              (attending-formal-event person3)
-              (attending-casual-event person2)
+              (attending-casual-event person7)
               (attending-formal-event person4)
+              (attending-formal-event person8)
+              (attending-casual-event person9)
               (attending-formal-event person1)
+              (attending-casual-event person6)
+              (attending-formal-event person10)
+              (attending-casual-event person3)
               ))
   )

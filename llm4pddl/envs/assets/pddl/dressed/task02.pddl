@@ -5,7 +5,7 @@
             sweatpants1 sweatpants2 - sweatpants
             sweatshirt1 sweatshirt2 - sweatshirt
             nice-pants1 - nice-pants
-            collared-shirt1 collared-shirt2 - collared-shirt
+            collared-shirt1 - collared-shirt
             suit-jacket1 - suit-jacket
             )
   (:init (wearing-nothing-formal person1)
@@ -23,12 +23,11 @@
          (in-closet sweatshirt2)
          (in-closet nice-pants1)
          (in-closet collared-shirt1)
-         (in-closet collared-shirt2)
          (in-closet suit-jacket1)
          )
-  (:goal (and (attending-formal-event person2)
-              (attending-formal-event person4)
+  (:goal (and (attending-casual-event person1)
+              (attending-formal-event person2)
               (attending-casual-event person3)
-              (attending-casual-event person1)
+              (attending-formal-event person4)
               ))
   )
