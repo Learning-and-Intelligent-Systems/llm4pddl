@@ -67,6 +67,10 @@ class LLMOpenLoopApproach(BaseApproach):
         for obj in sorted(problem.objects):
             obj_type = problem.objects[obj]
             type_to_objs[obj_type].append(obj)
+        # Include constants too.
+        for obj in sorted(domain.constants):
+            obj_type = domain.constants[obj]
+            type_to_objs[obj_type].append(obj)
         objects_strs: List[str] = []
         for typ, objs in type_to_objs.items():
             if not objs:
