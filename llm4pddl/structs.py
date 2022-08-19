@@ -1,5 +1,6 @@
 """Data structures."""
 from dataclasses import dataclass
+from functools import cached_property
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -23,6 +24,25 @@ class Task:
     """A task is a PDDL domain file and problem file."""
     domain_file: Path
     problem_file: Path
+
+    @cached_property
+    def task_id(self) -> str:
+        """A unique identifier for this task."""
+        # Use the name of the domain from the domain file.
+        with open(self.domain_file, "r", encoding="utf-8") as f:
+            domain_str = f.read()
+        domain_tag = "(domain "
+        assert domain_str.count(domain_tag) == 1
+        domain_tag_idx = domain_str.index(domain_tag)
+        tag_close_rel_idx = domain_str[domain_tag_idx:].index(")")
+        start = domain_tag_idx + len(domain_tag)
+        end = domain_tag_idx + tag_close_rel_idx
+        domain_name = domain_str[start:end].strip()
+        assert domain_name
+        # Use the problem filename, which is assumed unique within the domain.
+        assert self.problem_file.name.endswith(".pddl")
+        problem_name = self.problem_file.name[:-len(".pddl")]
+        return f"{domain_name}__{problem_name}"
 
 
 @dataclass(frozen=True)

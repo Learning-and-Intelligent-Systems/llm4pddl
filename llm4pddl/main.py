@@ -52,7 +52,7 @@ def _run_pipeline(approach: BaseApproach, env: BaseEnv) -> None:
         approach.train(dataset)
     # Run evaluation for all approaches.
     eval_tasks = env.get_eval_tasks()
-    results = _run_evaluation(approach, eval_tasks, env.get_name())
+    results = _run_evaluation(approach, eval_tasks)
     # Save the results.
     os.makedirs(FLAGS.results_dir, exist_ok=True)
     outdata = {
@@ -65,7 +65,7 @@ def _run_pipeline(approach: BaseApproach, env: BaseEnv) -> None:
         pickle.dump(outdata, f)
 
 
-def _run_evaluation(approach, eval_tasks, env_name) -> Metrics:
+def _run_evaluation(approach, eval_tasks) -> Metrics:
     """Evaluate the approach in the evaluation tasks."""
     results: Metrics = {}
     num_eval_tasks = len(eval_tasks)
@@ -73,8 +73,7 @@ def _run_evaluation(approach, eval_tasks, env_name) -> Metrics:
     for i, task in enumerate(eval_tasks):
         # Save metrics for this task.
         task_metrics: TaskMetrics = {}
-        task_id = f"{env_name}__{task.problem_file.stem}"
-        results[task_id] = task_metrics
+        results[task.task_id] = task_metrics
         # Get a plan.
         start_time = time.time()
         plan, solve_metrics = approach.solve(task)
