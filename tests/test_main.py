@@ -78,7 +78,7 @@ def test_run_evaluation():
     env_name = "pyperplan-blocks"
     env = create_env(env_name)
     eval_tasks = env.get_eval_tasks()
-    results = _run_evaluation(approach, eval_tasks, env_name)
+    results = _run_evaluation(approach, eval_tasks)
     assert len(results) == 2
     task0_id, task1_id = sorted(results)
     assert results[task0_id]["result"] == "no_plan_found"
