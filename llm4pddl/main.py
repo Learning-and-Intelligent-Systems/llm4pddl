@@ -48,7 +48,7 @@ def _run_pipeline(approach: BaseApproach, env: BaseEnv) -> None:
     # Run training for learning-based approaches.
     if approach.is_learning_based:
         train_tasks = env.get_train_tasks()
-        dataset = create_dataset(train_tasks)
+        dataset = create_dataset(train_tasks, attempt_loading=FLAGS.load_data)
         approach.train(dataset)
     # Run evaluation for all approaches.
     eval_tasks = env.get_eval_tasks()
