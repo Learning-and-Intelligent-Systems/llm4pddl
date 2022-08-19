@@ -24,6 +24,8 @@ def create_dataset(train_tasks: Sequence[Task],
             with open(cache_file, "rb") as f:
                 solution = pickle.load(f)
             logging.debug(f"Loaded solution from {cache_file}")
+            # Sanity check the loaded solution.
+            assert utils.validate_plan(task, solution)
         else:
             solution, _ = utils.run_planning(task,
                                              planner=FLAGS.data_gen_planner)
