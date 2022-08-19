@@ -10,7 +10,7 @@ import sys
 import tempfile
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Collection, Dict, Optional, Sequence, Set, Tuple
+from typing import Any, Collection, Dict, List, Optional, Sequence, Set, Tuple
 
 import numpy as np
 from pyperplan.grounding import ground as pyperplan_ground
@@ -318,6 +318,24 @@ def is_subtype(type1: PyperplanType, type2: PyperplanType) -> bool:
             return True
         type1 = type1.parent
     return False
+
+
+def augment_tasks(original_tasks: Sequence[Task],
+                  num_iters: int) -> List[Task]:
+    """Augment tasks to create a larger collection.
+
+    The original tasks are included in the returned tasks.
+
+    For each original task, repeat until validation fails:
+        - Select a random object to remove.
+        - Remove all atoms involving that object in the init and goal.
+        - Validate the task by trying to find a plan.
+        - If no plan is found, or if the plan is empty (trivial task), stop.
+        - Otherwise, keep the new task and continue.
+
+    An "iter" is one task validation attempt. So at most "iter" new tasks will
+    be created, but the number of new tasks may also be much less.
+    """
 
 
 def reset_flags(args: Dict[str, Any], default_seed: int = 123) -> None:

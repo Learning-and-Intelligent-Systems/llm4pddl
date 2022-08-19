@@ -15,6 +15,8 @@ def parse_flags() -> None:
     parser.add_argument("--experiment_id", default="", type=str)
     parser.add_argument("--num_train_tasks", default=2, type=int)
     parser.add_argument("--num_eval_tasks", default=10, type=int)
+    parser.add_argument("--augment_train_tasks", action="store_true")
+    parser.add_argument("--task_augmentation_num_iters", default=100, type=int)
     parser.add_argument("--planner", default="pyperplan", type=str)
     parser.add_argument("--data_gen_planner", default="fastdownward", type=str)
     parser.add_argument("--planning_timeout", default=100.0, type=float)

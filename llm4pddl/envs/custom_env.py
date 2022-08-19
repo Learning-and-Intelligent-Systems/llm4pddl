@@ -12,6 +12,7 @@ class CustomEnv(BaseEnv):
     """A custom made environment."""
 
     def __init__(self, benchmark_name: str) -> None:
+        super().__init__()
         self._benchmark_name = benchmark_name
         change_num = FLAGS.num_train_tasks + 1
         train_task_nums = range(1, change_num)
@@ -26,8 +27,8 @@ class CustomEnv(BaseEnv):
     def get_name(self) -> str:
         return f"custom-{self._benchmark_name}"
 
-    def get_train_tasks(self) -> List[Task]:
+    def _create_train_tasks(self) -> List[Task]:
         return list(self._train_tasks)
 
-    def get_eval_tasks(self) -> List[Task]:
+    def _create_eval_tasks(self) -> List[Task]:
         return list(self._eval_tasks)

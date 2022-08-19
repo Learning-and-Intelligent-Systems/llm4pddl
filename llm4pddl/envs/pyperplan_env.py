@@ -12,6 +12,7 @@ class PyperplanEnv(BaseEnv):
     """An environment defined by a pyperplan benchmark."""
 
     def __init__(self, benchmark_name: str) -> None:
+        super().__init__()
         self._benchmark_name = benchmark_name
         # Load tasks from pyperplan and sort them by size (just problem string
         # length). Then pick the shortest ones for the training set.
@@ -44,8 +45,8 @@ class PyperplanEnv(BaseEnv):
     def get_name(self) -> str:
         return f"pyperplan-{self._benchmark_name}"
 
-    def get_train_tasks(self) -> List[Task]:
+    def _create_train_tasks(self) -> List[Task]:
         return list(self._train_tasks)
 
-    def get_eval_tasks(self) -> List[Task]:
+    def _create_eval_tasks(self) -> List[Task]:
         return list(self._eval_tasks)
