@@ -13,19 +13,33 @@ class PyperplanEnv(BaseEnv):
 
     def __init__(self, benchmark_name: str) -> None:
         self._benchmark_name = benchmark_name
-        # Load tasks from pyperplan, and split so that the easiest (lower
-        # number) tasks are train, and the harder tasks are eval.
-        switch_num = FLAGS.num_train_tasks + 1
-        train_task_nums = range(1, switch_num)
-        eval_task_nums = range(switch_num, switch_num + FLAGS.num_eval_tasks)
-        self._train_tasks = [
-            utils.get_pyperplan_benchmark_task(benchmark_name, i)
-            for i in train_task_nums
-        ]
-        self._eval_tasks = [
-            utils.get_pyperplan_benchmark_task(benchmark_name, i)
-            for i in eval_task_nums
-        ]
+        # Load tasks from pyperplan and sort them by size (just problem string
+        # length). Then pick the shortest ones for the training set.
+        all_tasks = []
+        i = 1
+        # Keep loading until a file is not found.
+        while True:
+            try:
+                task = utils.get_pyperplan_benchmark_task(benchmark_name, i)
+            except FileNotFoundError:
+                # Reached the end of the tasks.
+                break
+            all_tasks.append(task)
+            i += 1
+        # We need to have at least this number of tasks.
+        assert len(all_tasks) >= FLAGS.num_train_tasks + FLAGS.num_eval_tasks
+
+        # Sort from smallest to largest.
+        def _get_task_size(task: Task) -> int:
+            with open(task.problem_file, "r", encoding="utf-8") as f:
+                problem_str = f.read()
+            return len(problem_str)
+
+        sorted_tasks = sorted(all_tasks, key=_get_task_size)
+        # Split into train and eval.
+        self._train_tasks = sorted_tasks[:FLAGS.num_train_tasks]
+        self._eval_tasks = sorted_tasks[FLAGS.num_train_tasks:(
+            FLAGS.num_train_tasks + FLAGS.num_eval_tasks)]
 
     def get_name(self) -> str:
         return f"pyperplan-{self._benchmark_name}"
