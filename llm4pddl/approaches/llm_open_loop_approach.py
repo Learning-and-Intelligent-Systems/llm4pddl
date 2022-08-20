@@ -22,6 +22,7 @@ class LLMOpenLoopApproach(BaseApproach):
         self._llm = OpenAILLM(FLAGS.llm_model_name)
         # Set after learning.
         self._prompt_prefix = ""
+        self.embeddings_mapping: dict = {}
 
     @property
     def is_learning_based(self) -> bool:
@@ -36,6 +37,9 @@ class LLMOpenLoopApproach(BaseApproach):
 
     def solve(self, task: Task) -> Tuple[Optional[Plan], TaskMetrics]:
         new_prompt = self._create_prompt(task)
+        if FLAGS.use_dynamic_examples:
+            closest_datums = utils.get_closest(task, self.embeddings_mapping)
+            self.train(closest_datums)
         prompt = self._prompt_prefix + new_prompt
         logging.debug(f"Querying with prompt suffix:\n{new_prompt}")
         responses = self._llm.sample_completions(

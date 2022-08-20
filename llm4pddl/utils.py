@@ -12,6 +12,12 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any, Collection, Dict, Optional, Sequence, Set, Tuple
 
+from sentence_transformers import SentenceTransformer
+from sentence_transformers.util import cos_sim
+from llm4pddl.approaches.base_approach import BaseApproach
+from llm4pddl.dataset import create_dataset, Dataset
+from llm4pddl.envs.base_env import BaseEnv
+
 import numpy as np
 from pyperplan.grounding import ground as pyperplan_ground
 from pyperplan.pddl.parser import Parser
@@ -19,7 +25,7 @@ from pyperplan.planner import HEURISTICS, SEARCHES, search_plan
 
 from llm4pddl.flags import FLAGS
 from llm4pddl.structs import Plan, PyperplanAction, PyperplanDomain, \
-    PyperplanPredicate, PyperplanProblem, PyperplanType, Task, TaskMetrics
+    PyperplanPredicate, PyperplanProblem, PyperplanType, Task, TaskMetrics, Datum
 
 LLM_QUESTION_TOKEN = "Q:"
 LLM_ANSWER_TOKEN = "A:"
@@ -236,6 +242,54 @@ def minify_pddl_problem(problem: str) -> str:
         if new_problem[0] == '\n':
             new_problem = new_problem[1:]
     return new_problem
+
+def embed_training_tasks(training_tasks: Sequence[Task]) -> Sequence:
+    """"embeds a list of tasks. 
+    Returns a list of embeddings with indicies corresponding to its task."""
+    embedding_model = SentenceTransformer(FLAGS.embedding_model_name)
+    embeddings = [embed_task(task, embedding_model) for task in training_tasks]
+    return embeddings 
+
+
+def embed_task(task: Task, embedding_model: SentenceTransformer) -> Sequence:
+    """Embeds a task using embedding_model."""
+    with open(task.problem_file, 'r', encoding='utf-8') as f:  
+        task_string = f.read()
+    task_string = minify_pddl_problem(task_string)
+    embedding = embedding_model.encode(task_string)
+    return embedding
+
+
+def make_embeddings_mapping(embeddings: Sequence, dataset: Dataset) -> Sequence:
+    """Makes embeddings mapping for training data."""
+    return [{'embedding':emb, 'datum': datum} for emb, datum in zip(embeddings, dataset)]
+
+
+def get_closest(task: Task, embeddings_mapping: Sequence[Dict], num_train: int) -> Sequence:
+    """Returns the num_train most similar training tasks to the task, 
+    in reverse order of similarity."""
+    embedding_model = SentenceTransformer(FLAGS.embedding_model_name)
+    task_embedding = embed_task(task, embedding_model)
+    # now compare this embedding to all the other embeddings 
+    other_embeddings = [mapping['embedding'] for mapping in embeddings_mapping]
+    cos_sims = [get_cosine_sim(task_embedding, other_emb) for other_emb in other_embeddings]
+    # select num_train datum that are most similar and return them. 
+    # it is here that we would instead need to get the extracted init and goal strings.
+    # we will need a get_init_string() and get_goal_string() helper functions.
+    num_train = 1 # hardcoding for now for testing purposes
+    closest_datums = []
+    for _ in num_train:
+        highest_cossim_index = np.argmax(cos_sims)
+        cossim_val = cos_sims.pop(highest_cossim_index)
+        datum = embeddings_mapping.pop(highest_cossim_index)['datum']
+        closest_datums.append(datum)
+    closest_datums.reverse()
+    return closest_datums
+        
+
+def get_cosine_sim(embedding1: np.array, embedding2: np.array) -> float:
+    """Returns the cosine similarity between the two embeddings."""
+    return cos_sim(embedding1, embedding2).item()
 
 
 @functools.lru_cache(maxsize=None)

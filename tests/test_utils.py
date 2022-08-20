@@ -4,9 +4,12 @@ import os
 import tempfile
 
 import pytest
+import numpy as np
 
 from llm4pddl import utils
 from llm4pddl.structs import Task
+from sentence_transformers import SentenceTransformer
+from sentence_transformers.util import cos_sim
 
 
 @pytest.fixture(scope="module", name="domain_file")
@@ -375,6 +378,46 @@ A:
 (make blue)(end)"""
 
 
+def test_embed_task():
+    """Tests for embed_task()."""
+    utils.reset_flags({"embedding_model_name": "paraphrase-MiniLM-L6-v2",
+                       "llm_prompt_flatten_pddl": True})
+    embedding_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
+    task01 = utils.get_custom_task('dressed', 1)
+    embedding1 = utils.embed_task(task01, embedding_model)
+    with open(task01.problem_file, 'r', encoding='utf-8') as f:
+        task_string = f.read()
+    task_string = utils.minify_pddl_problem(task_string)
+    embedding2 = embedding_model.encode(task_string)
+    assert np.all(embedding1 == embedding2)
+
+
+def test_make_embeddings_mapping():
+    """Tests make_embeddings_mapping()."""
+    raise NotImplementedError
+
+
+def test_get_closest():
+    """Tests for get_closest()."""
+    raise NotImplementedError
+
+
+def test_get_cosine_sim():
+    """Tests get_cosine_sim()."""
+    embedding_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
+    embedding1 = embedding_model.encode('hello')
+    embedding2 = embedding_model.encode('hello')
+    cos_sim1 = utils.get_cosine_sim(embedding1, embedding2).item()
+    assert cos_sim1 == 1
+    embedding3 = embedding_model.encode('hell')
+    cos_sim2 = utils.get_cosine_sim(embedding1, embedding3).item()
+    assert cos_sim2 != 1
+    embedding4 = embedding_model.encode('my name is')
+    embedding5 = embedding_model.encode('my dog is here')
+    cos_sim3 = utils.get_cosine_sim(embedding4, embedding5).item()
+    assert cos_sim3 == cos_sim(embedding4, embedding5).item()
+
+
 def test_run_planning(domain_file, problem_file, impossible_problem_file):
     """Tests for run_planning().
 
@@ -403,3 +446,10 @@ def test_run_planning(domain_file, problem_file, impossible_problem_file):
     with pytest.raises(NotImplementedError) as e:
         utils.run_planning(task, planner="not a real planner")
     assert "Unrecognized planner" in str(e)
+# A:
+# (make blue)
+# (end)"""
+#     utils.reset_flags({"llm_prompt_flatten_pddl": False})
+#     out = utils.minify_pddl_problem(q_a_example)
+#     import pdb
+#     pdb.set_trace()
