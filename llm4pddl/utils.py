@@ -13,8 +13,8 @@ from pathlib import Path
 from typing import Any, Collection, Dict, Optional, Sequence, Set, Tuple
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
+import numpy as np
 from pyperplan.grounding import ground as pyperplan_ground
 from pyperplan.pddl.parser import Parser
 from pyperplan.planner import HEURISTICS, SEARCHES, search_plan
