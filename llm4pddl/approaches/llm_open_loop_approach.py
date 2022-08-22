@@ -154,27 +154,31 @@ class LLMOpenLoopApproach(BaseApproach):
                 break
             # Get the words in between the parentheses.
             words = unparsed[left_parens_idx + 1:right_parens_idx].split()
+            # Update the unparsed response.
+            # Now that we have updated the unparsed response, from here on, if
+            # there is an issue encountered with the present action, we will
+            # continue, rather than break, and hope that there are still good
+            # actions to be had later on in the plan.
+            unparsed = unparsed[right_parens_idx + 1:]
             # If there's nothing in between, the response is malformed.
             if not words:
-                break
+                continue
             # The first word should be an operator.
             op, objects = words[0], words[1:]
             if op not in operator_names:
-                break
+                continue
             # The remaining words should be objects.
             if any(o not in object_names for o in objects):
-                break
+                continue
             # The signature of the objects should match that of the operator.
             op_sig = [t for _, (t, ) in domain.actions[op].signature]
             objs_sig = [obj_to_type[o] for o in objects]
             if len(op_sig) != len(objs_sig) or not all(
                     utils.is_subtype(t1, t2)
                     for (t1, t2) in zip(objs_sig, op_sig)):
-                break
+                continue
             # Otherwise, we found a good plan step.
             objects_str = " ".join(objects)
             action = f"({op} {objects_str})"
             plan.append(action)
-            # Update the unparsed response.
-            unparsed = unparsed[right_parens_idx + 1:]
         return plan
