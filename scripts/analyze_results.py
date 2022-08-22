@@ -4,7 +4,7 @@ import argparse
 import glob
 import pickle
 from pathlib import Path
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, Set, Tuple
 
 import numpy as np
 import pandas as pd
@@ -19,9 +19,20 @@ _DERIVED_COLS: Dict[str, Callable[[TaskMetrics], Any]] = {
 def _main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--results_dir", default="results", type=str)
+    parser.add_argument("--a_dir", type=str)
+    parser.add_argument("--b_dir", type=str)
     args = parser.parse_args()
-    raw_results = _load_results(args.results_dir)
-    _create_summary_table(raw_results)
+    if args.a_dir:
+        assert args.b_dir
+        a_summary = _create_summary_table(_load_results(args.a_dir),
+                                          verbose=False,
+                                          save_summary=False)
+        b_summary = _create_summary_table(_load_results(args.b_dir),
+                                          verbose=False,
+                                          save_summary=False)
+        _summarize_diff(a_summary, b_summary)
+    else:
+        _create_summary_table(_load_results(args.results_dir))
 
 
 def _load_results(results_dir: str) -> pd.DataFrame:
@@ -59,7 +70,9 @@ def _load_results(results_dir: str) -> pd.DataFrame:
     return df
 
 
-def _create_summary_table(raw_results: pd.DataFrame) -> None:
+def _create_summary_table(raw_results: pd.DataFrame,
+                          verbose: bool = True,
+                          save_summary: bool = True) -> pd.DataFrame:
     # Remove the non-numeric columns that we don't need anymore.
     df = raw_results.drop(columns=["result"])
     # Group by env, approach, seed, and experiment ID.
@@ -71,18 +84,106 @@ def _create_summary_table(raw_results: pd.DataFrame) -> None:
     means = grouped.mean()
     stds = grouped.std(ddof=0)
     sizes = grouped.size().to_frame()
+    summary = means.copy()
     # Add standard deviations to the printout.
     for col in means:
         for row in means[col].keys():
             mean = means.loc[row][col]
             std = stds.loc[row][col]
-            means.loc[row, col] = f"{mean:.2f} ({std:.2f})"
-    means["num_seeds"] = sizes
+            summary.loc[row, col] = f"{mean:.2f} ({std:.2f})"
+    summary["num_seeds"] = sizes
     pd.set_option("expand_frame_repr", False)
-    print("\n\nAGGREGATED DATA OVER SEEDS:")
-    print(means.reset_index())
-    means.to_csv("results_summary.csv")
-    print("\n\nWrote out table to results_summary.csv")
+    if verbose:
+        print("\n\nAGGREGATED DATA OVER EVAL TASKS AND SEEDS:")
+        print(summary.reset_index())
+        # Report the total number of results.
+        print(f"\nTOTAL RESULTS: {df.shape[0]}")
+        # Create an even higher-level summary, averaging over everything except
+        # the approach.
+        print("\nSUMMARY OF THE SUMMARY:")
+        print(df.groupby(["approach"]).mean())
+    if save_summary:
+        means.to_csv("results_summary.csv")
+        print("\n\nWrote out table to results_summary.csv")
+    return means.reset_index()
+
+
+def _summarize_diff(a_df: pd.DataFrame, b_df: pd.DataFrame) -> None:
+    # Collect the unique (env, approach, experiment ID) in each df.
+    a_ids = {(r.env, r.approach, r.experiment_id) for _, r in a_df.iterrows()}
+    b_ids = {(r.env, r.approach, r.experiment_id) for _, r in b_df.iterrows()}
+
+    # Helper to select rows from IDs.
+    def _id_to_rows(df: pd.DataFrame, row_id: Tuple[str, str,
+                                                    str]) -> pd.DataFrame:
+        env, approach, experiment_id = row_id
+        return df[((df.env == env) & (df.approach == approach) & \
+                   (df.experiment_id == experiment_id))]
+
+    # Helper to get the score from an ID later on.
+    def _id_to_score(df: pd.DataFrame,
+                     row_id: Tuple[str, str, str]) -> Tuple[float, ...]:
+        rows = _id_to_rows(df, row_id)
+        assert rows.shape[0] == 1
+        success = rows.success.item()
+        expanded = rows.nodes_expanded.item()
+        return (success, expanded)
+
+    # Print five cases: same in both; in A but not in B; in B but not in A;
+    # better in A than in B; better in B than in A. Here "better" is defined
+    # by looking first at success rate and second at number of nodes expanded.
+    a_only_ids = a_ids - b_ids
+    b_only_ids = b_ids - a_ids
+    better_a_ids = set()
+    better_b_ids = set()
+    same_in_both_ids = set()
+
+    for row_id in a_ids & b_ids:
+        a_score = _id_to_score(a_df, row_id)
+        b_score = _id_to_score(b_df, row_id)
+        if a_score > b_score:
+            better_a_ids.add(row_id)
+        elif b_score > a_score:
+            better_b_ids.add(row_id)
+        else:
+            same_in_both_ids.add(row_id)
+
+    # Create dataframes for each of the cases.
+    def _ids_to_df(row_ids: Set[Tuple[str, str, str]]) -> pd.DataFrame:
+        all_entries = []
+        for row_id in sorted(row_ids):
+            # Collect from a_df.
+            if row_id in a_ids:
+                rows = _id_to_rows(a_df, row_id)
+                assert rows.shape[0] == 1
+                entry = rows.to_dict(orient='records')[0]
+                entry["VERSION"] = "A"
+                all_entries.append(entry)
+            # Collect from b_df.
+            if row_id in b_ids:
+                rows = _id_to_rows(b_df, row_id)
+                assert rows.shape[0] == 1
+                entry = rows.to_dict(orient='records')[0]
+                entry["VERSION"] = "B"
+                all_entries.append(entry)
+        # Create combined df.
+        return pd.DataFrame(all_entries)
+
+    # Print cases.
+    print("\n#################### SAME IN BOTH: ###################")
+    print(_ids_to_df(same_in_both_ids))
+
+    print("\n##################### ONLY IN A: #####################")
+    print(_ids_to_df(a_only_ids))
+
+    print("\n##################### ONLY IN B: #####################")
+    print(_ids_to_df(b_only_ids))
+
+    print("\n#################### BETTER IN A: ####################")
+    print(_ids_to_df(better_a_ids))
+
+    print("\n#################### BETTER IN B: ####################")
+    print(_ids_to_df(better_b_ids))
 
 
 if __name__ == "__main__":

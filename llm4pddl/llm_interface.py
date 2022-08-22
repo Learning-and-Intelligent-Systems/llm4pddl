@@ -135,7 +135,7 @@ class OpenAILLM(LargeLanguageModel):
                 # Successfully queried, so break.
                 break
             except (openai.error.RateLimitError,
-                    openai.error.APIConnectionError):
+                    openai.error.APIConnectionError, openai.error.APIError):
                 # Wait for 60 seconds if this limit is reached. Hopefully rare.
                 time.sleep(60)
         else:

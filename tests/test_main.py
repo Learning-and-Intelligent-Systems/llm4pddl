@@ -50,13 +50,19 @@ def test_run_pipeline():
     """Tests for _run_pipeline() in main.py."""
     # Create a temporary results dir so as to not pollute real results.
     temp_results_dir = tempfile.TemporaryDirectory().name
+    # Same for data dir.
+    temp_data_dir = tempfile.TemporaryDirectory().name
     utils.reset_flags({
         "env": "pyperplan-blocks",
         "approach": "dummy",
         "experiment_id": "dummy",
-        "num_train_tasks": 0,
+        "num_train_tasks": 1,
         "num_eval_tasks": 2,
-        "results_dir": temp_results_dir
+        "results_dir": temp_results_dir,
+        "data_dir": temp_data_dir,
+        "load_data": False,
+        "data_gen_planner": "pyperplan",
+        "planning_timeout": 10,
     })
     # Cover cases where approach is None or invalid.
     plan_sequence = [None, []]
@@ -64,8 +70,25 @@ def test_run_pipeline():
     assert approach.get_name() == "dummy"
     env = create_env("pyperplan-blocks")
     _run_pipeline(approach, env)
-    # Remove temporary results dir.
+    # Run again but with data loading.
+    utils.reset_flags({
+        "env": "pyperplan-blocks",
+        "approach": "dummy",
+        "experiment_id": "dummy",
+        "num_train_tasks": 1,
+        "num_eval_tasks": 2,
+        "results_dir": temp_results_dir,
+        "data_dir": temp_data_dir,
+        "load_data": True,
+        "data_gen_planner": "pyperplan",
+        "planning_timeout": 10,
+    })
+    plan_sequence = [None, []]
+    approach = _MockApproach(plan_sequence)
+    _run_pipeline(approach, env)
+    # Remove temporary dirs.
     shutil.rmtree(temp_results_dir)
+    shutil.rmtree(temp_data_dir)
 
 
 def test_run_evaluation():
@@ -78,7 +101,7 @@ def test_run_evaluation():
     env_name = "pyperplan-blocks"
     env = create_env(env_name)
     eval_tasks = env.get_eval_tasks()
-    results = _run_evaluation(approach, eval_tasks, env_name)
+    results = _run_evaluation(approach, eval_tasks)
     assert len(results) == 2
     task0_id, task1_id = sorted(results)
     assert results[task0_id]["result"] == "no_plan_found"
