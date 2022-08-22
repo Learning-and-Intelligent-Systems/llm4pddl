@@ -169,8 +169,8 @@ def get_task_from_dir(dir_path: Path, task_num: int) -> Task:
     if not os.path.exists(dir_path):
         raise FileNotFoundError(f"Domain not found: {dir_path}")
     # Find the task first.
-    problem_file_v1 = dir_path / f"task{task_num:02d}.pddl"
-    problem_file_v2 = dir_path / f"task{task_num}.pddl"
+    problem_file_v1 = dir_path / f"task{task_num}.pddl"
+    problem_file_v2 = dir_path / f"task{task_num:02d}.pddl"
     if os.path.exists(problem_file_v1):
         problem_file = problem_file_v1
     elif os.path.exists(problem_file_v2):
