@@ -379,7 +379,7 @@ def test_get_task_size(domain_file, problem_file):
     """Tests for get_task_size()."""
     # There are 4 objects, 8 init atoms, and 1 goal atom in the problem.
     task = Task(domain_file, problem_file)
-    return utils.get_task_size(task) == 11
+    assert utils.get_task_size(task) == 13
 
 
 def test_run_planning(domain_file, problem_file, impossible_problem_file):
