@@ -2,6 +2,7 @@
 
 import functools
 import hashlib
+import heapq
 import logging
 import os
 import re
@@ -10,7 +11,8 @@ import sys
 import tempfile
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Collection, Dict, List, Optional, Sequence, Set, Tuple
+from typing import Any, Collection, Dict, Iterator, List, Optional, Sequence, \
+    Set, Tuple
 
 import numpy as np
 from pyperplan.grounding import ground as pyperplan_ground
@@ -247,9 +249,38 @@ def parse_task(task: Task) -> Tuple[PyperplanDomain, PyperplanProblem]:
     return (domain, problem)
 
 
+@functools.lru_cache(maxsize=None)
+def get_task_size(task: Task) -> int:
+    """A crude estimate of problem complexity."""
+    _, prob = parse_task(task)
+    return len(prob.objects) + len(prob.initial_state) + len(prob.goal)
+
+
 def pyperplan_problem_to_str(problem: PyperplanProblem) -> str:
     """Create a PDDL string from a pyperplan problem."""
-    import ipdb; ipdb.set_trace()
+    # Sort everything to ensure determinism.
+    objects_str = "\n    ".join(f"{o} - {problem.objects[o]}"
+                                for o in sorted(problem.objects))
+
+    def _atom_to_str(atom: PyperplanPredicate) -> str:
+        pred_name = atom.name
+        if not atom.signature:
+            return f"({pred_name})"
+        args_str = " ".join(obj for obj, _ in atom.signature)
+        return f"({pred_name} {args_str})"
+
+    init_str = "\n    ".join(_atom_to_str(a) for a in problem.initial_state)
+    goal_str = " ".join(_atom_to_str(a) for a in problem.goal)
+
+    return f"""(define (problem {problem.name})
+  (:domain {problem.domain.name})
+  (:objects\n    {objects_str}
+  )
+  (:init\n    {init_str}
+  )
+  (:goal (and {goal_str}))
+)
+"""
 
 
 @functools.lru_cache(maxsize=None)
@@ -333,39 +364,61 @@ def augment_tasks(original_tasks: Sequence[Task],
 
     For each original task, repeat until validation fails:
         - Greedily select a goal atom to remove.
-        - Greedily remove init atoms until the problem.
-        - Greedily remove objects.
+        - Greedily remove init atoms until the problem. (TODO)
+        - Greedily remove objects. (TODO)
 
     Any time the task is validated, we add it to the set of tasks.
-
-    An "iter" is one task validation attempt. So at most "iter" new tasks will
-    be created, but the number of new tasks may also be much less.
     """
     new_tasks = list(original_tasks)
+    planner = FLAGS.data_gen_planner
 
-    # Helper function.    
-    task_is_solvable = lambda t: run_planning(t, planner=FLAGS.data_gen_planner)
+    # Helper function.
+    task_is_solvable = lambda t: run_planning(t, planner)[0] is not None
 
-    # Sort from smallest to largest to prioritize tasks that are already short
-    # in case we hit the maximum number of iters.
-    for task in sorted(original_tasks, key=lambda t: t.task_size):
-        # The original task should be solvable.
-        assert task_is_solvable(task)
-        # Parse the task so we can modify it.
-        domain, problem = parse_task(task)
-        # Greedily remove goals.
+    # Successor generation in search over tasks.
+    def _succ_gen_remove_goals(task: Task) -> Iterator[Task]:
+        _, problem = parse_task(task)
         for goal_to_remove in problem.goal:
-            # Create new task.
             new_goal = [g for g in problem.goal if g != goal_to_remove]
-            new_problem = PyperplanProblem(problem.name, problem.domain, problem.objects, problem.initial_state, new_goal)
+            new_problem = PyperplanProblem(problem.name, problem.domain,
+                                           problem.objects,
+                                           problem.initial_state, new_goal)
             new_problem_str = pyperplan_problem_to_str(new_problem)
-            new_problem_file = tempfile.NamedTemporaryFile(delete=False).name
+            new_problem_file = tempfile.NamedTemporaryFile(delete=False,
+                                                           suffix=".pddl").name
             with open(new_problem_file, "w", encoding="utf-8") as f:
                 f.write(new_problem_str)
-            new_task = Task(domain, new_problem_file)
-            # Check if the new task is solvable.
-            import ipdb; ipdb.set_trace()
+            new_task = Task(task.domain_file, Path(new_problem_file))
+            # Removing a goal should never make the task not solvable, but it
+            # may make the task trivial.
+            plan, _ = run_planning(new_task, planner)
+            if not plan:
+                os.remove(new_problem_file)
+                continue
+            yield new_task
 
+    successor_gens = [_succ_gen_remove_goals]
+
+    # Greedy search with respect to task size.
+    queue = [(get_task_size(t), i, t) for i, t in enumerate(original_tasks)]
+    tiebreak = len(original_tasks)
+
+    for it in range(num_iters):
+        if not queue:
+            logging.debug("Data augmentation queue exhausted.")
+            break
+        logging.debug(f"Data augmentation iteration {it}/{num_iters}")
+        _, _, task = heapq.heappop(queue)
+        for generate_successors in successor_gens:
+            for succ in generate_successors(task):
+                tiebreak += 1
+                new_tasks.append(succ)
+                heapq.heappush(queue, (get_task_size(succ), tiebreak, succ))
+
+    logging.debug(f"Data augmentation generated {len(new_tasks)} tasks "
+                  f"(including the original {len(original_tasks)} tasks).")
+
+    return new_tasks
 
 
 def reset_flags(args: Dict[str, Any], default_seed: int = 123) -> None:

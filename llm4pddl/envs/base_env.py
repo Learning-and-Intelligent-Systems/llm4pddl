@@ -3,9 +3,9 @@
 import abc
 from typing import List
 
+from llm4pddl import utils
 from llm4pddl.flags import FLAGS
 from llm4pddl.structs import Task
-from llm4pddl import utils
 
 
 class BaseEnv(abc.ABC):
