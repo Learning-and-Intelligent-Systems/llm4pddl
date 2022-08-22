@@ -18,7 +18,7 @@ class AugmentedEnv(MultiDirEnv):
     because we may want to also augment other kinds of tasks.
 
     Since augmentation takes a while, it should be run once separately from
-    the main pipeline; see scripts/run_data_augmentation.py.
+    the main pipeline.
     """
 
     @property
