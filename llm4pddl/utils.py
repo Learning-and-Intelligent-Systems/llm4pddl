@@ -21,8 +21,12 @@ from llm4pddl.flags import FLAGS
 from llm4pddl.structs import Plan, PyperplanAction, PyperplanDomain, \
     PyperplanPredicate, PyperplanProblem, PyperplanType, Task, TaskMetrics
 
+# Global constants.
 LLM_QUESTION_TOKEN = "Q:"
 LLM_ANSWER_TOKEN = "A:"
+_DIR = Path(__file__).parent
+PYPERPLAN_BENCHMARK_DIR = _DIR / "third_party" / "pyperplan" / "benchmarks"
+CUSTOM_BENCHMARK_DIR = _DIR / "envs" / "assets" / "pddl"
 
 
 def validate_plan(task: Task, plan: Plan) -> bool:
@@ -189,18 +193,14 @@ def get_task_from_dir(dir_path: Path, task_num: int) -> Task:
     return Task(domain_file, problem_file)
 
 
-def get_pyperplan_benchmark_task(benchmark_name: str, task_num: int) -> Task:
+def get_pyperplan_benchmark_task(name: str, task_num: int) -> Task:
     """Get the paths to the pyperplan benchmark domain and problem files."""
-    pyperplan_dir = Path(__file__).parent / "third_party" / "pyperplan"
-    benchmark_dir = pyperplan_dir / "benchmarks" / benchmark_name
-    return get_task_from_dir(benchmark_dir, task_num)
+    return get_task_from_dir(PYPERPLAN_BENCHMARK_DIR / name, task_num)
 
 
-def get_custom_task(benchmark_name: str, task_num: int) -> Task:
+def get_custom_task(name: str, task_num: int) -> Task:
     """Get the paths to the custom domain and problem files."""
-    custom_pddl_dir = Path(__file__).parent / "envs" / "assets" / "pddl"
-    benchmark_dir = custom_pddl_dir / benchmark_name
-    return get_task_from_dir(benchmark_dir, task_num)
+    return get_task_from_dir(CUSTOM_BENCHMARK_DIR / name, task_num)
 
 
 def minify_pddl_problem(problem: str) -> str:
