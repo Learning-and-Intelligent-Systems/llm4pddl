@@ -10,7 +10,7 @@ import sys
 import tempfile
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Collection, Dict, Optional, Sequence, Set, Tuple
+from typing import Any, Collection, Dict, List, Optional, Sequence, Set, Tuple
 
 import numpy as np
 from pyperplan.grounding import ground as pyperplan_ground
@@ -191,6 +191,24 @@ def get_task_from_dir(dir_path: Path, task_num: int) -> Task:
         domain_file = dir_path / domain_file_name
         assert os.path.exists(domain_file)
     return Task(domain_file, problem_file)
+
+
+def get_all_tasks_from_dir(dir_path: Path) -> List[Task]:
+    """Load all tasks from a directory.
+
+    Searches for files named task*.pddl in the given directory.
+
+    Sorts the tasks in order from smallest to largest.
+    """
+    tasks = []
+    for file_path in dir_path.glob("task*.pddl"):
+        num = file_path.name[len("task"):-len(".pddl")]
+        assert num.isdigit()
+        task = get_task_from_dir(dir_path, int(num))
+        tasks.append(task)
+    # Sort by task size.
+    sorted_tasks = sorted(tasks, key=get_task_size)
+    return sorted_tasks
 
 
 def get_pyperplan_benchmark_task(name: str, task_num: int) -> Task:
