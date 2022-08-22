@@ -413,6 +413,31 @@ class _DataAugmentationInitRemovalOperator(_DataAugmentationSearchOperator):
             yield new_problem
 
 
+class _DataAugmentationObjectRemovalOperator(_DataAugmentationSearchOperator):
+    """Augment by removing objects."""
+
+    def _get_successor_problems(
+            self, problem: PyperplanProblem) -> Iterator[PyperplanProblem]:
+        # We could only ever remove objects that are in neither the initial
+        # state nor the goal.
+        used_objects = {
+            o
+            for a in problem.initial_state + problem.goal
+            for o, _ in a.signature
+        }
+        candidate_objects = set(problem.objects) - used_objects
+        for obj_to_remove in candidate_objects:
+            new_objects = {
+                o: problem.objects[o]
+                for o in problem.objects if o != obj_to_remove
+            }
+            assert len(new_objects) < len(problem.objects)
+            new_problem = PyperplanProblem(problem.name, problem.domain,
+                                           new_objects, problem.initial_state,
+                                           problem.goal)
+            yield new_problem
+
+
 def augment_tasks(original_tasks: Sequence[Task],
                   num_iters: int) -> List[Task]:
     """Augment tasks to create a larger collection of smaller tasks.
@@ -420,9 +445,9 @@ def augment_tasks(original_tasks: Sequence[Task],
     The original tasks are included in the returned tasks.
 
     For each original task, repeat until validation fails:
+        - Greedily remove objects.
         - Greedily select a goal atom to remove.
         - Greedily remove init atoms until the problem.
-        - Greedily remove objects. (TODO)
 
     TODO: fix task saving and loading of datasets.
 
@@ -431,8 +456,9 @@ def augment_tasks(original_tasks: Sequence[Task],
     new_tasks = list(original_tasks)
 
     successor_gens = [
+        _DataAugmentationObjectRemovalOperator(),
         _DataAugmentationGoalRemovalOperator(),
-        _DataAugmentationInitRemovalOperator()
+        _DataAugmentationInitRemovalOperator(),
     ]
 
     # Greedy search with respect to task size.
