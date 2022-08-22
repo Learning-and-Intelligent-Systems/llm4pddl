@@ -1,14 +1,14 @@
 # Our main experiments configuration file.
 ---
 APPROACHES:
-  pyperplan-only:
-    NAME: "pure-planning"
-    FLAGS:
-      planner: pyperplan
-  fd-only:
-    NAME: "pure-planning"
-    FLAGS:
-      planner: fastdownward
+  # pyperplan-only:
+  #   NAME: "pure-planning"
+  #   FLAGS:
+  #     planner: pyperplan
+  # fd-only:
+  #   NAME: "pure-planning"
+  #   FLAGS:
+  #     planner: fastdownward
   llm-standard:
     NAME: "llm-standard"
     FLAGS: {}
