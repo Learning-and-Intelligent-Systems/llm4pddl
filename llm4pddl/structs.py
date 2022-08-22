@@ -44,6 +44,13 @@ class Task:
         problem_name = self.problem_file.name[:-len(".pddl")]
         return f"{domain_name}__{problem_name}"
 
+    @cached_property
+    def task_size(self) -> int:
+        """Length of the problem string."""
+        with open(self.problem_file, "r", encoding="utf-8") as f:
+            problem_str = f.read()
+        return len(problem_str)
+
 
 @dataclass(frozen=True)
 class LLMResponse:

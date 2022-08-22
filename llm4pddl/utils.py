@@ -247,6 +247,11 @@ def parse_task(task: Task) -> Tuple[PyperplanDomain, PyperplanProblem]:
     return (domain, problem)
 
 
+def pyperplan_problem_to_str(problem: PyperplanProblem) -> str:
+    """Create a PDDL string from a pyperplan problem."""
+    import ipdb; ipdb.set_trace()
+
+
 @functools.lru_cache(maxsize=None)
 def get_all_ground_operators(task: Task) -> Dict[str, PyperplanAction]:
     """Ground all operators in a task.
@@ -327,15 +332,40 @@ def augment_tasks(original_tasks: Sequence[Task],
     The original tasks are included in the returned tasks.
 
     For each original task, repeat until validation fails:
-        - Select a random object to remove.
-        - Remove all atoms involving that object in the init and goal.
-        - Validate the task by trying to find a plan.
-        - If no plan is found, or if the plan is empty (trivial task), stop.
-        - Otherwise, keep the new task and continue.
+        - Greedily select a goal atom to remove.
+        - Greedily remove init atoms until the problem.
+        - Greedily remove objects.
+
+    Any time the task is validated, we add it to the set of tasks.
 
     An "iter" is one task validation attempt. So at most "iter" new tasks will
     be created, but the number of new tasks may also be much less.
     """
+    new_tasks = list(original_tasks)
+
+    # Helper function.    
+    task_is_solvable = lambda t: run_planning(t, planner=FLAGS.data_gen_planner)
+
+    # Sort from smallest to largest to prioritize tasks that are already short
+    # in case we hit the maximum number of iters.
+    for task in sorted(original_tasks, key=lambda t: t.task_size):
+        # The original task should be solvable.
+        assert task_is_solvable(task)
+        # Parse the task so we can modify it.
+        domain, problem = parse_task(task)
+        # Greedily remove goals.
+        for goal_to_remove in problem.goal:
+            # Create new task.
+            new_goal = [g for g in problem.goal if g != goal_to_remove]
+            new_problem = PyperplanProblem(problem.name, problem.domain, problem.objects, problem.initial_state, new_goal)
+            new_problem_str = pyperplan_problem_to_str(new_problem)
+            new_problem_file = tempfile.NamedTemporaryFile(delete=False).name
+            with open(new_problem_file, "w", encoding="utf-8") as f:
+                f.write(new_problem_str)
+            new_task = Task(domain, new_problem_file)
+            # Check if the new task is solvable.
+            import ipdb; ipdb.set_trace()
+
 
 
 def reset_flags(args: Dict[str, Any], default_seed: int = 123) -> None:
