@@ -47,6 +47,8 @@ class LLMOpenLoopApproach(BaseApproach):
 
     def train(self, dataset: Dataset) -> None:
         prompts = []
+        # TODO make a new flag for this
+        dataset = sorted(dataset, key=lambda d: utils.get_task_size(d.task))[:FLAGS.num_train_tasks]
         for datum in dataset:
             prompt = self._create_prompt(datum.task, datum.solution)
             prompts.append(prompt)
