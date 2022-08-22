@@ -182,7 +182,7 @@ def test_get_pyperplan_benchmark_task():
     # Problem doesn't exist.
     with pytest.raises(FileNotFoundError) as e:
         utils.get_pyperplan_benchmark_task("blocks", 100)
-    assert "Problem not found" in str(e)
+    assert "Problem 100 not found" in str(e)
 
 
 def test_get_custom_task():
@@ -198,7 +198,7 @@ def test_get_custom_task():
     # Problem doesn't exist:
     with pytest.raises(FileNotFoundError) as f:
         task = utils.get_custom_task("dressed", 100)
-    assert "Task not found" in str(f)
+    assert "Problem 100 not found" in str(f)
 
 
 def test_minify_pddl_problem():
