@@ -264,6 +264,13 @@ def parse_task(task: Task) -> Tuple[PyperplanDomain, PyperplanProblem]:
 
 
 @functools.lru_cache(maxsize=None)
+def get_task_size(task: Task) -> int:
+    """A crude estimate of problem complexity."""
+    _, prob = parse_task(task)
+    return len(prob.objects) + len(prob.initial_state) + len(prob.goal)
+
+
+@functools.lru_cache(maxsize=None)
 def get_all_ground_operators(task: Task) -> Dict[str, PyperplanAction]:
     """Ground all operators in a task.
 
