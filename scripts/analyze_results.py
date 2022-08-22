@@ -79,10 +79,16 @@ def _create_summary_table(raw_results: pd.DataFrame) -> None:
             means.loc[row, col] = f"{mean:.2f} ({std:.2f})"
     means["num_seeds"] = sizes
     pd.set_option("expand_frame_repr", False)
-    print("\n\nAGGREGATED DATA OVER SEEDS:")
+    print("\n\nAGGREGATED DATA OVER EVAL TASKS AND SEEDS:")
     print(means.reset_index())
     means.to_csv("results_summary.csv")
     print("\n\nWrote out table to results_summary.csv")
+    # Report the total number of results.
+    print(f"\nTOTAL RESULTS: {df.shape[0]}")
+    # Create an even higher-level summary, averaging over everything except
+    # the approach.
+    print("\nSUMMARY OF THE SUMMARY:")
+    print(df.groupby(["approach"]).mean())
 
 
 if __name__ == "__main__":
