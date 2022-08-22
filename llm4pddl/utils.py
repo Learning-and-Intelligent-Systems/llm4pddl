@@ -27,6 +27,7 @@ LLM_ANSWER_TOKEN = "A:"
 _DIR = Path(__file__).parent
 PYPERPLAN_BENCHMARK_DIR = _DIR / "third_party" / "pyperplan" / "benchmarks"
 CUSTOM_BENCHMARK_DIR = _DIR / "envs" / "assets" / "pddl"
+AUGMENTED_BENCHMARK_DIR = CUSTOM_BENCHMARK_DIR / "augmented"
 
 
 def validate_plan(task: Task, plan: Plan) -> bool:

@@ -1,20 +1,18 @@
 """Environments created by augmenting tasks."""
 
-from typing import List
+from pathlib import Path
 
 from llm4pddl import utils
-from llm4pddl.envs.base_env import BaseEnv
-from llm4pddl.flags import FLAGS
-from llm4pddl.structs import Task
+from llm4pddl.envs.multi_dir_env import MultiDirEnv
 
 
-class AugmentedEnv(BaseEnv):
+class AugmentedEnv(MultiDirEnv):
     """An environment created by augmenting tasks.
-    
+
     This is different from CustomEnv because we want to make a very clear
     separation between tasks that were augmented from train tasks and held-out
-    eval tasks. So we store the tasks in three separate folders per env: train,
-    augmented_train, and eval.
+    eval tasks. So we store the tasks in two separate folders per env: train
+    and eval.
 
     This is different from PyperplanEnv because of the augmentation, and
     because we may want to also augment other kinds of tasks.
@@ -23,18 +21,10 @@ class AugmentedEnv(BaseEnv):
     the main pipeline; see scripts/run_data_augmentation.py.
     """
 
-    def __init__(self, benchmark_name: str) -> None:
-        self._benchmark_name = benchmark_name
-        # For now, load all train and augmented train tasks and choose the
-        # smallest ones to keep. Soon we may replace this by allowing the
-        # approach to choose which of the main train tasks it wants to use.
+    @property
+    def env_prefix(self) -> str:
+        return "augmented"
 
-
-    def get_name(self) -> str:
-        return f"augmented-{self._benchmark_name}"
-
-    def get_train_tasks(self) -> List[Task]:
-        return list(self._train_tasks)
-
-    def get_eval_tasks(self) -> List[Task]:
-        return list(self._eval_tasks)
+    @property
+    def dir_path(self) -> Path:
+        return utils.AUGMENTED_BENCHMARK_DIR
