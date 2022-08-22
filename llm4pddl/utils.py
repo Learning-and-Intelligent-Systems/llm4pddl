@@ -455,31 +455,45 @@ def augment_tasks(original_tasks: Sequence[Task],
     """
     new_tasks = list(original_tasks)
 
-    successor_gens = [
-        _DataAugmentationObjectRemovalOperator(),
-        _DataAugmentationGoalRemovalOperator(),
-        _DataAugmentationInitRemovalOperator(),
-    ]
+    remove_goal_gen =  _DataAugmentationGoalRemovalOperator()
+    remove_obj_gen = _DataAugmentationObjectRemovalOperator()
+    remove_init_gen = _DataAugmentationInitRemovalOperator()
+
+    def _greedy_minimize(task: Task) -> Task:
+        while True:
+            improvement_found = False
+            for gen in [remove_obj_gen, remove_init_gen]:
+                for succ in gen.get_successors(task):
+                    task = succ
+                    improvement_found = True
+                    break
+            if not improvement_found:
+                break
+        return task
 
     # Greedy search with respect to task size.
     queue = [(get_task_size(t), i, t) for i, t in enumerate(original_tasks)]
     tiebreak = len(original_tasks)
+    visited = {t.problem_str for t in original_tasks}
 
     for it in range(num_iters):
         if not queue:
             logging.debug("Data augmentation queue exhausted.")
             break
         logging.debug(f"Data augmentation iteration {it}/{num_iters}")
-        prio, _, task = heapq.heappop(queue)
-        for successor_gen in successor_gens:
-            for succ in successor_gen.get_successors(task):
-                tiebreak += 1
-                new_tasks.append(succ)
-                succ_prio = get_task_size(succ)
-                heapq.heappush(queue, (succ_prio, tiebreak, succ))
-                # Super greedy! Break as soon as ANY improvement is found.
-                if succ_prio < prio:
-                    break
+        _, _, task = heapq.heappop(queue)
+        logging.debug(f"Popped task with size: {get_task_size(task)}")
+        for succ in remove_goal_gen.get_successors(task):
+            logging.debug(f"Task size before minimize: {get_task_size(succ)}")
+            succ = _greedy_minimize(succ)
+            logging.debug(f"Task size after minimize: {get_task_size(succ)}")
+            if succ.problem_str in visited:
+                continue
+            visited.add(succ.problem_str)
+            tiebreak += 1
+            new_tasks.append(succ)
+            succ_prio = get_task_size(succ)
+            heapq.heappush(queue, (succ_prio, tiebreak, succ))
 
     logging.debug(f"Data augmentation generated {len(new_tasks)} tasks "
                   f"(including the original {len(original_tasks)} tasks).")

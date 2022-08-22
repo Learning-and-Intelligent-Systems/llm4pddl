@@ -26,6 +26,13 @@ class Task:
     problem_file: Path
 
     @cached_property
+    def problem_str(self) -> str:
+        """The problem string."""
+        with open(self.problem_file, "r", encoding="utf-8") as f:
+            problem_str = f.read()
+        return problem_str
+
+    @cached_property
     def task_id(self) -> str:
         """A unique identifier for this task."""
         # Use the name of the domain from the domain file.
