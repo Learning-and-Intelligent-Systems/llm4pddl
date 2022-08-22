@@ -127,7 +127,7 @@ def _summarize_diff(a_df: pd.DataFrame, b_df: pd.DataFrame) -> None:
         assert rows.shape[0] == 1
         success = rows.success.item()
         expanded = rows.nodes_expanded.item()
-        return (success, expanded)
+        return (success, -1 * expanded)  # lower expanded is better
 
     # Print five cases: same in both; in A but not in B; in B but not in A;
     # better in A than in B; better in B than in A. Here "better" is defined
