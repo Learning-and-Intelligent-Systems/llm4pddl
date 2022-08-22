@@ -1,5 +1,6 @@
 """Utility functions."""
 
+import abc
 import functools
 import hashlib
 import heapq
@@ -356,48 +357,83 @@ def is_subtype(type1: PyperplanType, type2: PyperplanType) -> bool:
     return False
 
 
-def augment_tasks(original_tasks: Sequence[Task],
-                  num_iters: int) -> List[Task]:
-    """Augment tasks to create a larger collection.
+class _DataAugmentationSearchOperator(abc.ABC):
+    """Helper for augment_tasks()."""
 
-    The original tasks are included in the returned tasks.
-
-    For each original task, repeat until validation fails:
-        - Greedily select a goal atom to remove.
-        - Greedily remove init atoms until the problem. (TODO)
-        - Greedily remove objects. (TODO)
-
-    Any time the task is validated, we add it to the set of tasks.
-    """
-    new_tasks = list(original_tasks)
-    planner = FLAGS.data_gen_planner
-
-    # Helper function.
-    task_is_solvable = lambda t: run_planning(t, planner)[0] is not None
-
-    # Successor generation in search over tasks.
-    def _succ_gen_remove_goals(task: Task) -> Iterator[Task]:
+    def get_successors(self, task: Task) -> Iterator[Task]:
+        """Generate successor tasks."""
         _, problem = parse_task(task)
-        for goal_to_remove in problem.goal:
-            new_goal = [g for g in problem.goal if g != goal_to_remove]
-            new_problem = PyperplanProblem(problem.name, problem.domain,
-                                           problem.objects,
-                                           problem.initial_state, new_goal)
+        for new_problem in self._get_successor_problems(problem):
             new_problem_str = pyperplan_problem_to_str(new_problem)
             new_problem_file = tempfile.NamedTemporaryFile(delete=False,
                                                            suffix=".pddl").name
             with open(new_problem_file, "w", encoding="utf-8") as f:
                 f.write(new_problem_str)
             new_task = Task(task.domain_file, Path(new_problem_file))
-            # Removing a goal should never make the task not solvable, but it
-            # may make the task trivial.
-            plan, _ = run_planning(new_task, planner)
+            # Check if plan is trivial or not found.
+            plan, _ = run_planning(new_task, FLAGS.data_gen_planner)
             if not plan:
                 os.remove(new_problem_file)
                 continue
             yield new_task
 
-    successor_gens = [_succ_gen_remove_goals]
+    @abc.abstractmethod
+    def _get_successor_problems(
+            self, problem: PyperplanProblem) -> Iterator[PyperplanProblem]:
+        """Generate successor pyperplan problems."""
+        raise NotImplementedError("Override me!")
+
+
+class _DataAugmentationGoalRemovalOperator(_DataAugmentationSearchOperator):
+    """Augment by removing parts of the goal."""
+
+    def _get_successor_problems(
+            self, problem: PyperplanProblem) -> Iterator[PyperplanProblem]:
+        for goal_to_remove in problem.goal:
+            new_goal = [g for g in problem.goal if g != goal_to_remove]
+            new_problem = PyperplanProblem(problem.name, problem.domain,
+                                           problem.objects,
+                                           problem.initial_state, new_goal)
+            yield new_problem
+
+
+class _DataAugmentationInitRemovalOperator(_DataAugmentationSearchOperator):
+    """Augment by removing parts of the initial state."""
+
+    def _get_successor_problems(
+            self, problem: PyperplanProblem) -> Iterator[PyperplanProblem]:
+        for init_to_remove in problem.initial_state:
+            new_initial_state = [
+                a for a in problem.initial_state if a != init_to_remove
+            ]
+            assert len(new_initial_state) < len(problem.initial_state)
+            new_problem = PyperplanProblem(problem.name, problem.domain,
+                                           problem.objects, new_initial_state,
+                                           problem.goal)
+            yield new_problem
+
+
+def augment_tasks(original_tasks: Sequence[Task],
+                  num_iters: int) -> List[Task]:
+    """Augment tasks to create a larger collection of smaller tasks.
+
+    The original tasks are included in the returned tasks.
+
+    For each original task, repeat until validation fails:
+        - Greedily select a goal atom to remove.
+        - Greedily remove init atoms until the problem.
+        - Greedily remove objects. (TODO)
+
+    TODO: fix task saving and loading of datasets.
+
+    Any time the task is validated, we add it to the set of tasks.
+    """
+    new_tasks = list(original_tasks)
+
+    successor_gens = [
+        _DataAugmentationGoalRemovalOperator(),
+        _DataAugmentationInitRemovalOperator()
+    ]
 
     # Greedy search with respect to task size.
     queue = [(get_task_size(t), i, t) for i, t in enumerate(original_tasks)]
@@ -408,12 +444,16 @@ def augment_tasks(original_tasks: Sequence[Task],
             logging.debug("Data augmentation queue exhausted.")
             break
         logging.debug(f"Data augmentation iteration {it}/{num_iters}")
-        _, _, task = heapq.heappop(queue)
-        for generate_successors in successor_gens:
-            for succ in generate_successors(task):
+        prio, _, task = heapq.heappop(queue)
+        for successor_gen in successor_gens:
+            for succ in successor_gen.get_successors(task):
                 tiebreak += 1
                 new_tasks.append(succ)
-                heapq.heappush(queue, (get_task_size(succ), tiebreak, succ))
+                succ_prio = get_task_size(succ)
+                heapq.heappush(queue, (succ_prio, tiebreak, succ))
+                # Super greedy! Break as soon as ANY improvement is found.
+                if succ_prio < prio:
+                    break
 
     logging.debug(f"Data augmentation generated {len(new_tasks)} tasks "
                   f"(including the original {len(original_tasks)} tasks).")
