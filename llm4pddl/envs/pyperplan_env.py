@@ -30,12 +30,7 @@ class PyperplanEnv(BaseEnv):
         assert len(all_tasks) >= FLAGS.num_train_tasks + FLAGS.num_eval_tasks
 
         # Sort from smallest to largest.
-        def _get_task_size(task: Task) -> int:
-            with open(task.problem_file, "r", encoding="utf-8") as f:
-                problem_str = f.read()
-            return len(problem_str)
-
-        sorted_tasks = sorted(all_tasks, key=_get_task_size)
+        sorted_tasks = sorted(all_tasks, key=utils.get_task_size)
         # Split into train and eval.
         self._train_tasks = sorted_tasks[:FLAGS.num_train_tasks]
         self._eval_tasks = sorted_tasks[FLAGS.num_train_tasks:(
