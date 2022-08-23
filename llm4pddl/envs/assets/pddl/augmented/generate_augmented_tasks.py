@@ -162,6 +162,7 @@ def _augment_tasks(original_tasks: Sequence[Task],
 
     return new_tasks
 
+
 def _save_tasks(tasks: Sequence[Task], save_path: Path) -> None:
     assert len(tasks) > 0
     os.makedirs(save_path, exist_ok=True)
@@ -181,7 +182,7 @@ def _save_tasks(tasks: Sequence[Task], save_path: Path) -> None:
         with open(problem_file_path, "w", encoding="utf-8") as f:
             f.write(task.problem_str)
     print(f"Saved tasks to {save_path}")
-    
+
 
 def _main(original_task_dir: str, out_dir: str, num_original_train_tasks: int,
           max_num_iters: int) -> None:
@@ -214,6 +215,5 @@ if __name__ == "__main__":
         "data_gen_planner": args.data_gen_planner,
         "planning_timeout": args.planning_timeout,
     })
-    _main(args.original_task_dir, args.out_dir,
-        args.num_original_train_tasks,
+    _main(args.original_task_dir, args.out_dir, args.num_original_train_tasks,
           args.max_num_iters)
