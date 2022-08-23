@@ -378,6 +378,19 @@ A:
 (make blue)(end)"""
 
 
+def test_embed_training_tasks():
+    utils.reset_flags({
+        "embedding_model_name": "paraphrase-MiniLM-L6-v2",
+        "llm_prompt_flatten_pddl": True
+    })
+    tasks = [utils.get_custom_task('dressed', i) for i in range(1, 5)]
+    embedding_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
+    for j, emb in enumerate(utils.embed_training_tasks(tasks)):
+        assert np.all(
+            emb == utils.embed_task(utils.get_custom_task('dressed', j +
+                                                          1), embedding_model))
+
+
 def test_embed_task():
     """Tests for embed_task()."""
     utils.reset_flags({
@@ -408,7 +421,11 @@ def test_make_embeddings_mapping():
 
 def test_get_closest():
     """Tests for get_closest()."""
-    task01 = utils.get_custom_task('dressed', 1)
+    utils.reset_flags({
+        "llm_prompt_flatten_pddl": True,
+        "embedding_model_name": "paraphrase-MiniLM-L6-v2"
+    })
+    dressed01 = utils.get_custom_task('dressed', 1)
     tasks = [utils.get_custom_task('dressed', i) for i in range(2, 5)]
     blocks01 = utils.get_pyperplan_benchmark_task('blocks', 1)
     blocks02 = utils.get_pyperplan_benchmark_task('blocks', 2)
@@ -419,16 +436,16 @@ def test_get_closest():
     dataset = [Datum(task, ['insert plan here']) for task in tasks]
     embeddings_mapping = utils.make_embeddings_mapping(embeddings, dataset)
     # checking correct output size
-    most_similar = utils.get_closest(task01, embeddings_mapping, 1)
+    most_similar = utils.get_closest(dressed01, embeddings_mapping, 1)
     assert len(most_similar) == 1
-    most_similar2 = utils.get_closest(task01, embeddings_mapping, 3)
+    most_similar2 = utils.get_closest(dressed01, embeddings_mapping, 3)
     assert len(most_similar2) == 3
-    most_similar3 = utils.get_closest(task01, embeddings_mapping, 4)
+    most_similar3 = utils.get_closest(dressed01, embeddings_mapping, 4)
     assert len(most_similar3) == 4
     # checking that blocks is the least likely:
     assert most_similar3[0].task == utils.get_pyperplan_benchmark_task(
         'blocks', 1)
-    dif_tasks = [task01, blocks01, depot01]
+    dif_tasks = [dressed01, blocks01, depot01]
     dif_embeddings = [
         utils.embed_task(task, embedding_model) for task in dif_tasks
     ]
@@ -437,14 +454,41 @@ def test_get_closest():
     most_sim1 = utils.get_closest(blocks02, dif_emb_map, 1)
     # checking that blocks is the most likely of the 3:
     assert most_sim1[0].task == utils.get_pyperplan_benchmark_task('blocks', 1)
+    # big example selecting the correct tasks each time:
+    dressed = [utils.get_custom_task('dressed', i) for i in range(2, 5)]
+    depot = [
+        utils.get_pyperplan_benchmark_task('depot', i) for i in range(2, 5)
+    ]
+    blocks = [
+        utils.get_pyperplan_benchmark_task('blocks', i) for i in range(2, 5)
+    ]
+    big_tasks = dressed + depot + blocks
+    big_embeddings = [
+        utils.embed_task(task, embedding_model) for task in big_tasks
+    ]
+    big_dataset = [Datum(task, ['insert plan here']) for task in big_tasks]
+    big_emb_map = utils.make_embeddings_mapping(big_embeddings, big_dataset)
+    # comparing to dressed:
+    most_similar_dressed = utils.get_closest(dressed01, big_emb_map, 9)
+    assert len(most_similar_dressed) == len(big_tasks)
+    for datum in most_similar_dressed[-3:]:
+        assert datum.task in dressed
 
-    # test that the order returned is good.
-    # make helper function to return the order?
-    # so that it is easier to scrutinize?
-    # do a couple tests with two problems,
-    # one form dif domains and then check if order is correct.
-    # do a big test with many probs and check that all of the correct domains
-    # are filtered to be more similar than the foreign domains.
+    # comparing to blocks:
+    most_similar_blocks = utils.get_closest(blocks01, big_emb_map, 9)
+    for datum in most_similar_blocks[-3:]:
+        assert datum.task in blocks
+
+    # comparing to depot:
+    most_similar_depot = utils.get_closest(depot01, big_emb_map, 9)
+    for datum in most_similar_depot[-3:]:
+        assert datum.task in depot
+
+    # proving identical is considered best:
+    most_sim = utils.get_closest(blocks02, big_emb_map, 9)[-1]
+    assert most_sim.task == utils.get_pyperplan_benchmark_task('blocks', 2)
+
+    #make test here that shows it selects a more similar task in the same domain.
 
 
 def test_get_cosine_sim():
@@ -494,38 +538,8 @@ def test_run_planning(domain_file, problem_file, impossible_problem_file):
 
 
 if __name__ == "__main__":
+    test_embed_training_tasks()
     test_embed_task()
-    # test_get_all_env_tasks()
-    # test_embed_env_tasks()
     test_get_cosine_sim()
-    #     test_minify_pddl_problem()
     test_make_embeddings_mapping()
     test_get_closest()
-
-#     q_a_example = """Q:
-# (:objects
-# red blue - color
-# )
-# (:init
-# (here red)
-# )
-# (:goal
-# (and (here red) (here blue))
-# )
-# A:
-# (make blue)
-# (end)"""
-#     goal = """Q:
-# (:objects
-# red blue - color)
-# (:init
-# (here red))
-# (:goal
-# (and (here red)(here blue)))
-# A:
-# (make blue)
-# (end)"""
-#     utils.reset_flags({"llm_prompt_flatten_pddl": False})
-#     out = utils.minify_pddl_problem(q_a_example)
-#     import pdb
-#     pdb.set_trace()

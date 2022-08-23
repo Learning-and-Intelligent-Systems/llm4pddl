@@ -267,6 +267,7 @@ def embed_task(task: Task, embedding_model: SentenceTransformer) -> List:
 def make_embeddings_mapping(embeddings: Sequence,
                             dataset: Dataset) -> List[Dict]:
     """Makes embeddings mapping for training data."""
+    assert len(embeddings) == len(dataset)
     return [{
         'embedding': emb,
         'datum': datum
@@ -292,13 +293,15 @@ def get_closest(task: Task, embeddings_mapping: List[Dict],
     # it is here that we would instead
     # need to get the extracted init and goal strings.
     # we will need a get_init_string() and get_goal_string() helper functions.
-    closest_datums = []
-    for _ in range(num_train):
-        highest_cossim_index = np.argmax(cos_sims)
-        # cossim_val = cos_sims.pop(highest_cossim_index)
-        datum = embeddings_map.pop(highest_cossim_index)['datum']
-        closest_datums.append(datum)
-    closest_datums.reverse()
+
+    indicies = np.argsort(cos_sims)[-num_train:]
+    closest_datums = [embeddings_map[ind]['datum'] for ind in indicies]
+    # for _ in range(num_train):
+    #     highest_cossim_index = np.argmax(cos_sims)
+    #     # cossim_val = cos_sims.pop(highest_cossim_index)
+    #     datum = embeddings_map.pop(highest_cossim_index)['datum']
+    #     closest_datums.append(datum)
+    # closest_datums.reverse()
     return closest_datums
 
 
@@ -425,13 +428,3 @@ def str_to_identifier(x: str) -> str:
         https://stackoverflow.com/questions/5297448
     """
     return hashlib.md5(x.encode('utf-8')).hexdigest()
-
-
-if __name__ == "__main__":
-    get_custom_task('dressed', 31)
-#     task01_path = get_custom_task('dressed', 1).problem_file
-#     with open(task01_path, 'r', encoding='utf-8') as f:
-#         task01 = f.read()
-#     mini_task01 = minify_pddl_problem(task01)
-#     flattened_task01 = flatten_pddl_problem(mini_task01)
-#     print(flattened_task01)

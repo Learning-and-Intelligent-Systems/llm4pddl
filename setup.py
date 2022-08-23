@@ -18,6 +18,7 @@ setup(name="llm4pddl",
           "pandas-stubs",
           "openai",
           "transformers",
+          "sentence-transformers"
       ],
       setup_requires=['setuptools_scm'],
       include_package_data=True,
