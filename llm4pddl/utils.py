@@ -212,16 +212,6 @@ def get_all_tasks_from_dir(dir_path: Path) -> List[Task]:
     return sorted_tasks
 
 
-def get_pyperplan_benchmark_task(name: str, task_num: int) -> Task:
-    """Get the paths to the pyperplan benchmark domain and problem files."""
-    return get_task_from_dir(PYPERPLAN_BENCHMARK_DIR / name, task_num)
-
-
-def get_custom_task(name: str, task_num: int) -> Task:
-    """Get the paths to the custom domain and problem files."""
-    return get_task_from_dir(CUSTOM_BENCHMARK_DIR / name, task_num)
-
-
 def minify_pddl_problem(problem: str) -> str:
     """Maps a string of a problem file to a new string.
 

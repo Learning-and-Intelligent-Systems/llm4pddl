@@ -15,7 +15,3 @@ def test_custom_env():
         assert len(training_tasks) == 5
         eval_tasks = env.get_eval_tasks()
         assert len(eval_tasks) == 10
-        for task_num, train_task in enumerate(training_tasks):
-            task_num += 1
-            assert train_task.domain_file == utils.get_custom_task(
-                env_name, task_num).domain_file
