@@ -46,8 +46,8 @@ class Task:
     def problem_str(self) -> str:
         """Load and cache the problem string."""
         with open(self.problem_file, "r", encoding="utf-8") as f:
-            problem_file = f.read()
-        return problem_file
+            problem_str = f.read()
+        return problem_str
 
     @cached_property
     def domain_str(self) -> str:
