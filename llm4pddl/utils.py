@@ -298,7 +298,7 @@ def get_next_task_from_action(task: Task, action_str: str) -> Optional[Task]:
                                                suffix=".pddl").name
     with open(problem_file, "w", encoding="utf-8") as f:
         f.write(problem_str)
-    return Task(task.domain_file, problem_file)
+    return Task(task.domain_file, Path(problem_file))
 
 
 def pyperplan_problem_to_str(problem: PyperplanProblem) -> str:

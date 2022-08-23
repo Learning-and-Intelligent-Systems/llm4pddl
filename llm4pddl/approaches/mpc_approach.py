@@ -1,7 +1,6 @@
 """A meta-approach that uses model-predictive control with another approach."""
 
-import logging
-from typing import List, Optional, Tuple
+from typing import Optional, Tuple
 
 from llm4pddl import utils
 from llm4pddl.approaches.base_approach import BaseApproach
@@ -25,7 +24,7 @@ class MPCApproach(BaseApproach):
         return self._wrapped_approach.is_planning_based
 
     def get_name(self) -> str:
-        return f"mpc-{self.wrapped_approach.get_name()}"
+        return f"mpc-{self._wrapped_approach.get_name()}"
 
     def solve(self, task: Task) -> Tuple[Optional[Plan], TaskMetrics]:
         executed_actions: Plan = []
@@ -56,9 +55,10 @@ class MPCApproach(BaseApproach):
             # returns None if the action is not applicable.
             act = plan.pop(0)
             executed_actions.append(act)
-            current_task = utils.get_next_task_from_action(current_task, act)
-            if not current_task:
+            next_task = utils.get_next_task_from_action(current_task, act)
+            if next_task is None:
                 return None, cumulative_metrics
+            current_task = next_task
 
         return executed_actions, cumulative_metrics
 
