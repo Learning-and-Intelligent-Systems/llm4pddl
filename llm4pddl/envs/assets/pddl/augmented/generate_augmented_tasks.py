@@ -3,7 +3,8 @@
 Usage example:
 
     python llm4pddl/envs/assets/pddl/augmented/generate_augmented_tasks.py \
-        --original_task_dir llm4pddl/third_party/pyperplan/benchmarks/logistics
+        --out_dir llm4pddl/envs/assets/pddl/augmented/blocks \
+        --original_task_dir llm4pddl/third_party/pyperplan/benchmarks/blocks
 """
 
 import abc
@@ -161,8 +162,28 @@ def _augment_tasks(original_tasks: Sequence[Task],
 
     return new_tasks
 
+def _save_tasks(tasks: Sequence[Task], save_path: Path) -> None:
+    assert len(tasks) > 0
+    os.makedirs(save_path, exist_ok=True)
+    # Check whether to save one or several domain files.
+    if tasks[0].domain_file.name == "domain.pddl":
+        assert all(t.domain_file.name == "domain.pddl" for t in tasks)
+        with open(save_path / "domain.pddl", "w", encoding="utf-8") as f:
+            f.write(tasks[0].domain_str)
+    else:
+        for i, task in enumerate(tasks):
+            domain_file_path = save_path / f"domain{i+1}.pddl"
+            with open(domain_file_path, "w", encoding="utf-8") as f:
+                f.write(task.domain_str)
+    # Save the problem files.
+    for i, task in enumerate(tasks):
+        problem_file_path = save_path / f"task{i+1}.pddl"
+        with open(problem_file_path, "w", encoding="utf-8") as f:
+            f.write(task.problem_str)
+    print(f"Saved tasks to {save_path}")
+    
 
-def _main(original_task_dir: str, num_original_train_tasks: int,
+def _main(original_task_dir: str, out_dir: str, num_original_train_tasks: int,
           max_num_iters: int) -> None:
     # Load all the original tasks.
     all_tasks = utils.get_all_tasks_from_dir(Path(original_task_dir))
@@ -171,13 +192,19 @@ def _main(original_task_dir: str, num_original_train_tasks: int,
     train_tasks = all_tasks[:num_original_train_tasks]
     eval_tasks = all_tasks[num_original_train_tasks:]
     # Augment the train tasks.
-    new_tasks = _augment_tasks(train_tasks, max_num_iters)
-    # TODO: Save the augmented tasks.
+    new_train_tasks = _augment_tasks(train_tasks, max_num_iters)
+    # Make the outdirs.
+    out_path = Path(out_dir)
+    train_path = out_path / "train"
+    eval_path = out_path / "eval"
+    _save_tasks(new_train_tasks, train_path)
+    _save_tasks(eval_tasks, eval_path)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--original_task_dir", required=True, type=str)
+    parser.add_argument("--out_dir", required=True, type=str)
     parser.add_argument("--num_original_train_tasks", default=5, type=int)
     parser.add_argument("--max_num_iters", default=100, type=int)
     parser.add_argument("--data_gen_planner", default="fastdownward", type=str)
@@ -187,5 +214,6 @@ if __name__ == "__main__":
         "data_gen_planner": args.data_gen_planner,
         "planning_timeout": args.planning_timeout,
     })
-    _main(args.original_task_dir, args.num_original_train_tasks,
+    _main(args.original_task_dir, args.out_dir,
+        args.num_original_train_tasks,
           args.max_num_iters)
