@@ -112,6 +112,19 @@ def _greedy_minimize(task: Task) -> Task:
     return _problem_to_task(problem, domain_file)
 
 
+def _get_task_identifier(task: Task) -> str:
+    # Don't care about the problem name.
+    problem_str = task.problem_str.lower()
+    problem_name_start_idx = problem_str.index("(problem")
+    problem_name_rel_end_idx = problem_str[problem_name_start_idx:].index(")")
+    end_idx = problem_name_start_idx + problem_name_rel_end_idx
+    identifier = problem_str[end_idx:]
+    assert "(:objects" in identifier
+    assert "(:init" in identifier
+    assert "(:goal" in identifier
+    return identifier
+
+
 def _augment_tasks(original_tasks: Sequence[Task],
                    num_iters: int) -> List[Task]:
     """Augment tasks to create a larger collection of smaller tasks.
@@ -133,13 +146,14 @@ def _augment_tasks(original_tasks: Sequence[Task],
     queue = [(utils.get_task_size(t), i, t)
              for i, t in enumerate(original_tasks)]
     tiebreak = len(original_tasks)
-    visited = {t.problem_str for t in original_tasks}
+    visited = {_get_task_identifier(t) for t in original_tasks}
 
     # Start by minimizing the original tasks.
     for task in original_tasks:
         succ = _greedy_minimize(task)
-        if succ.problem_str not in visited:
-            visited.add(succ.problem_str)
+        succ_id = _get_task_identifier(succ)
+        if succ_id not in visited:
+            visited.add(succ_id)
             tiebreak += 1
             new_tasks.append(succ)
             succ_prio = utils.get_task_size(succ)
@@ -155,10 +169,11 @@ def _augment_tasks(original_tasks: Sequence[Task],
         for succ in remove_goal_gen.get_successors(task):
             print(f"Task size before minimize: {utils.get_task_size(succ)}")
             succ = _greedy_minimize(succ)
+            succ_id = _get_task_identifier(succ)
             print(f"Task size after minimize: {utils.get_task_size(succ)}")
-            if succ.problem_str in visited:
+            if succ_id in visited:
                 continue
-            visited.add(succ.problem_str)
+            visited.add(succ_id)
             tiebreak += 1
             new_tasks.append(succ)
             succ_prio = utils.get_task_size(succ)
