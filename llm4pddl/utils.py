@@ -281,6 +281,33 @@ def parse_task(task: Task) -> Tuple[PyperplanDomain, PyperplanProblem]:
     return (domain, problem)
 
 
+def pyperplan_problem_to_str(problem: PyperplanProblem) -> str:
+    """Create a PDDL string from a pyperplan problem."""
+    # Sort everything to ensure determinism.
+    objects_str = "\n    ".join(f"{o} - {problem.objects[o]}"
+                                for o in sorted(problem.objects))
+
+    def _atom_to_str(atom: PyperplanPredicate) -> str:
+        pred_name = atom.name
+        if not atom.signature:
+            return f"({pred_name})"
+        args_str = " ".join(obj for obj, _ in atom.signature)
+        return f"({pred_name} {args_str})"
+
+    init_str = "\n    ".join(_atom_to_str(a) for a in problem.initial_state)
+    goal_str = " ".join(_atom_to_str(a) for a in problem.goal)
+
+    return f"""(define (problem {problem.name})
+  (:domain {problem.domain.name})
+  (:objects\n    {objects_str}
+  )
+  (:init\n    {init_str}
+  )
+  (:goal (and {goal_str}))
+)
+"""
+
+
 @functools.lru_cache(maxsize=None)
 def get_task_size(task: Task) -> int:
     """A crude estimate of problem complexity."""
