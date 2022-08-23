@@ -20,7 +20,7 @@ class MultiDirEnv(BaseEnv):
         self._train_tasks = utils.get_all_tasks_from_dir(train_dir)
         assert len(self._train_tasks) >= FLAGS._train_tasks
         self._train_tasks = self._train_tasks[:FLAGS._train_tasks]
-        
+
         eval_dir = self.dir_path / benchmark_name / "eval"
         self._eval_tasks = utils.get_all_tasks_from_dir(eval_dir)
         assert len(self._eval_tasks) >= FLAGS.num_eval_tasks
