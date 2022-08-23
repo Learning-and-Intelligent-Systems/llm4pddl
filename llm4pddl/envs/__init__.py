@@ -34,8 +34,11 @@ CUSTOM_BENCHMARKS = [
     "medium_delivery", "easy_spanner", "medium_spanner"
 ]
 
-ALL_ENVS = [f"pyperplan-{b}" for b in PYPERPLAN_BENCHMARKS
-            ] + [f"custom-{b}" for b in CUSTOM_BENCHMARKS]
+AUGMENTED_BENCHMARKS = ["blocks"]
+
+ALL_ENVS = [f"pyperplan-{b}" for b in PYPERPLAN_BENCHMARKS] + [
+    f"custom-{b}" for b in CUSTOM_BENCHMARKS
+] + [f"augmented-{b}" for b in AUGMENTED_BENCHMARKS]
 
 
 def create_env(env_name: str) -> BaseEnv:
