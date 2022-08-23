@@ -122,10 +122,13 @@ class LLMOpenLoopApproach(BaseApproach):
         # Return the first plan that succeeds. Subclasses may override.
         # By default, this class doesn't plan, so there are no metrics.
         metrics: TaskMetrics = {}
-        for response in responses:
+        num_responses = len(responses)
+        for i, response in enumerate(responses):
             logging.debug(f"Processing response:\n{response.response_text}")
             plan = self._llm_response_to_plan(response, task)
-            if utils.validate_plan(task, plan):
+            # If this is the last response, return it regardless. This is
+            # useful when MPC wraps this approach.
+            if i == (num_responses - 1) or utils.validate_plan(task, plan):
                 return plan, metrics
         return None, metrics
 

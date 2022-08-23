@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Collection, Dict, List, Optional, Sequence, Set, Tuple
 
 import numpy as np
+from pyperplan.grounding import _get_fact as pyperplan_atom_to_fact
 from pyperplan.grounding import ground as pyperplan_ground
 from pyperplan.pddl.parser import Parser
 from pyperplan.planner import HEURISTICS, SEARCHES, search_plan
@@ -272,6 +273,34 @@ def parse_task(task: Task) -> Tuple[PyperplanDomain, PyperplanProblem]:
     return (domain, problem)
 
 
+def get_next_task_from_action(task: Task, action_str: str) -> Optional[Task]:
+    """Take the action from the initial state in the task and return the
+    resulting task.
+
+    If the action is not applicable, return None.
+    """
+    domain, problem = parse_task(task)
+    facts = frozenset(map(pyperplan_atom_to_fact, problem.initial_state))
+    op = parse_plan_step(action_str, task)
+    if op is None:
+        return None
+    if not op.applicable(facts):
+        return None
+    next_facts = sorted(op.apply(facts))
+    next_initial_state = [
+        pyperplan_fact_to_atom(f, domain) for f in next_facts
+    ]
+    new_problem = PyperplanProblem(problem.name, problem.domain,
+                                   problem.objects, next_initial_state,
+                                   problem.goal)
+    problem_str = pyperplan_problem_to_str(new_problem)
+    problem_file = tempfile.NamedTemporaryFile(delete=False,
+                                               suffix=".pddl").name
+    with open(problem_file, "w", encoding="utf-8") as f:
+        f.write(problem_str)
+    return Task(task.domain_file, problem_file)
+
+
 def pyperplan_problem_to_str(problem: PyperplanProblem) -> str:
     """Create a PDDL string from a pyperplan problem."""
     # Sort everything to ensure determinism.
@@ -297,6 +326,22 @@ def pyperplan_problem_to_str(problem: PyperplanProblem) -> str:
   (:goal (and {goal_str}))
 )
 """
+
+
+def pyperplan_fact_to_atom(fact: str,
+                           domain: PyperplanDomain) -> PyperplanPredicate:
+    """Convert a pyperplan fact into an atom."""
+    if " " in fact:
+        pred_name, remainder = fact[1:-1].split(" ", 1)
+        args = remainder.split(" ")
+    else:
+        pred_name = fact[1:-1]
+        args = []
+    predicate = domain.predicates[pred_name]
+    assert len(args) == len(predicate.signature)
+    types = [t for _, (t, ) in predicate.signature]
+    signature = list(zip(args, types))
+    return PyperplanPredicate(pred_name, signature)
 
 
 @functools.lru_cache(maxsize=None)

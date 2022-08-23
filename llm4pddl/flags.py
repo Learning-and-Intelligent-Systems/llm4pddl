@@ -42,5 +42,6 @@ def parse_flags() -> None:
                         const=logging.DEBUG,
                         default=logging.INFO)
     parser.add_argument('--llm_prompt_flatten_pddl', action='store_true')
+    parser.add_argument("--mpc_max_steps", default=500, type=int)
     args = parser.parse_args()
     FLAGS.__dict__.update(args.__dict__)
