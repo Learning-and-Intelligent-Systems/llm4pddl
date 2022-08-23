@@ -1,0 +1,94 @@
+# Our main experiments configuration file.
+---
+APPROACHES:
+  pyperplan-only:
+    NAME: "pure-planning"
+    FLAGS:
+      planner: pyperplan
+  fd-only:
+    NAME: "pure-planning"
+    FLAGS:
+      planner: fastdownward
+  llm-standard:
+    NAME: "llm-standard"
+    FLAGS: {}
+  llm-multi:
+    NAME: "llm-multi"
+    FLAGS: {}
+  llm-standard-plan:
+    NAME: "llm-standard-plan"
+    FLAGS: {}
+  llm-multi-plan:
+    NAME: "llm-multi-plan"
+    FLAGS: {}
+ENVS:
+  airport:
+    NAME: "augmented-pyperplan-airport"
+    FLAGS: {}
+  blocks:
+    NAME: "augmented-pyperplan-blocks"
+    FLAGS: {}
+  depot:
+    NAME: "augmented-pyperplan-depot"
+    FLAGS: {}
+  elevators:
+    NAME: "augmented-pyperplan-elevators"
+    FLAGS: {}
+  freecell:
+    NAME: "augmented-pyperplan-freecell"
+    FLAGS: {}
+  gripper:
+    NAME: "augmented-pyperplan-gripper"
+    FLAGS: {}
+  logistics:
+    NAME: "augmented-pyperplan-logistics"
+    FLAGS: {}
+  miconic:
+    NAME: "augmented-pyperplan-miconic"
+    FLAGS: {}
+  movie:
+    NAME: "augmented-pyperplan-movie"
+    FLAGS: {}
+  openstacks:
+    NAME: "augmented-pyperplan-openstacks"
+    FLAGS: {}
+  parcprinter:
+    NAME: "augmented-pyperplan-parcprinter"
+    FLAGS: {}
+  pegsol:
+    NAME: "augmented-pyperplan-pegsol"
+    FLAGS: {}
+  psr-small:
+    NAME: "augmented-pyperplan-psr-small"
+    FLAGS: {}
+  rovers:
+    NAME: "augmented-pyperplan-rovers"
+    FLAGS: {}
+  satellite:
+    NAME: "augmented-pyperplan-satellite"
+    FLAGS: {}
+  scanalyzer:
+    NAME: "augmented-pyperplan-scanalyzer"
+    FLAGS: {}
+  sokoban:
+    NAME: "augmented-pyperplan-sokoban"
+    FLAGS: {}
+  tpp:
+    NAME: "augmented-pyperplan-tpp"
+    FLAGS: {}
+  transport:
+    NAME: "augmented-pyperplan-transport"
+    FLAGS: {}
+  woodworking:
+    NAME: "augmented-pyperplan-woodworking"
+    FLAGS: {}
+  zenotravel:
+    NAME: "augmented-pyperplan-zenotravel"
+    FLAGS: {}
+ARGS:
+  - "debug"
+FLAGS:
+  num_train_tasks: 5
+  num_eval_tasks: 10
+START_SEED: 456
+NUM_SEEDS: 1
