@@ -1,25 +1,22 @@
-"""Data augmentation script."""
+"""Data augmentation script.
+
+Usage example:
+
+    python llm4pddl/envs/assets/pddl/augmented/generate_augmented_tasks.py \
+        --original_task_dir llm4pddl/third_party/pyperplan/benchmarks/logistics
+"""
 
 import abc
 import argparse
-import functools
-import hashlib
 import heapq
-import logging
 import os
-import re
-import subprocess
-import sys
 import tempfile
-from collections import defaultdict
 from pathlib import Path
-from typing import Any, Collection, Dict, Iterator, List, Optional, Sequence, \
-    Set, Tuple
+from typing import Iterator, List, Sequence
 
-from llm4pddl.flags import FLAGS
-from llm4pddl.structs import Plan, PyperplanAction, PyperplanDomain, \
-    PyperplanPredicate, PyperplanProblem, PyperplanType, Task, TaskMetrics
 from llm4pddl import utils
+from llm4pddl.flags import FLAGS
+from llm4pddl.structs import PyperplanProblem, Task
 
 
 class _DataAugmentationSearchOperator(abc.ABC):
@@ -118,7 +115,7 @@ def _augment_tasks(original_tasks: Sequence[Task],
     """
     new_tasks = list(original_tasks)
 
-    remove_goal_gen =  _DataAugmentationGoalRemovalOperator()
+    remove_goal_gen = _DataAugmentationGoalRemovalOperator()
     remove_obj_gen = _DataAugmentationObjectRemovalOperator()
     remove_init_gen = _DataAugmentationInitRemovalOperator()
 
@@ -135,21 +132,22 @@ def _augment_tasks(original_tasks: Sequence[Task],
         return task
 
     # Greedy search with respect to task size.
-    queue = [(utils.get_task_size(t), i, t) for i, t in enumerate(original_tasks)]
+    queue = [(utils.get_task_size(t), i, t)
+             for i, t in enumerate(original_tasks)]
     tiebreak = len(original_tasks)
     visited = {t.problem_str for t in original_tasks}
 
     for it in range(num_iters):
         if not queue:
-            logging.debug("Data augmentation queue exhausted.")
+            print("Data augmentation queue exhausted.")
             break
-        logging.debug(f"Data augmentation iteration {it}/{num_iters}")
+        print(f"Data augmentation iteration {it}/{num_iters}")
         _, _, task = heapq.heappop(queue)
-        logging.debug(f"Popped task with size: {utils.get_task_size(task)}")
+        print(f"Popped task with size: {utils.get_task_size(task)}")
         for succ in remove_goal_gen.get_successors(task):
-            logging.debug(f"Task size before minimize: {utils.get_task_size(succ)}")
+            print(f"Task size before minimize: {utils.get_task_size(succ)}")
             succ = _greedy_minimize(succ)
-            logging.debug(f"Task size after minimize: {utils.get_task_size(succ)}")
+            print(f"Task size after minimize: {utils.get_task_size(succ)}")
             if succ.problem_str in visited:
                 continue
             visited.add(succ.problem_str)
@@ -158,13 +156,14 @@ def _augment_tasks(original_tasks: Sequence[Task],
             succ_prio = utils.get_task_size(succ)
             heapq.heappush(queue, (succ_prio, tiebreak, succ))
 
-    logging.debug(f"Data augmentation generated {len(new_tasks)} tasks "
-                  f"(including the original {len(original_tasks)} tasks).")
+    print(f"Data augmentation generated {len(new_tasks)} tasks "
+          f"(including the original {len(original_tasks)} tasks).")
 
     return new_tasks
 
 
-def _main(original_task_dir: str, num_original_train_tasks: int, max_num_iters: int) -> None:
+def _main(original_task_dir: str, num_original_train_tasks: int,
+          max_num_iters: int) -> None:
     # Load all the original tasks.
     all_tasks = utils.get_all_tasks_from_dir(Path(original_task_dir))
     assert len(original_task_dir) >= num_original_train_tasks
@@ -173,8 +172,7 @@ def _main(original_task_dir: str, num_original_train_tasks: int, max_num_iters: 
     eval_tasks = all_tasks[num_original_train_tasks:]
     # Augment the train tasks.
     new_tasks = _augment_tasks(train_tasks, max_num_iters)
-    # Save the augmented tasks.
-    import ipdb; ipdb.set_trace()
+    # TODO: Save the augmented tasks.
 
 
 if __name__ == "__main__":
@@ -182,5 +180,12 @@ if __name__ == "__main__":
     parser.add_argument("--original_task_dir", required=True, type=str)
     parser.add_argument("--num_original_train_tasks", default=5, type=int)
     parser.add_argument("--max_num_iters", default=100, type=int)
+    parser.add_argument("--data_gen_planner", default="fastdownward", type=str)
+    parser.add_argument("--planning_timeout", default=100.0, type=float)
     args = parser.parse_args()
-    _main(args.original_task_dir, args.num_original_train_tasks, args.max_num_iters)
+    utils.reset_flags({
+        "data_gen_planner": args.data_gen_planner,
+        "planning_timeout": args.planning_timeout,
+    })
+    _main(args.original_task_dir, args.num_original_train_tasks,
+          args.max_num_iters)
