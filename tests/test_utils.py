@@ -3,13 +3,13 @@
 import os
 import tempfile
 
-import pytest
 import numpy as np
-
-from llm4pddl import utils
-from llm4pddl.structs import Task
+import pytest
 from sentence_transformers import SentenceTransformer
 from sentence_transformers.util import cos_sim
+
+from llm4pddl import utils
+from llm4pddl.structs import Datum, Task
 
 
 @pytest.fixture(scope="module", name="domain_file")
@@ -380,8 +380,10 @@ A:
 
 def test_embed_task():
     """Tests for embed_task()."""
-    utils.reset_flags({"embedding_model_name": "paraphrase-MiniLM-L6-v2",
-                       "llm_prompt_flatten_pddl": True})
+    utils.reset_flags({
+        "embedding_model_name": "paraphrase-MiniLM-L6-v2",
+        "llm_prompt_flatten_pddl": True
+    })
     embedding_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
     task01 = utils.get_custom_task('dressed', 1)
     embedding1 = utils.embed_task(task01, embedding_model)
@@ -394,12 +396,47 @@ def test_embed_task():
 
 def test_make_embeddings_mapping():
     """Tests make_embeddings_mapping()."""
-    raise NotImplementedError
+    embeddings = [[0.5], [0.1], [0.2]]
+    tasks = [utils.get_custom_task('dressed', i) for i in range(1, 4)]
+    dataset = [Datum(task, ['insert plan here']) for task in tasks]
+    mapping = utils.make_embeddings_mapping(embeddings, dataset)
+    assert len(mapping) == 3
+    assert mapping[0]['embedding'] == [0.5]
+    assert mapping[1]['embedding'] == [0.1]
+    assert mapping[0]['datum'].solution == ['insert plan here']
 
 
 def test_get_closest():
     """Tests for get_closest()."""
-    raise NotImplementedError
+    task01 = utils.get_custom_task('dressed', 1)
+    tasks = [utils.get_custom_task('dressed', i) for i in range(2, 5)]
+    blocks01 = utils.get_pyperplan_benchmark_task('blocks', 1)
+    blocks02 = utils.get_pyperplan_benchmark_task('blocks', 2)
+    depot01 = utils.get_pyperplan_benchmark_task('depot', 1)
+    tasks.append(blocks01)
+    embedding_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
+    embeddings = [utils.embed_task(task, embedding_model) for task in tasks]
+    dataset = [Datum(task, ['insert plan here']) for task in tasks]
+    embeddings_mapping = utils.make_embeddings_mapping(embeddings, dataset)
+    # checking correct output size
+    most_similar = utils.get_closest(task01, embeddings_mapping, 1)
+    assert len(most_similar) == 1
+    most_similar2 = utils.get_closest(task01, embeddings_mapping, 3)
+    assert len(most_similar2) == 3
+    most_similar3 = utils.get_closest(task01, embeddings_mapping, 4)
+    assert len(most_similar3) == 4
+    # checking that blocks is the least likely:
+    assert most_similar3[0].task == utils.get_pyperplan_benchmark_task(
+        'blocks', 1)
+    dif_tasks = [task01, blocks01, depot01]
+    dif_embeddings = [
+        utils.embed_task(task, embedding_model) for task in dif_tasks
+    ]
+    dif_dataset = [Datum(task, ['insert plan here']) for task in dif_tasks]
+    dif_emb_map = utils.make_embeddings_mapping(dif_embeddings, dif_dataset)
+    most_sim1 = utils.get_closest(blocks02, dif_emb_map, 1)
+    # checking that blocks is the most likely of the 3:
+    assert most_sim1[0].task == utils.get_pyperplan_benchmark_task('blocks', 1)
 
     # test that the order returned is good.
     # make helper function to return the order?
@@ -415,14 +452,14 @@ def test_get_cosine_sim():
     embedding_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
     embedding1 = embedding_model.encode('hello')
     embedding2 = embedding_model.encode('hello')
-    cos_sim1 = utils.get_cosine_sim(embedding1, embedding2).item()
+    cos_sim1 = utils.get_cosine_sim(embedding1, embedding2)
     assert cos_sim1 == 1
     embedding3 = embedding_model.encode('hell')
-    cos_sim2 = utils.get_cosine_sim(embedding1, embedding3).item()
+    cos_sim2 = utils.get_cosine_sim(embedding1, embedding3)
     assert cos_sim2 != 1
     embedding4 = embedding_model.encode('my name is')
     embedding5 = embedding_model.encode('my dog is here')
-    cos_sim3 = utils.get_cosine_sim(embedding4, embedding5).item()
+    cos_sim3 = utils.get_cosine_sim(embedding4, embedding5)
     assert cos_sim3 == cos_sim(embedding4, embedding5).item()
 
 
