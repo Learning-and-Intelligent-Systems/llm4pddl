@@ -29,20 +29,32 @@ class Task:
     def task_id(self) -> str:
         """A unique identifier for this task."""
         # Use the name of the domain from the domain file.
-        with open(self.domain_file, "r", encoding="utf-8") as f:
-            domain_str = f.read()
         domain_tag = "(domain "
-        assert domain_str.count(domain_tag) == 1
-        domain_tag_idx = domain_str.index(domain_tag)
-        tag_close_rel_idx = domain_str[domain_tag_idx:].index(")")
+        assert self.domain_str.count(domain_tag) == 1
+        domain_tag_idx = self.domain_str.index(domain_tag)
+        tag_close_rel_idx = self.domain_str[domain_tag_idx:].index(")")
         start = domain_tag_idx + len(domain_tag)
         end = domain_tag_idx + tag_close_rel_idx
-        domain_name = domain_str[start:end].strip()
+        domain_name = self.domain_str[start:end].strip()
         assert domain_name
         # Use the problem filename, which is assumed unique within the domain.
         assert self.problem_file.name.endswith(".pddl")
         problem_name = self.problem_file.name[:-len(".pddl")]
         return f"{domain_name}__{problem_name}"
+
+    @cached_property
+    def problem_str(self) -> str:
+        """Load and cache the problem string."""
+        with open(self.problem_file, "r", encoding="utf-8") as f:
+            problem_file = f.read()
+        return problem_file
+
+    @cached_property
+    def domain_str(self) -> str:
+        """Load and cache the domain string."""
+        with open(self.domain_file, "r", encoding="utf-8") as f:
+            domain_str = f.read()
+        return domain_str
 
 
 @dataclass(frozen=True)
