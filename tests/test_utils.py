@@ -379,6 +379,7 @@ A:
 
 
 def test_embed_training_tasks():
+    """Tests for embed_training_tasks()."""
     utils.reset_flags({
         "embedding_model_name": "paraphrase-MiniLM-L6-v2",
         "llm_prompt_flatten_pddl": True
@@ -488,7 +489,8 @@ def test_get_closest():
     most_sim = utils.get_closest(blocks02, big_emb_map, 9)[-1]
     assert most_sim.task == utils.get_pyperplan_benchmark_task('blocks', 2)
 
-    #make test here that shows it selects a more similar task in the same domain.
+    # make test here that shows it selects a more similar 
+    # task in the same domain.
 
 
 def test_get_cosine_sim():
@@ -497,9 +499,11 @@ def test_get_cosine_sim():
     embedding1 = embedding_model.encode('hello')
     embedding2 = embedding_model.encode('hello')
     cos_sim1 = utils.get_cosine_sim(embedding1, embedding2)
-    assert cos_sim1 == 1
+    # cos_sim1 should be 1.
+    assert abs(cos_sim1-1)<0.00001
     embedding3 = embedding_model.encode('hell')
     cos_sim2 = utils.get_cosine_sim(embedding1, embedding3)
+    # cos_sim2 should not be 1.
     assert cos_sim2 != 1
     embedding4 = embedding_model.encode('my name is')
     embedding5 = embedding_model.encode('my dog is here')
@@ -537,7 +541,7 @@ def test_run_planning(domain_file, problem_file, impossible_problem_file):
     assert "Unrecognized planner" in str(e)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__": # pragma: no cover
     test_embed_training_tasks()
     test_embed_task()
     test_get_cosine_sim()
