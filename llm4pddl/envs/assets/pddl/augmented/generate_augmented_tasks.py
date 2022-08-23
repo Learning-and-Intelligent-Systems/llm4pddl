@@ -2,9 +2,7 @@
 
 Usage example:
 
-    python llm4pddl/envs/assets/pddl/augmented/generate_augmented_tasks.py \
-        --out_dir llm4pddl/envs/assets/pddl/augmented/blocks \
-        --original_task_dir llm4pddl/third_party/pyperplan/benchmarks/blocks
+    python llm4pddl/envs/assets/pddl/augmented/generate_augmented_tasks.py
 """
 
 import abc
@@ -16,8 +14,18 @@ from pathlib import Path
 from typing import Iterator, List, Sequence
 
 from llm4pddl import utils
+from llm4pddl.envs import PYPERPLAN_BENCHMARKS
 from llm4pddl.flags import FLAGS
 from llm4pddl.structs import PyperplanProblem, Task
+
+
+def _problem_to_task(problem: PyperplanProblem, domain_file: Path) -> Task:
+    problem_str = utils.pyperplan_problem_to_str(problem)
+    problem_file = tempfile.NamedTemporaryFile(delete=False,
+                                               suffix=".pddl").name
+    with open(problem_file, "w", encoding="utf-8") as f:
+        f.write(problem_str)
+    return Task(domain_file, Path(problem_file))
 
 
 class _DataAugmentationSearchOperator(abc.ABC):
@@ -27,16 +35,11 @@ class _DataAugmentationSearchOperator(abc.ABC):
         """Generate successor tasks."""
         _, problem = utils.parse_task(task)
         for new_problem in self._get_successor_problems(problem):
-            new_problem_str = utils.pyperplan_problem_to_str(new_problem)
-            new_problem_file = tempfile.NamedTemporaryFile(delete=False,
-                                                           suffix=".pddl").name
-            with open(new_problem_file, "w", encoding="utf-8") as f:
-                f.write(new_problem_str)
-            new_task = Task(task.domain_file, Path(new_problem_file))
+            new_task = _problem_to_task(new_problem, task.domain_file)
             # Check if plan is trivial or not found.
             plan, _ = utils.run_planning(new_task, FLAGS.data_gen_planner)
             if not plan:
-                os.remove(new_problem_file)
+                os.remove(new_task.problem_file)
                 continue
             yield new_task
 
@@ -60,45 +63,53 @@ class _DataAugmentationGoalRemovalOperator(_DataAugmentationSearchOperator):
             yield new_problem
 
 
-class _DataAugmentationInitRemovalOperator(_DataAugmentationSearchOperator):
-    """Augment by removing parts of the initial state."""
-
-    def _get_successor_problems(
-            self, problem: PyperplanProblem) -> Iterator[PyperplanProblem]:
-        for init_to_remove in problem.initial_state:
-            new_initial_state = [
-                a for a in problem.initial_state if a != init_to_remove
-            ]
-            assert len(new_initial_state) < len(problem.initial_state)
-            new_problem = PyperplanProblem(problem.name, problem.domain,
-                                           problem.objects, new_initial_state,
-                                           problem.goal)
-            yield new_problem
-
-
-class _DataAugmentationObjectRemovalOperator(_DataAugmentationSearchOperator):
-    """Augment by removing objects."""
-
-    def _get_successor_problems(
-            self, problem: PyperplanProblem) -> Iterator[PyperplanProblem]:
-        # We could only ever remove objects that are in neither the initial
-        # state nor the goal.
-        used_objects = {
-            o
-            for a in problem.initial_state + problem.goal
-            for o, _ in a.signature
+def _greedy_minimize(task: Task) -> Task:
+    print(f"Greedily minimizing task {task.task_id}")
+    domain_file = task.domain_file
+    # Greedily remove initial state atoms.
+    _, problem = utils.parse_task(task)
+    for init_to_remove in list(problem.initial_state):
+        new_initial_state = [
+            a for a in problem.initial_state if a != init_to_remove
+        ]
+        assert len(new_initial_state) < len(problem.initial_state)
+        new_problem = PyperplanProblem(problem.name, problem.domain,
+                                       problem.objects, new_initial_state,
+                                       problem.goal)
+        new_task = _problem_to_task(new_problem, domain_file)
+        # Check if plan is trivial or not found.
+        plan, _ = utils.run_planning(new_task, FLAGS.data_gen_planner)
+        if not plan:
+            os.remove(new_task.problem_file)
+            continue
+        # Update the problem.
+        problem = new_problem
+    # Greedily remove objects. We could only ever remove objects that are
+    # in neither the initial state nor the goal.
+    used_objects = {
+        o
+        for a in problem.initial_state + problem.goal for o, _ in a.signature
+    }
+    candidate_objects = set(problem.objects) - used_objects
+    for obj_to_remove in candidate_objects:
+        new_objects = {
+            o: problem.objects[o]
+            for o in problem.objects if o != obj_to_remove
         }
-        candidate_objects = set(problem.objects) - used_objects
-        for obj_to_remove in candidate_objects:
-            new_objects = {
-                o: problem.objects[o]
-                for o in problem.objects if o != obj_to_remove
-            }
-            assert len(new_objects) < len(problem.objects)
-            new_problem = PyperplanProblem(problem.name, problem.domain,
-                                           new_objects, problem.initial_state,
-                                           problem.goal)
-            yield new_problem
+        assert len(new_objects) < len(problem.objects)
+        new_problem = PyperplanProblem(problem.name, problem.domain,
+                                       new_objects, problem.initial_state,
+                                       problem.goal)
+        new_task = _problem_to_task(new_problem, domain_file)
+        # Check if plan is trivial or not found.
+        plan, _ = utils.run_planning(new_task, FLAGS.data_gen_planner)
+        if not plan:
+            os.remove(new_task.problem_file)
+            continue
+        # Update the problem.
+        problem = new_problem
+    # Create the final task.
+    return _problem_to_task(problem, domain_file)
 
 
 def _augment_tasks(original_tasks: Sequence[Task],
@@ -117,26 +128,22 @@ def _augment_tasks(original_tasks: Sequence[Task],
     new_tasks = list(original_tasks)
 
     remove_goal_gen = _DataAugmentationGoalRemovalOperator()
-    remove_obj_gen = _DataAugmentationObjectRemovalOperator()
-    remove_init_gen = _DataAugmentationInitRemovalOperator()
-
-    def _greedy_minimize(task: Task) -> Task:
-        while True:
-            improvement_found = False
-            for gen in [remove_obj_gen, remove_init_gen]:
-                for succ in gen.get_successors(task):
-                    task = succ
-                    improvement_found = True
-                    break
-            if not improvement_found:
-                break
-        return task
 
     # Greedy search with respect to task size.
     queue = [(utils.get_task_size(t), i, t)
              for i, t in enumerate(original_tasks)]
     tiebreak = len(original_tasks)
     visited = {t.problem_str for t in original_tasks}
+
+    # Start by minimizing the original tasks.
+    for task in original_tasks:
+        succ = _greedy_minimize(task)
+        if succ.problem_str not in visited:
+            visited.add(succ.problem_str)
+            tiebreak += 1
+            new_tasks.append(succ)
+            succ_prio = utils.get_task_size(succ)
+            heapq.heappush(queue, (succ_prio, tiebreak, succ))
 
     for it in range(num_iters):
         if not queue:
@@ -184,11 +191,12 @@ def _save_tasks(tasks: Sequence[Task], save_path: Path) -> None:
     print(f"Saved tasks to {save_path}")
 
 
-def _main(original_task_dir: str, out_dir: str, num_original_train_tasks: int,
-          max_num_iters: int) -> None:
+def _generate_tasks_for_env(original_task_dir: Path, out_dir: Path,
+                            num_original_train_tasks: int,
+                            max_num_iters: int) -> None:
     # Load all the original tasks.
-    all_tasks = utils.get_all_tasks_from_dir(Path(original_task_dir))
-    assert len(original_task_dir) >= num_original_train_tasks
+    all_tasks = utils.get_all_tasks_from_dir(original_task_dir)
+    assert len(all_tasks) >= num_original_train_tasks
     # Split into train and eval.
     train_tasks = all_tasks[:num_original_train_tasks]
     eval_tasks = all_tasks[num_original_train_tasks:]
@@ -202,10 +210,17 @@ def _main(original_task_dir: str, out_dir: str, num_original_train_tasks: int,
     _save_tasks(eval_tasks, eval_path)
 
 
+def _main(num_original_train_tasks: int, max_num_iters: int) -> None:
+    for benchmark_name in PYPERPLAN_BENCHMARKS:
+        print(f"******** Starting augmentation for {benchmark_name} *********")
+        original_task_dir = utils.PYPERPLAN_BENCHMARK_DIR / benchmark_name
+        out_dir = utils.AUGMENTED_BENCHMARK_DIR / f"pyperplan-{benchmark_name}"
+        _generate_tasks_for_env(original_task_dir, out_dir,
+                                num_original_train_tasks, max_num_iters)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--original_task_dir", required=True, type=str)
-    parser.add_argument("--out_dir", required=True, type=str)
     parser.add_argument("--num_original_train_tasks", default=5, type=int)
     parser.add_argument("--max_num_iters", default=100, type=int)
     parser.add_argument("--data_gen_planner", default="fastdownward", type=str)
@@ -215,5 +230,4 @@ if __name__ == "__main__":
         "data_gen_planner": args.data_gen_planner,
         "planning_timeout": args.planning_timeout,
     })
-    _main(args.original_task_dir, args.out_dir, args.num_original_train_tasks,
-          args.max_num_iters)
+    _main(args.num_original_train_tasks, args.max_num_iters)
