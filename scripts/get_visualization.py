@@ -65,14 +65,10 @@ def _get_visualization(custom_approaches: Dict[str, Dict[str, str]],
                        custom_approaches[CUSTOM_APPROACHES[0]].keys()):
         llm_approaches = CUSTOM_APPROACHES + BASELINE_APPROACHES
         llm_accuracies = []
-        _ = [
+        for approach in custom_approaches:
             llm_accuracies.append(custom_approaches[approach][env])
-            for approach in custom_approaches
-        ]
-        _ = [
+        for approach in baseline_approaches:
             llm_accuracies.append(baseline_approaches[approach][env])
-            for approach in baseline_approaches
-        ]
         ax.bar(llm_approaches, llm_accuracies, color="blue")
         ax.set_title(env)
         ax.set_ylabel("accuracy")
