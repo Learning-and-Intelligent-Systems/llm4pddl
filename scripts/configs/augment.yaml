@@ -22,9 +22,6 @@ APPROACHES:
     NAME: "llm-multi-plan"
     FLAGS: {}
 ENVS:
-  airport:
-    NAME: "augmented-pyperplan-airport"
-    FLAGS: {}
   blocks:
     NAME: "augmented-pyperplan-blocks"
     FLAGS: {}
@@ -49,17 +46,8 @@ ENVS:
   movie:
     NAME: "augmented-pyperplan-movie"
     FLAGS: {}
-  openstacks:
-    NAME: "augmented-pyperplan-openstacks"
-    FLAGS: {}
-  parcprinter:
-    NAME: "augmented-pyperplan-parcprinter"
-    FLAGS: {}
   pegsol:
     NAME: "augmented-pyperplan-pegsol"
-    FLAGS: {}
-  psr-small:
-    NAME: "augmented-pyperplan-psr-small"
     FLAGS: {}
   rovers:
     NAME: "augmented-pyperplan-rovers"
