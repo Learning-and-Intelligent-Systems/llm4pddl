@@ -18,8 +18,8 @@ class MultiDirEnv(BaseEnv):
         # Load tasks and sort them by size.
         train_dir = self.dir_path / benchmark_name / "train"
         self._train_tasks = utils.get_all_tasks_from_dir(train_dir)
-        assert len(self._train_tasks) >= FLAGS._train_tasks
-        self._train_tasks = self._train_tasks[:FLAGS._train_tasks]
+        assert len(self._train_tasks) >= FLAGS.num_train_tasks
+        self._train_tasks = self._train_tasks[:FLAGS.num_train_tasks]
 
         eval_dir = self.dir_path / benchmark_name / "eval"
         self._eval_tasks = utils.get_all_tasks_from_dir(eval_dir)
