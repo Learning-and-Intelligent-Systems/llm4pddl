@@ -410,3 +410,13 @@ def str_to_identifier(x: str) -> str:
         https://stackoverflow.com/questions/5297448
     """
     return hashlib.md5(x.encode('utf-8')).hexdigest()
+
+
+if __name__ == "__main__":
+    get_custom_task('dressed', 31)
+#     task01_path = get_custom_task('dressed', 1).problem_file
+#     with open(task01_path, 'r', encoding='utf-8') as f:
+#         task01 = f.read()
+#     mini_task01 = minify_pddl_problem(task01)
+#     flattened_task01 = flatten_pddl_problem(mini_task01)
+#     print(flattened_task01)

@@ -41,6 +41,7 @@ def parse_flags() -> None:
                         default=logging.INFO)
     parser.add_argument('--llm_prompt_flatten_pddl', action='store_true')
     parser.add_argument('--use_dynamic_examples', action='store_true')
-    parser.add_argument('--embedding_model_name', default='paraphrase-MiniLM-L6-v2')
+    parser.add_argument('--embedding_model_name',
+                        default='paraphrase-MiniLM-L6-v2')
     args = parser.parse_args()
     FLAGS.__dict__.update(args.__dict__)

@@ -56,7 +56,8 @@ def test_run_pipeline():
         "experiment_id": "dummy",
         "num_train_tasks": 0,
         "num_eval_tasks": 2,
-        "results_dir": temp_results_dir
+        "results_dir": temp_results_dir,
+        "use_dynamic_examples": False
     })
     # Cover cases where approach is None or invalid.
     plan_sequence = [None, []]

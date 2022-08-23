@@ -401,6 +401,14 @@ def test_get_closest():
     """Tests for get_closest()."""
     raise NotImplementedError
 
+    # test that the order returned is good.
+    # make helper function to return the order?
+    # so that it is easier to scrutinize?
+    # do a couple tests with two problems,
+    # one form dif domains and then check if order is correct.
+    # do a big test with many probs and check that all of the correct domains
+    # are filtered to be more similar than the foreign domains.
+
 
 def test_get_cosine_sim():
     """Tests get_cosine_sim()."""
@@ -446,6 +454,37 @@ def test_run_planning(domain_file, problem_file, impossible_problem_file):
     with pytest.raises(NotImplementedError) as e:
         utils.run_planning(task, planner="not a real planner")
     assert "Unrecognized planner" in str(e)
+
+
+if __name__ == "__main__":
+    test_embed_task()
+    # test_get_all_env_tasks()
+    # test_embed_env_tasks()
+    test_get_cosine_sim()
+    #     test_minify_pddl_problem()
+    test_make_embeddings_mapping()
+    test_get_closest()
+
+#     q_a_example = """Q:
+# (:objects
+# red blue - color
+# )
+# (:init
+# (here red)
+# )
+# (:goal
+# (and (here red) (here blue))
+# )
+# A:
+# (make blue)
+# (end)"""
+#     goal = """Q:
+# (:objects
+# red blue - color)
+# (:init
+# (here red))
+# (:goal
+# (and (here red)(here blue)))
 # A:
 # (make blue)
 # (end)"""
