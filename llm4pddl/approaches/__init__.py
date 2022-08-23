@@ -3,12 +3,16 @@
 from llm4pddl.approaches.base_approach import BaseApproach
 from llm4pddl.approaches.llm_open_loop_approach import LLMOpenLoopApproach
 from llm4pddl.approaches.llm_planning_approach import LLMPlanningApproach
+from llm4pddl.approaches.mpc_approach import MPCApproach
 from llm4pddl.approaches.pure_planning_approach import PurePlanningApproach
 from llm4pddl.flags import FLAGS
 
 
 def create_approach(approach_name: str) -> BaseApproach:
     """Create an approach."""
+    if approach_name.startswith("mpc-"):
+        wrapped_approach = create_approach(approach_name[len("mpc-"):])
+        return MPCApproach(wrapped_approach)
     if approach_name == "pure-planning":
         return PurePlanningApproach()
     if approach_name == "llm-standard":
