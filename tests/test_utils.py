@@ -165,40 +165,25 @@ def test_validate_plan(domain_file, problem_file, valid_plans, invalid_plans):
         assert not utils.validate_plan(task, invalid_plan)
 
 
-def test_get_pyperplan_benchmark_task():
-    """Tests for get_pyperplan_benchmark_task()."""
+def test_get_task_from_dir():
+    """Tests for get_task_from_dir()."""
+    pyperplan_dir = utils.PYPERPLAN_BENCHMARK_DIR
     # Standard domain format.
-    task = utils.get_pyperplan_benchmark_task("blocks", 1)
+    task = utils.get_task_from_dir(pyperplan_dir / "blocks", 1)
     assert os.path.exists(task.domain_file)
     assert os.path.exists(task.problem_file)
     # Per-problem domain files.
-    task = utils.get_pyperplan_benchmark_task("airport", 1)
+    task = utils.get_task_from_dir(pyperplan_dir / "airport", 1)
     assert os.path.exists(task.domain_file)
     assert os.path.exists(task.problem_file)
     # Domain doesn't exist.
     with pytest.raises(FileNotFoundError) as e:
-        utils.get_pyperplan_benchmark_task("not a real domain", 1)
+        utils.get_task_from_dir(pyperplan_dir / "not a real domain", 1)
     assert "Domain not found" in str(e)
     # Problem doesn't exist.
     with pytest.raises(FileNotFoundError) as e:
-        utils.get_pyperplan_benchmark_task("blocks", 100)
+        utils.get_task_from_dir(pyperplan_dir / "blocks", 100)
     assert "Problem 100 not found" in str(e)
-
-
-def test_get_custom_task():
-    """Tests get_custom_task()"""
-    # Dressed:
-    task = utils.get_custom_task("dressed", 1)
-    assert os.path.exists(task.domain_file)
-    assert os.path.exists(task.problem_file)
-    # Domain doesn't exist:
-    with pytest.raises(FileNotFoundError) as f:
-        task = utils.get_custom_task("nonsense", 1)
-    assert "Domain not found" in str(f)
-    # Problem doesn't exist:
-    with pytest.raises(FileNotFoundError) as f:
-        task = utils.get_custom_task("dressed", 100)
-    assert "Problem 100 not found" in str(f)
 
 
 def test_minify_pddl_problem():
@@ -209,10 +194,10 @@ def test_minify_pddl_problem():
     """
     utils.reset_flags({"llm_prompt_flatten_pddl": False})
     # Testing big example #1:
-    task01_path = utils.get_custom_task('dressed', 1).problem_file
-    with open(task01_path, 'r', encoding='utf-8') as f:
-        task01 = f.read()
-    answer01 = """(define (problem dressed)
+    task01 = utils.get_task_from_dir(utils.CUSTOM_BENCHMARK_DIR / 'dressed', 1)
+    with open(task01.problem_file, 'r', encoding='utf-8') as f:
+        problem01 = f.read()
+    expected01 = """(define (problem dressed)
 (:domain dressed)
 (:objects person1 person2 person3 person4 - person
 dress1 - dress
@@ -241,7 +226,7 @@ suit-jacket1 - suit-jacket)
 (attending-formal-event person1)
 (attending-casual-event person4)
 (attending-formal-event person2))))"""
-    assert utils.minify_pddl_problem(task01) == answer01
+    assert utils.minify_pddl_problem(problem01) == expected01
     #Testing big example #2(same as above but with noise added):
     initial = """(define (problem dressed)
 
@@ -278,7 +263,7 @@ collared-shirt1 - collared-shirt
 (attending-formal-event person1)
 (attending-casual-event person4)  
 (attending-formal-event person2) )  )   )"""
-    assert utils.minify_pddl_problem(initial) == answer01
+    assert utils.minify_pddl_problem(initial) == expected01
     # Testing many blank lines:
     example01 = """(in-closet sweatshirt2)
 
@@ -408,7 +393,7 @@ def test_run_planning(domain_file, problem_file, impossible_problem_file):
     assert metrics["nodes_created"] == metrics["nodes_expanded"] == 1
     assert plan is None
     # Test planning in a pyperplan benchmark problem.
-    task = utils.get_pyperplan_benchmark_task("blocks", 1)
+    task = utils.get_task_from_dir(utils.PYPERPLAN_BENCHMARK_DIR / "blocks", 1)
     plan, metrics = utils.run_planning(task)
     assert metrics["nodes_created"] > metrics["nodes_expanded"]
     assert plan is not None
