@@ -19,6 +19,8 @@ def test_create_approach():
     assert approach.get_name() == "pure-planning"
     approach = create_approach("llm-standard")
     assert approach.get_name() == "llm-open-loop"
+    approach = create_approach("mpc-llm-standard")
+    assert approach.get_name() == "mpc-llm-open-loop"
     approach = create_approach("llm-multi")
     assert approach.get_name() == "llm-open-loop"
     approach = create_approach("llm-standard-plan")
