@@ -417,3 +417,20 @@ def test_run_planning(domain_file, problem_file, impossible_problem_file):
     with pytest.raises(NotImplementedError) as e:
         utils.run_planning(task, planner="not a real planner")
     assert "Unrecognized planner" in str(e)
+
+
+def test_pyperplan_problem_to_str(domain_file, problem_file):
+    """Tests for pyperplan_problem_to_str()."""
+    utils.reset_flags({"planning_timeout": 100})
+    original_task = Task(domain_file, problem_file)
+    _, problem = utils.parse_task(original_task)
+    problem_str = utils.pyperplan_problem_to_str(problem)
+    new_problem_file = tempfile.NamedTemporaryFile(delete=False,
+                                                   suffix=".pddl").name
+    with open(new_problem_file, "w", encoding="utf-8") as f:
+        f.write(problem_str)
+    task = Task(domain_file, new_problem_file)
+    plan, metrics = utils.run_planning(task)
+    assert metrics["nodes_created"] > metrics["nodes_expanded"]
+    assert plan is not None
+    assert utils.validate_plan(task, plan)
