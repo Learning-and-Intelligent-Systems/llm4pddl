@@ -383,7 +383,7 @@ def test_get_task_size(domain_file, problem_file):
 
 
 def test_task_strs(domain_file, problem_file):
-    """Test Task.problem_str() and Task.domain_str()."""
+    """Test Task.problem_str and Task.domain_str."""
     task = Task(domain_file, problem_file)
     assert "(:objects" in task.problem_str
     assert "(:predicates" in task.domain_str
