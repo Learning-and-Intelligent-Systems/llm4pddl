@@ -114,8 +114,8 @@ def _greedy_minimize(task: Task) -> Task:
 
 def _get_task_identifier(task: Task) -> str:
     # Don't care about the problem name.
-    problem_str = task.problem_str
-    problem_name_start_idx = problem_str.index("(:problem")
+    problem_str = task.problem_str.lower()
+    problem_name_start_idx = problem_str.index("(problem")
     problem_name_rel_end_idx = problem_str[problem_name_start_idx:].index(")")
     end_idx = problem_name_start_idx + problem_name_rel_end_idx
     identifier = problem_str[end_idx:]
