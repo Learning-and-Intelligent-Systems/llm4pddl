@@ -12,8 +12,6 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any, Collection, Dict, Optional, Sequence, Set, Tuple
 
-import matplotlib.pyplot as plt
-import pandas as pd
 import numpy as np
 from pyperplan.grounding import ground as pyperplan_ground
 from pyperplan.pddl.parser import Parser
@@ -358,58 +356,3 @@ def str_to_identifier(x: str) -> str:
         https://stackoverflow.com/questions/5297448
     """
     return hashlib.md5(x.encode('utf-8')).hexdigest()
-
-
-def get_visualization(input_path: str, output_dir: str) -> None:
-    """Creates visualization of planner accuracy across all environments."""
-    df = pd.read_csv(input_path)
-    column_labels = []
-    _ = [column_labels.append(col) for col in df.columns]
-    env_column_index = column_labels.index('env')
-    approach_column_index = column_labels.index('approach')
-    accuracy_column_index = column_labels.index('success')
-    experiment_name_index = column_labels.index('experiment_id')
-
-    llm_multi_accuracies = {}
-    llm_standard_plan_accuracies = {}
-    llm_multi_plan_accuracies = {}
-    fd_accuracies = {}
-    pyperplan_accuracies = {}
-    for _, row_raw in df.iterrows():
-        row = row_raw.tolist()
-        approach_name = row[approach_column_index]
-        environment_name = row[env_column_index]
-        accuracy = row[accuracy_column_index]
-        accuracy = float(accuracy[0:accuracy.index(' ')])
-        experiment_name = row[experiment_name_index]
-        if approach_name == "llm-multi":
-            llm_multi_accuracies[environment_name] = accuracy
-        elif approach_name == "llm-standard-plan":
-            llm_standard_plan_accuracies[environment_name] = accuracy
-        elif approach_name == "llm-multi-plan":
-            llm_multi_plan_accuracies[environment_name] = accuracy
-        elif approach_name == "pure-planning" and "fd-only" in experiment_name:
-            fd_accuracies[environment_name] = accuracy
-        elif approach_name == "pure-planning" and ("pyperplan"
-                                                   in experiment_name):
-            pyperplan_accuracies[environment_name] = accuracy
-
-    llm_approaches = [
-        "standard-plan", "multi", "multi-plan", "fd", "pyperplan"
-    ]
-    fig, axs = plt.subplots(nrows=5, ncols=6, figsize=(30, 25))
-    for ax, env in zip(axs.flat, llm_multi_accuracies.keys()):
-        llm_accuracies = [
-            llm_standard_plan_accuracies[env], llm_multi_accuracies[env],
-            llm_multi_plan_accuracies[env], fd_accuracies[env],
-            pyperplan_accuracies[env]
-        ]
-        ax.bar(llm_approaches, llm_accuracies, color="blue")
-        ax.set_title(env)
-        ax.set_ylabel("accuracy")
-    fig.savefig(output_dir + "/final_output.png",
-                facecolor='w',
-                bbox_inches="tight",
-                pad_inches=0.3,
-                transparent=True)
-    plt.close(fig)
