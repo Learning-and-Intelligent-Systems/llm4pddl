@@ -37,7 +37,9 @@ CUSTOM_BENCHMARKS = [
 
 AUGMENTED_BENCHMARKS = [f"pyperplan-{b}" for b in PYPERPLAN_BENCHMARKS]
 
-MANUAL_TRAIN_BENCHMARKS = ["pyperplan-gripper", "pyperplan-tpp"]
+MANUAL_TRAIN_BENCHMARKS = [
+    "pyperplan-gripper", "pyperplan-tpp", "pyperplan-miconic"
+]
 
 ALL_ENVS = [f"pyperplan-{b}" for b in PYPERPLAN_BENCHMARKS] + [
     f"custom-{b}" for b in CUSTOM_BENCHMARKS
