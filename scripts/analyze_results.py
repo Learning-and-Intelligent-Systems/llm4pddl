@@ -97,7 +97,7 @@ def _create_summary_table(raw_results: pd.DataFrame,
     pd.set_option("expand_frame_repr", False)
     if verbose:
         print("\n\nAGGREGATED DATA OVER EVAL TASKS AND SEEDS:")
-        print(summary)  #.reset_index())
+        print(summary)
         # Report the total number of results.
         print(f"\nTOTAL RESULTS: {df.shape[0]}")
         # Create an even higher-level summary, averaging over everything except
