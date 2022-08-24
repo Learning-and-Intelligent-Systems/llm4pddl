@@ -51,6 +51,7 @@ def validate_plan(task: Task, plan: Plan) -> bool:
     os.remove(plan_file)
     if "Plan valid" in output:
         return True
+    logging.debug(output)
     return False
 
 
