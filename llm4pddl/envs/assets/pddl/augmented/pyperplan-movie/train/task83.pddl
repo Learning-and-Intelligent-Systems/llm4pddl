@@ -3,13 +3,11 @@
   (:objects
     c1 - object
     k1 - object
-    p1 - object
   )
   (:init
     (chips c1)
-    (pop p1)
     (crackers k1)
     (counter-at-other-than-two-hours)
   )
-  (:goal (and (movie-rewound) (counter-at-zero) (have-chips) (have-pop) (have-crackers)))
+  (:goal (and (movie-rewound) (counter-at-zero) (have-chips) (have-crackers)))
 )

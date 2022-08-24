@@ -11,5 +11,5 @@
     (crackers k1)
     (counter-at-other-than-two-hours)
   )
-  (:goal (and (movie-rewound) (counter-at-zero) (have-chips) (have-cheese) (have-crackers)))
+  (:goal (and (movie-rewound) (have-chips) (have-cheese) (have-crackers)))
 )

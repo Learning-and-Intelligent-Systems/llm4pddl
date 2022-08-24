@@ -119,7 +119,6 @@ def _get_task_identifier(task: Task) -> str:
     problem_name_rel_end_idx = problem_str[problem_name_start_idx:].index(")")
     end_idx = problem_name_start_idx + problem_name_rel_end_idx
     identifier = problem_str[end_idx:]
-    assert "(:objects" in identifier
     assert "(:init" in identifier
     assert "(:goal" in identifier
     return identifier

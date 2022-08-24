@@ -15,6 +15,7 @@
   (:init
     (clear crate1)
     (surface pallet1)
+    (at pallet1 distributor0)
     (clear crate4)
     (truck truck1)
     (at truck1 distributor0)
@@ -40,5 +41,5 @@
     (place depot0)
     (place distributor0)
   )
-  (:goal (and (on crate0 crate1)))
+  (:goal (and (on crate0 crate1) (on crate4 pallet1)))
 )

@@ -6,6 +6,7 @@
   (:init
     (do-normal)
     (not-updated-cb1)
+    (closed-sd1)
   )
-  (:goal (and (updated-cb1)))
+  (:goal (and (closed-cb1)))
 )

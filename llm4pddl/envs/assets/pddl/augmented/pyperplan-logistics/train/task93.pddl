@@ -1,17 +1,17 @@
 (define (problem logistics-5-1)
   (:domain logistics)
   (:objects
-    apt2 - airport
-    cit2 - city
-    obj22 - package
-    pos2 - location
-    tru2 - truck
+    apt1 - airport
+    cit1 - city
+    obj12 - package
+    pos1 - location
+    tru1 - truck
   )
   (:init
-    (at tru2 pos2)
-    (at obj22 pos2)
-    (in-city pos2 cit2)
-    (in-city apt2 cit2)
+    (at tru1 pos1)
+    (at obj12 pos1)
+    (in-city pos1 cit1)
+    (in-city apt1 cit1)
   )
-  (:goal (and (at obj22 apt2)))
+  (:goal (and (at obj12 apt1)))
 )

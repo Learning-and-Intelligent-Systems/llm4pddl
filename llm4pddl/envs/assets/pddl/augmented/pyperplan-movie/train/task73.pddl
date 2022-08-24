@@ -3,11 +3,13 @@
   (:objects
     d1 - object
     p1 - object
+    z1 - object
   )
   (:init
     (dip d1)
     (pop p1)
+    (cheese z1)
     (counter-at-other-than-two-hours)
   )
-  (:goal (and (movie-rewound) (have-dip) (have-pop)))
+  (:goal (and (movie-rewound) (have-dip) (have-pop) (have-cheese)))
 )

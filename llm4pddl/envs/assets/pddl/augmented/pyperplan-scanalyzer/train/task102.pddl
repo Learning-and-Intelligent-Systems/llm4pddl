@@ -17,5 +17,5 @@
     (on car-out-1a seg-out-1a)
     (on car-out-1b seg-out-1b)
   )
-  (:goal (and (analyzed car-in-1b)))
+  (:goal (and (analyzed car-in-1b) (on car-in-1a seg-out-1b) (on car-out-1b seg-out-1a)))
 )

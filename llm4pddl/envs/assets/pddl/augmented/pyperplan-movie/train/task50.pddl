@@ -1,12 +1,14 @@
 (define (problem strips-movie-x-1)
   (:domain movie-strips)
   (:objects
-    p1 - object
+    d1 - object
+    k1 - object
     z1 - object
   )
   (:init
-    (pop p1)
+    (dip d1)
     (cheese z1)
+    (crackers k1)
   )
-  (:goal (and (counter-at-zero) (have-pop) (have-cheese)))
+  (:goal (and (counter-at-zero) (have-dip) (have-cheese) (have-crackers)))
 )

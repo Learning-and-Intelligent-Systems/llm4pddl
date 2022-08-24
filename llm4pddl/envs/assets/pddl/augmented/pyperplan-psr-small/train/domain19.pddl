@@ -5,66 +5,16 @@
 (:predicates
 (NOT-CLOSED-CB1)
 (UPDATED-CB1)
-(CLOSED-SD5)
 (NOT-CLOSED-SD1)
 (NOT-CLOSED-SD2)
-(NOT-CLOSED-SD3)
-(NOT-CLOSED-SD4)
-(NOT-CLOSED-SD6)
 (CLOSED-CB1)
-(CLOSED-SD6)
-(CLOSED-SD4)
-(CLOSED-SD3)
 (CLOSED-SD2)
 (CLOSED-SD1)
-(NOT-CLOSED-SD5)
 (NOT-UPDATED-CB1)
 (do-CLOSE_SD1-condeffs)
 (do-WAIT_CB1-condeffs)
 (do-normal)
 (done-0)
-)
-(:action CLOSE_SD6
-:parameters ()
-:precondition
-(and
-(do-normal)
-(NOT-CLOSED-SD6)
-(UPDATED-CB1)
-)
-:effect
-(and
-(CLOSED-SD6)
-(not (NOT-CLOSED-SD6))
-)
-)
-(:action CLOSE_SD4
-:parameters ()
-:precondition
-(and
-(do-normal)
-(NOT-CLOSED-SD4)
-(UPDATED-CB1)
-)
-:effect
-(and
-(CLOSED-SD4)
-(not (NOT-CLOSED-SD4))
-)
-)
-(:action CLOSE_SD3
-:parameters ()
-:precondition
-(and
-(do-normal)
-(NOT-CLOSED-SD3)
-(UPDATED-CB1)
-)
-:effect
-(and
-(CLOSED-SD3)
-(not (NOT-CLOSED-SD3))
-)
 )
 (:action CLOSE_SD2
 :parameters ()
@@ -152,62 +102,6 @@
 (not (UPDATED-CB1))
 )
 )
-(:action OPEN-SD6
-:parameters ()
-:precondition
-(and
-(do-normal)
-(CLOSED-SD6)
-(UPDATED-CB1)
-)
-:effect
-(and
-(NOT-CLOSED-SD6)
-(not (CLOSED-SD6))
-)
-)
-(:action OPEN-SD5
-:parameters ()
-:precondition
-(and
-(do-normal)
-(CLOSED-SD5)
-(UPDATED-CB1)
-)
-:effect
-(and
-(NOT-CLOSED-SD5)
-(not (CLOSED-SD5))
-)
-)
-(:action OPEN-SD4
-:parameters ()
-:precondition
-(and
-(do-normal)
-(CLOSED-SD4)
-(UPDATED-CB1)
-)
-:effect
-(and
-(NOT-CLOSED-SD4)
-(not (CLOSED-SD4))
-)
-)
-(:action OPEN-SD3
-:parameters ()
-:precondition
-(and
-(do-normal)
-(CLOSED-SD3)
-(UPDATED-CB1)
-)
-:effect
-(and
-(NOT-CLOSED-SD3)
-(not (CLOSED-SD3))
-)
-)
 (:action OPEN-SD2
 :parameters ()
 :precondition
@@ -248,20 +142,6 @@
 (and
 (NOT-CLOSED-CB1)
 (not (CLOSED-CB1))
-)
-)
-(:action CLOSE_SD5
-:parameters ()
-:precondition
-(and
-(do-normal)
-(NOT-CLOSED-SD5)
-(UPDATED-CB1)
-)
-:effect
-(and
-(CLOSED-SD5)
-(not (NOT-CLOSED-SD5))
 )
 )
 (:action WAIT_CB1

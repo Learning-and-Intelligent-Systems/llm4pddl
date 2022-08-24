@@ -4,16 +4,14 @@
     apt1 - airport
     cit1 - city
     obj11 - package
-    obj13 - package
     pos1 - location
     tru1 - truck
   )
   (:init
     (at tru1 pos1)
     (at obj11 pos1)
-    (at obj13 pos1)
     (in-city pos1 cit1)
     (in-city apt1 cit1)
   )
-  (:goal (and (at obj11 apt1) (at obj13 apt1)))
+  (:goal (and (at obj11 apt1)))
 )

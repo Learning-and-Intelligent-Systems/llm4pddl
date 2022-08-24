@@ -14,14 +14,12 @@
     hoist1 - object
     hoist2 - object
     pallet0 - object
-    pallet1 - object
     pallet2 - object
     truck1 - object
   )
   (:init
     (surface pallet0)
     (clear crate1)
-    (surface pallet1)
     (clear crate4)
     (surface pallet2)
     (at pallet2 distributor1)
@@ -37,10 +35,8 @@
     (hoist hoist2)
     (at hoist2 distributor1)
     (available hoist2)
-    (crate crate0)
     (surface crate0)
     (at crate0 distributor0)
-    (on crate0 pallet1)
     (crate crate1)
     (surface crate1)
     (at crate1 depot0)
@@ -63,5 +59,5 @@
     (place distributor0)
     (place distributor1)
   )
-  (:goal (and (on crate0 crate1) (on crate1 pallet2) (on crate5 crate0)))
+  (:goal (and (on crate1 pallet2) (on crate3 crate2) (on crate5 crate0)))
 )

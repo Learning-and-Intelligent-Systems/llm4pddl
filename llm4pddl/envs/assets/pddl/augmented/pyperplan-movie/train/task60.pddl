@@ -2,10 +2,11 @@
   (:domain movie-strips)
   (:objects
     d1 - object
+    k1 - object
   )
   (:init
     (dip d1)
-    (counter-at-other-than-two-hours)
+    (crackers k1)
   )
-  (:goal (and (movie-rewound) (counter-at-zero) (have-dip)))
+  (:goal (and (have-dip) (have-crackers)))
 )

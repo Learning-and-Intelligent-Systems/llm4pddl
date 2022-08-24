@@ -5,7 +5,6 @@
     cit2 - city
     obj11 - package
     obj21 - package
-    obj22 - package
     pos1 - location
     pos2 - location
     tru2 - truck
@@ -14,9 +13,8 @@
     (at obj11 pos1)
     (at tru2 pos2)
     (at obj21 pos2)
-    (at obj22 pos2)
     (in-city pos2 cit2)
     (in-city apt2 cit2)
   )
-  (:goal (and (at obj11 pos1) (at obj22 apt2) (at obj21 apt2)))
+  (:goal (and (at obj11 pos1) (at obj21 apt2)))
 )

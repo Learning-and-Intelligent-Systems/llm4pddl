@@ -4,11 +4,13 @@
     c1 - object
     k1 - object
     p1 - object
+    z1 - object
   )
   (:init
     (chips c1)
     (pop p1)
+    (cheese z1)
     (crackers k1)
   )
-  (:goal (and (have-chips) (have-pop) (have-crackers)))
+  (:goal (and (have-chips) (have-pop) (have-cheese) (have-crackers)))
 )

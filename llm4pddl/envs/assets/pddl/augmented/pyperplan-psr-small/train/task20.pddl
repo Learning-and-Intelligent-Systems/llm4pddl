@@ -1,4 +1,4 @@
-(define (problem grounded-strips-psr-s10-n1-l4-f50)
+(define (problem grounded-strips-psr-s5-n1-l3-f30)
   (:domain grounded-strips-psr)
   (:objects
     
@@ -6,7 +6,9 @@
   (:init
     (do-normal)
     (not-updated-cb1)
+    (closed-sd8)
+    (closed-sd7)
     (closed-sd1)
   )
-  (:goal (and (closed-cb1)))
+  (:goal (and (closed-sd7) (closed-cb1) (updated-cb1)))
 )

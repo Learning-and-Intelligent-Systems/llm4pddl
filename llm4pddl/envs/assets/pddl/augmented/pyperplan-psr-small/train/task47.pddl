@@ -10,5 +10,5 @@
     (closed-sd2)
     (closed-sd1)
   )
-  (:goal (and (closed-sd2) (closed-sd1) (closed-cb1)))
+  (:goal (and (do-normal) (closed-sd1) (closed-cb1)))
 )

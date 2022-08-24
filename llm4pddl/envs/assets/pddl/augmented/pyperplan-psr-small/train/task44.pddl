@@ -10,5 +10,5 @@
     (closed-sd2)
     (closed-sd1)
   )
-  (:goal (and (closed-sd1) (closed-cb1) (updated-cb1)))
+  (:goal (and (closed-sd2) (closed-cb1)))
 )

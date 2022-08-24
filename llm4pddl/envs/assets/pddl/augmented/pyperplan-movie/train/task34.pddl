@@ -5,7 +5,6 @@
   )
   (:init
     (crackers k1)
-    (counter-at-other-than-two-hours)
   )
-  (:goal (and (movie-rewound) (have-crackers)))
+  (:goal (and (have-crackers)))
 )

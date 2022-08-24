@@ -63,5 +63,5 @@
     (place distributor0)
     (place distributor1)
   )
-  (:goal (and (on crate0 crate1) (on crate1 pallet2) (on crate3 crate2)))
+  (:goal (and (on crate0 crate1) (on crate1 pallet2) (on crate5 crate0)))
 )

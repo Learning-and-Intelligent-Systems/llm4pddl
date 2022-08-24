@@ -8,5 +8,5 @@
     (not-updated-cb1)
     (closed-sd1)
   )
-  (:goal (and (closed-cb1) (updated-cb1)))
+  (:goal (and (do-normal) (updated-cb1)))
 )

@@ -2,13 +2,11 @@
   (:domain movie-strips)
   (:objects
     c1 - object
-    k1 - object
-    z1 - object
+    p1 - object
   )
   (:init
     (chips c1)
-    (cheese z1)
-    (crackers k1)
+    (pop p1)
   )
-  (:goal (and (have-chips) (have-cheese) (have-crackers)))
+  (:goal (and (counter-at-zero) (have-chips) (have-pop)))
 )

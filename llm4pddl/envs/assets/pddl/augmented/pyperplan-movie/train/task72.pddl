@@ -3,10 +3,12 @@
   (:objects
     d1 - object
     p1 - object
+    z1 - object
   )
   (:init
     (dip d1)
     (pop p1)
+    (cheese z1)
   )
-  (:goal (and (counter-at-zero) (have-dip) (have-pop)))
+  (:goal (and (counter-at-zero) (have-dip) (have-pop) (have-cheese)))
 )

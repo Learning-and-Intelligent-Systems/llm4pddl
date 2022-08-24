@@ -3,10 +3,12 @@
   (:objects
     d1 - object
     k1 - object
+    z1 - object
   )
   (:init
     (dip d1)
+    (cheese z1)
     (crackers k1)
   )
-  (:goal (and (have-dip) (have-crackers)))
+  (:goal (and (have-dip) (have-cheese) (have-crackers)))
 )
