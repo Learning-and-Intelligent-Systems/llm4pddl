@@ -53,6 +53,8 @@ def _load_results(results_dir: str) -> pd.DataFrame:
                 "task_id": task_id,
                 **task_results,
             }
+            # Exclude solve_time because it's misleading.
+            del datum["solve_time"]
             for col, derive_fn in _DERIVED_COLS.items():
                 datum[col] = derive_fn(datum)
             all_data.append(datum)
@@ -95,7 +97,7 @@ def _create_summary_table(raw_results: pd.DataFrame,
     pd.set_option("expand_frame_repr", False)
     if verbose:
         print("\n\nAGGREGATED DATA OVER EVAL TASKS AND SEEDS:")
-        print(summary.reset_index())
+        print(summary)  #.reset_index())
         # Report the total number of results.
         print(f"\nTOTAL RESULTS: {df.shape[0]}")
         # Create an even higher-level summary, averaging over everything except
