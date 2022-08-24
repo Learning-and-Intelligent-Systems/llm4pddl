@@ -9,7 +9,11 @@ from llm4pddl.envs import ALL_ENVS, create_env
 @pytest.mark.parametrize("env_name", ALL_ENVS)
 def test_create_env(env_name):
     """Tests for create_env()."""
-    utils.reset_flags({"num_train_tasks": 3, "num_eval_tasks": 6})
+    utils.reset_flags({
+        "num_train_tasks": 3,
+        "num_eval_tasks": 6,
+        "train_task_offset": 0
+    })
     blocks_env = create_env(env_name)
     assert blocks_env.get_name() == env_name
     train_tasks = blocks_env.get_train_tasks()

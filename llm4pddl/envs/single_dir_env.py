@@ -20,9 +20,13 @@ class SingleDirEnv(BaseEnv):
         # We need to have at least this number of tasks.
         assert len(tasks) >= FLAGS.num_train_tasks + FLAGS.num_eval_tasks
         # Split into train and eval.
-        self._train_tasks = tasks[:FLAGS.num_train_tasks]
-        self._eval_tasks = tasks[FLAGS.num_train_tasks:(FLAGS.num_train_tasks +
-                                                        FLAGS.num_eval_tasks)]
+        start = FLAGS.train_task_offset
+        switch = start + FLAGS.num_train_tasks
+        end = switch + FLAGS.num_eval_tasks
+        self._train_tasks = tasks[start:switch]
+        self._eval_tasks = tasks[switch:end]
+        assert len(self._train_tasks) == FLAGS.num_train_tasks
+        assert len(self._eval_tasks) == FLAGS.num_eval_tasks
 
     @property
     @abc.abstractmethod

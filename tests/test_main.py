@@ -58,6 +58,7 @@ def test_run_pipeline():
         "experiment_id": "dummy",
         "num_train_tasks": 1,
         "num_eval_tasks": 2,
+        "train_task_offset": 0,
         "results_dir": temp_results_dir,
         "data_dir": temp_data_dir,
         "load_data": False,
@@ -77,6 +78,7 @@ def test_run_pipeline():
         "experiment_id": "dummy",
         "num_train_tasks": 1,
         "num_eval_tasks": 2,
+        "train_task_offset": 0,
         "results_dir": temp_results_dir,
         "data_dir": temp_data_dir,
         "load_data": True,
@@ -93,7 +95,11 @@ def test_run_pipeline():
 
 def test_run_evaluation():
     """Tests for _run_evaluation() in main.py."""
-    utils.reset_flags({"num_train_tasks": 0, "num_eval_tasks": 2})
+    utils.reset_flags({
+        "num_train_tasks": 0,
+        "num_eval_tasks": 2,
+        "train_task_offset": 0,
+    })
     # Cover cases where approach is None or invalid.
     plan_sequence = [None, []]
     approach = _MockApproach(plan_sequence)
