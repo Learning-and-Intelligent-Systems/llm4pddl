@@ -28,6 +28,7 @@ _DIR = Path(__file__).parent
 PYPERPLAN_BENCHMARK_DIR = _DIR / "third_party" / "pyperplan" / "benchmarks"
 CUSTOM_BENCHMARK_DIR = _DIR / "envs" / "assets" / "pddl"
 AUGMENTED_BENCHMARK_DIR = CUSTOM_BENCHMARK_DIR / "augmented"
+MANUAL_TRAIN_BENCHMARK_DIR = CUSTOM_BENCHMARK_DIR / "manual"
 
 
 def validate_plan(task: Task, plan: Plan) -> bool:
