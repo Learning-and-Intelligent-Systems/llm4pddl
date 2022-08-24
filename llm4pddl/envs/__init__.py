@@ -34,7 +34,7 @@ CUSTOM_BENCHMARKS = [
     "medium_delivery", "easy_spanner", "medium_spanner"
 ]
 
-AUGMENTED_BENCHMARKS = ["blocks"]
+AUGMENTED_BENCHMARKS = [f"pyperplan-{b}" for b in PYPERPLAN_BENCHMARKS]
 
 ALL_ENVS = [f"pyperplan-{b}" for b in PYPERPLAN_BENCHMARKS] + [
     f"custom-{b}" for b in CUSTOM_BENCHMARKS
