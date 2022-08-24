@@ -10,14 +10,14 @@ from llm4pddl.envs import ALL_ENVS, create_env
 def test_create_env(env_name):
     """Tests for create_env()."""
     utils.reset_flags({
-        "num_train_tasks": 3,
+        "num_train_tasks": 1,
         "num_eval_tasks": 6,
         "train_task_offset": 0
     })
     blocks_env = create_env(env_name)
     assert blocks_env.get_name() == env_name
     train_tasks = blocks_env.get_train_tasks()
-    assert len(train_tasks) == 3
+    assert len(train_tasks) == 1
     eval_tasks = blocks_env.get_eval_tasks()
     assert len(eval_tasks) == 6
 
