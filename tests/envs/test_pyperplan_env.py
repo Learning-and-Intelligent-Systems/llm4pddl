@@ -7,7 +7,11 @@ from llm4pddl.envs.pyperplan_env import PyperplanEnv
 
 def test_pyperplan_env():
     """Tests for PyperplanEnv()."""
-    utils.reset_flags({"num_train_tasks": 5, "num_eval_tasks": 10})
+    utils.reset_flags({
+        "num_train_tasks": 5,
+        "num_eval_tasks": 10,
+        "train_task_offset": 0
+    })
     for benchmark_name in PYPERPLAN_BENCHMARKS:
         env = PyperplanEnv(benchmark_name)
         assert env.get_name() == f"pyperplan-{benchmark_name}"

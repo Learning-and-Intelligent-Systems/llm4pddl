@@ -44,6 +44,7 @@ def test_llm_standard_approach(env_name):
         "llm_cache_dir": cache_dir,
         "num_train_tasks": 1,
         "num_eval_tasks": 1,
+        "train_task_offset": 0,
         "llm_model_name": "code-davinci-002",  # should not matter for test
         "llm_use_cache_only": False,
         "llm_max_total_tokens": 700,
@@ -94,6 +95,7 @@ def test_llm_standard_approach_failure_cases(llm_prompt_method):
         "llm_cache_dir": cache_dir,
         "num_train_tasks": 1,
         "num_eval_tasks": 1,
+        "train_task_offset": 0,
         "llm_model_name": "code-davinci-002",  # should not matter for test
         "llm_use_cache_only": False,
         "llm_max_total_tokens": 700,
@@ -168,6 +170,7 @@ def test_llm_multi_approach():
         "llm_cache_dir": cache_dir,
         "num_train_tasks": 1,
         "num_eval_tasks": 1,
+        "train_task_offset": 0,
         "llm_model_name": "code-davinci-002",  # should not matter for test
         "llm_max_total_tokens": 700,
         "llm_multi_temperature": 0.3,

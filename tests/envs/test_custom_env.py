@@ -7,7 +7,11 @@ from llm4pddl.envs.custom_env import CustomEnv
 
 def test_custom_env():
     """Tests for CustomEnv()"""
-    utils.reset_flags({"num_train_tasks": 5, "num_eval_tasks": 10})
+    utils.reset_flags({
+        "num_train_tasks": 5,
+        "num_eval_tasks": 10,
+        "train_task_offset": 0
+    })
     for env_name in CUSTOM_BENCHMARKS:
         env = CustomEnv(env_name)
         assert env.get_name() == f'custom-{env_name}'
