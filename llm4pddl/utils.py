@@ -241,21 +241,21 @@ def minify_pddl_problem(problem: str) -> str:
     return new_problem
 
 
-def embed_training_tasks(training_tasks: Sequence[Task]) -> List:
-    """"embeds a list of tasks.
+def embed_tasks(tasks: List[Task]) -> List:
+    """"Embeds a list of tasks.
 
-    Returns a list of embeddings with indicies corresponding to its
+    Returns a list of embeddings with indices corresponding to its
     task.
     """
     embedding_model = SentenceTransformer(FLAGS.embedding_model_name)
-    embeddings = [embed_task(task, embedding_model) for task in training_tasks]
+    embeddings = [embed_task(task, embedding_model) for task in tasks]
     return embeddings
 
 
 def embed_task(task: Task, embedding_model: SentenceTransformer) -> List:
     """Embeds a task using embedding_model.
 
-    Returns a numpy array?
+    Returns a numpy array.
     """
     with open(task.problem_file, 'r', encoding='utf-8') as f:
         task_string = f.read()
@@ -274,34 +274,22 @@ def make_embeddings_mapping(embeddings: Sequence,
     } for emb, datum in zip(embeddings, dataset)]
 
 
-def get_closest(task: Task, embeddings_mapping: List[Dict],
-                num_train: int) -> List:
+def get_closest_datums(task: Task, embeddings_mapping: List[Dict],
+                       num_closest: int) -> List:
     """Returns the num_train most similar training tasks to the task, in
     reverse order of similarity."""
-    embeddings_map = embeddings_mapping[:]
-    # print(f'{num_train}<={len(embeddings_map)}')
-    assert num_train <= len(embeddings_map)
+    assert num_closest <= len(embeddings_mapping)
     embedding_model = SentenceTransformer(FLAGS.embedding_model_name)
     task_embedding = embed_task(task, embedding_model)
     # now compare this embedding to all the other embeddings
-    other_embeddings = [mapping['embedding'] for mapping in embeddings_map]
+    other_embeddings = [mapping['embedding'] for mapping in embeddings_mapping]
     cos_sims = [
         get_cosine_sim(task_embedding, other_emb)
         for other_emb in other_embeddings
     ]
-    # select num_train datum that are most similar and return them.
-    # it is here that we would instead
-    # need to get the extracted init and goal strings.
     # we will need a get_init_string() and get_goal_string() helper functions.
-
-    indicies = np.argsort(cos_sims)[-num_train:]
-    closest_datums = [embeddings_map[ind]['datum'] for ind in indicies]
-    # for _ in range(num_train):
-    #     highest_cossim_index = np.argmax(cos_sims)
-    #     # cossim_val = cos_sims.pop(highest_cossim_index)
-    #     datum = embeddings_map.pop(highest_cossim_index)['datum']
-    #     closest_datums.append(datum)
-    # closest_datums.reverse()
+    indicies = np.argsort(cos_sims)[-num_closest:]
+    closest_datums = [embeddings_mapping[ind]['datum'] for ind in indicies]
     return closest_datums
 
 

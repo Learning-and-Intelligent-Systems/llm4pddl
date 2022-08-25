@@ -378,15 +378,15 @@ A:
 (make blue)(end)"""
 
 
-def test_embed_training_tasks():
-    """Tests for embed_training_tasks()."""
+def test_embed_tasks():
+    """Tests for embed_tasks()."""
     utils.reset_flags({
         "embedding_model_name": "paraphrase-MiniLM-L6-v2",
         "llm_prompt_flatten_pddl": True
     })
     tasks = [utils.get_custom_task('dressed', i) for i in range(1, 5)]
     embedding_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
-    for j, emb in enumerate(utils.embed_training_tasks(tasks)):
+    for j, emb in enumerate(utils.embed_tasks(tasks)):
         assert np.all(
             emb == utils.embed_task(utils.get_custom_task('dressed', j +
                                                           1), embedding_model))
@@ -420,8 +420,8 @@ def test_make_embeddings_mapping():
     assert mapping[0]['datum'].solution == ['insert plan here']
 
 
-def test_get_closest():
-    """Tests for get_closest()."""
+def test_get_closest_datums():
+    """Tests for get_closest_datums()."""
     utils.reset_flags({
         "llm_prompt_flatten_pddl": True,
         "embedding_model_name": "paraphrase-MiniLM-L6-v2"
@@ -437,11 +437,11 @@ def test_get_closest():
     dataset = [Datum(task, ['insert plan here']) for task in tasks]
     embeddings_mapping = utils.make_embeddings_mapping(embeddings, dataset)
     # checking correct output size
-    most_similar = utils.get_closest(dressed01, embeddings_mapping, 1)
+    most_similar = utils.get_closest_datums(dressed01, embeddings_mapping, 1)
     assert len(most_similar) == 1
-    most_similar2 = utils.get_closest(dressed01, embeddings_mapping, 3)
+    most_similar2 = utils.get_closest_datums(dressed01, embeddings_mapping, 3)
     assert len(most_similar2) == 3
-    most_similar3 = utils.get_closest(dressed01, embeddings_mapping, 4)
+    most_similar3 = utils.get_closest_datums(dressed01, embeddings_mapping, 4)
     assert len(most_similar3) == 4
     # checking that blocks is the least likely:
     assert most_similar3[0].task == utils.get_pyperplan_benchmark_task(
@@ -452,7 +452,7 @@ def test_get_closest():
     ]
     dif_dataset = [Datum(task, ['insert plan here']) for task in dif_tasks]
     dif_emb_map = utils.make_embeddings_mapping(dif_embeddings, dif_dataset)
-    most_sim1 = utils.get_closest(blocks02, dif_emb_map, 1)
+    most_sim1 = utils.get_closest_datums(blocks02, dif_emb_map, 1)
     # checking that blocks is the most likely of the 3:
     assert most_sim1[0].task == utils.get_pyperplan_benchmark_task('blocks', 1)
     # big example selecting the correct tasks each time:
@@ -470,23 +470,23 @@ def test_get_closest():
     big_dataset = [Datum(task, ['insert plan here']) for task in big_tasks]
     big_emb_map = utils.make_embeddings_mapping(big_embeddings, big_dataset)
     # comparing to dressed:
-    most_similar_dressed = utils.get_closest(dressed01, big_emb_map, 9)
+    most_similar_dressed = utils.get_closest_datums(dressed01, big_emb_map, 9)
     assert len(most_similar_dressed) == len(big_tasks)
     for datum in most_similar_dressed[-3:]:
         assert datum.task in dressed
 
     # comparing to blocks:
-    most_similar_blocks = utils.get_closest(blocks01, big_emb_map, 9)
+    most_similar_blocks = utils.get_closest_datums(blocks01, big_emb_map, 9)
     for datum in most_similar_blocks[-3:]:
         assert datum.task in blocks
 
     # comparing to depot:
-    most_similar_depot = utils.get_closest(depot01, big_emb_map, 9)
+    most_similar_depot = utils.get_closest_datums(depot01, big_emb_map, 9)
     for datum in most_similar_depot[-3:]:
         assert datum.task in depot
 
     # proving identical is considered best:
-    most_sim = utils.get_closest(blocks02, big_emb_map, 9)[-1]
+    most_sim = utils.get_closest_datums(blocks02, big_emb_map, 9)[-1]
     assert most_sim.task == utils.get_pyperplan_benchmark_task('blocks', 2)
 
     # make test here that shows it selects a more similar 
@@ -539,11 +539,3 @@ def test_run_planning(domain_file, problem_file, impossible_problem_file):
     with pytest.raises(NotImplementedError) as e:
         utils.run_planning(task, planner="not a real planner")
     assert "Unrecognized planner" in str(e)
-
-
-if __name__ == "__main__": # pragma: no cover
-    test_embed_training_tasks()
-    test_embed_task()
-    test_get_cosine_sim()
-    test_make_embeddings_mapping()
-    test_get_closest()

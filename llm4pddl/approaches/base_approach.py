@@ -14,7 +14,6 @@ class BaseApproach(abc.ABC):
 
     def __init__(self) -> None:
         self._rng = np.random.default_rng(FLAGS.seed)
-        self.embeddings_mapping: List[Dict] = []
 
     @property
     @abc.abstractmethod

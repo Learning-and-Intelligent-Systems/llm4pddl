@@ -47,13 +47,13 @@ def _run_pipeline(approach: BaseApproach, env: BaseEnv) -> None:
     """Run training and evaluation."""
     # Run training for learning-based approaches.
     if approach.is_learning_based:
-        train_tasks = env.get_train_tasks()  #list of tasks
+        train_tasks = env.get_train_tasks()  # list of tasks
         dataset = create_dataset(train_tasks)
         approach.train(dataset)
         # Embedding the training tasks.
         if FLAGS.use_dynamic_examples:
-            embeddings = utils.embed_training_tasks(train_tasks)
-            approach.embeddings_mapping = utils.make_embeddings_mapping(
+            embeddings = utils.embed_tasks(train_tasks)
+            approach._list_embeddings_mapping = utils.make_embeddings_mapping(
                 embeddings, dataset)
     # Run evaluation for all approaches.
     eval_tasks = env.get_eval_tasks()
