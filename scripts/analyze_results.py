@@ -2,7 +2,6 @@
 
 import argparse
 import glob
-import itertools
 import pickle
 from pathlib import Path
 from typing import Any, Callable, Dict, Set, Tuple
@@ -103,10 +102,11 @@ def _create_summary_table(raw_results: pd.DataFrame,
         print("\n\nAGGREGATED DATA OVER EVAL TASKS AND SEEDS:")
         summary = summary.reset_index()
         envs = summary.env.unique()
-        approaches = summary.approach_id.unique()
         metrics = ["nodes_created", "nodes_expanded", "success"]
         # env -> approach X metric -> value
-        reshaped_data = {env: {} for env in envs}
+        reshaped_data: Dict[str, Dict[Tuple[str, str],
+                                      float]] = {env: {}
+                                                 for env in envs}
         for _, row in summary.iterrows():
             for metric in metrics:
                 reshaped_data[row.env][(row.approach_id, metric)] = row[metric]
