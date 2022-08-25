@@ -9,6 +9,9 @@ from pyperplan.pddl.pddl import Predicate as _PyperplanPredicate
 from pyperplan.pddl.pddl import Problem as _PyperplanProblem
 from pyperplan.pddl.pddl import Type as _PyperplanType
 
+import numpy as np
+from numpy.typing import NDArray
+
 # Explicitly list the pyperplan data structures that we use.
 PyperplanAction = _PyperplanAction
 PyperplanDomain = _PyperplanDomain
@@ -55,3 +58,7 @@ class Datum:
 
 # A training dataset.
 Dataset = List[Datum]
+
+
+# An embedding.
+Embedding = NDArray[np.float32]
