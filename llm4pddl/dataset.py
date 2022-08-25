@@ -26,22 +26,19 @@ def create_dataset(train_tasks: Sequence[Task],
             with open(cache_path, "rb") as f:
                 solution = pickle.load(f)
             logging.debug(f"Loaded solution from {cache_path}")
-            # Sanity check the loaded solution.
-            assert utils.validate_plan(task, solution)
         else:
-
             if FLAGS.data_gen_method == "planning":
                 planner = FLAGS.data_gen_planner
                 solution, _ = utils.run_planning(task, planner=planner)
                 assert solution is not None
-
             else:
                 assert FLAGS.data_gen_method == "manual"
                 solution = create_manual_plan(task, FLAGS.env)
-
             with open(cache_path, "wb") as f:
                 pickle.dump(solution, f)
             logging.debug(f"Saved solution to {cache_path}")
+        # Sanity check the solution.
+        assert utils.validate_plan(task, solution)
         datum = Datum(task, solution)
         dataset.append(datum)
     return dataset
