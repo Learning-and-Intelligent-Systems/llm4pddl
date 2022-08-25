@@ -2,6 +2,7 @@
 
 import argparse
 import glob
+import itertools
 import pickle
 from pathlib import Path
 from typing import Any, Callable, Dict, Set, Tuple
@@ -12,7 +13,8 @@ import pandas as pd
 from llm4pddl.structs import TaskMetrics
 
 _DERIVED_COLS: Dict[str, Callable[[TaskMetrics], Any]] = {
-    "success": lambda d: float(d["result"] == "success")
+    "success": lambda d: float(d["result"] == "success"),
+    "approach_id": lambda d: d["experiment_id"].split("-", 1)[1]
 }
 
 
@@ -55,6 +57,8 @@ def _load_results(results_dir: str) -> pd.DataFrame:
             }
             # Exclude solve_time because it's misleading.
             del datum["solve_time"]
+            # Approach replaced by approach_id.
+            del datum["approach"]
             for col, derive_fn in _DERIVED_COLS.items():
                 datum[col] = derive_fn(datum)
             all_data.append(datum)
@@ -78,11 +82,11 @@ def _create_summary_table(raw_results: pd.DataFrame,
     # Remove the non-numeric columns that we don't need anymore.
     df = raw_results.drop(columns=["result"])
     # Group by env, approach, seed, and experiment ID.
-    grouped = df.groupby(["env", "approach", "seed", "experiment_id"])
+    grouped = df.groupby(["env", "approach_id", "seed", "experiment_id"])
     # Average over eval tasks.
     eval_means = grouped.mean().reset_index()
     # Get statistics over seed.
-    grouped = eval_means.groupby(["env", "approach", "experiment_id"])
+    grouped = eval_means.groupby(["env", "approach_id", "experiment_id"])
     means = grouped.mean()
     stds = grouped.std(ddof=0)
     sizes = grouped.size().to_frame()
@@ -97,29 +101,41 @@ def _create_summary_table(raw_results: pd.DataFrame,
     pd.set_option("expand_frame_repr", False)
     if verbose:
         print("\n\nAGGREGATED DATA OVER EVAL TASKS AND SEEDS:")
-        print(summary)
+        summary = summary.reset_index()
+        envs = summary.env.unique()
+        approaches = summary.approach_id.unique()
+        metrics = ["nodes_created", "nodes_expanded", "success"]
+        # env -> approach X metric -> value
+        reshaped_data = {env: {} for env in envs}
+        for _, row in summary.iterrows():
+            for metric in metrics:
+                reshaped_data[row.env][(row.approach_id, metric)] = row[metric]
+        summary_nested = pd.DataFrame(reshaped_data).transpose()
+        print(summary_nested)
         # Report the total number of results.
         print(f"\nTOTAL RESULTS: {df.shape[0]}")
         # Create an even higher-level summary, averaging over everything except
         # the approach.
         print("\nSUMMARY OF THE SUMMARY:")
-        print(df.groupby(["approach"]).mean())
+        print(df.groupby(["approach_id"]).mean())
     if save_summary:
-        means.to_csv("results_summary.csv")
+        summary_nested.to_csv("results_summary.csv")
         print("\n\nWrote out table to results_summary.csv")
     return means.reset_index()
 
 
 def _summarize_diff(a_df: pd.DataFrame, b_df: pd.DataFrame) -> None:
     # Collect the unique (env, approach, experiment ID) in each df.
-    a_ids = {(r.env, r.approach, r.experiment_id) for _, r in a_df.iterrows()}
-    b_ids = {(r.env, r.approach, r.experiment_id) for _, r in b_df.iterrows()}
+    a_ids = {(r.env, r.approach_id, r.experiment_id)
+             for _, r in a_df.iterrows()}
+    b_ids = {(r.env, r.approach_id, r.experiment_id)
+             for _, r in b_df.iterrows()}
 
     # Helper to select rows from IDs.
     def _id_to_rows(df: pd.DataFrame, row_id: Tuple[str, str,
                                                     str]) -> pd.DataFrame:
         env, approach, experiment_id = row_id
-        return df[((df.env == env) & (df.approach == approach) & \
+        return df[((df.env == env) & (df.approach_id == approach) & \
                    (df.experiment_id == experiment_id))]
 
     # Helper to get the score from an ID later on.
