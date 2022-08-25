@@ -28,6 +28,7 @@ def test_llm_planning_planning_approach():
         "llm_plan_guidance_method": "init-queue",
         "planner": "pyperplan",
         "data_gen_planner": "pyperplan",
+        "data_gen_method": "planning",
         "planning_timeout": 100,
         "llm_prompt_flatten_pddl": False,
         "data_dir": data_dir,
