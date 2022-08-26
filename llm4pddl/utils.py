@@ -263,9 +263,8 @@ def embed_task(task: Task, embedding_model: SentenceTransformer) -> Embedding:
     return embedding
 
 
-def make_embeddings_mapping(
-        embeddings: List[Embedding],
-        dataset: Dataset) -> List[Dict[str, Embedding or Datum]]:
+def make_embeddings_mapping(embeddings: List[Embedding],
+                            dataset: Dataset) -> List[Dict[str, Any]]:
     """Makes embeddings mapping for training data."""
     assert len(embeddings) == len(dataset)
     return [{
@@ -274,8 +273,7 @@ def make_embeddings_mapping(
     } for emb, datum in zip(embeddings, dataset)]
 
 
-def get_closest_datums(task: Task,
-                       embeddings_mapping: List[Dict[str, Embedding or Datum]],
+def get_closest_datums(task: Task, embeddings_mapping: List[Dict[str, Any]],
                        num_closest: int) -> List[Datum]:
     """Returns the num_train most similar training tasks to the task, in
     reverse order of similarity."""
