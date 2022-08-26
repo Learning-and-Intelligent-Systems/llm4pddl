@@ -3,28 +3,29 @@ import argparse
 from typing import Dict
 
 import matplotlib.pyplot as plt
-import pandas as pd
+from analyze_results import _load_results
 
 APPROACHES = [
-    "llm-standard-plan", "llm-multi", "llm-multi-plan", "fd", "pyperplan"
+    "llm-standard-plan", "llm-multi", "llm-multi-plan", "fd-only",
+    "pyperplan-only"
 ]
 
 
 def _main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input_path", type=str)
+    parser.add_argument("--input_dir", type=str)
     parser.add_argument("--output_path", type=str)
     args = parser.parse_args()
-    approaches = _construct_dictionaries(args.input_path)
+    approaches = _construct_dictionaries(args.input_dir)
     _get_visualization(approaches, args.output_path)
 
 
-def _construct_dictionaries(input_path: str) -> Dict[str, Dict[str, str]]:
+def _construct_dictionaries(input_dir: str) -> Dict[str, Dict[str, str]]:
     approaches: Dict = {}
     for name in APPROACHES:
         approaches[name] = {}
 
-    df = pd.read_csv(input_path)
+    df = _load_results(input_dir)
     column_labels = list(df.columns)
     env_column_index = column_labels.index('env')
     approach_column_index = column_labels.index('approach_id')
@@ -35,7 +36,6 @@ def _construct_dictionaries(input_path: str) -> Dict[str, Dict[str, str]]:
         approach_name = row[approach_column_index]
         environment_name = row[env_column_index]
         accuracy = row[accuracy_column_index]
-        accuracy = float(accuracy[0:accuracy.index(' ')])
         for approach in APPROACHES:
             if approach_name == approach:
                 approaches[approach][environment_name] = accuracy
