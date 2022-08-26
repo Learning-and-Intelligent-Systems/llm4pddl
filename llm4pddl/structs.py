@@ -3,14 +3,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List
 
+import numpy as np
+from numpy.typing import NDArray
 from pyperplan.pddl.pddl import Action as _PyperplanAction
 from pyperplan.pddl.pddl import Domain as _PyperplanDomain
 from pyperplan.pddl.pddl import Predicate as _PyperplanPredicate
 from pyperplan.pddl.pddl import Problem as _PyperplanProblem
 from pyperplan.pddl.pddl import Type as _PyperplanType
-
-import numpy as np
-from numpy.typing import NDArray
 
 # Explicitly list the pyperplan data structures that we use.
 PyperplanAction = _PyperplanAction
@@ -58,7 +57,6 @@ class Datum:
 
 # A training dataset.
 Dataset = List[Datum]
-
 
 # An embedding.
 Embedding = NDArray[np.float32]

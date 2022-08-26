@@ -38,9 +38,9 @@ class LLMOpenLoopApproach(BaseApproach):
     def solve(self, task: Task) -> Tuple[Optional[Plan], TaskMetrics]:
         new_prompt = self._create_prompt(task)
         if FLAGS.use_dynamic_examples:
-            closest_datums = utils.get_closest_datums(task, self._list_embeddings_mapping,
-                                               FLAGS.num_train_tasks)
-            self.train(closest_datums)
+            closest_datums = utils.get_closest_datums(
+                task, self._list_embeddings_mapping, FLAGS.num_train_tasks)
+            self._create_prompt_prefix(closest_datums)
         prompt = self._prompt_prefix + new_prompt
         logging.debug(f"Querying with prompt suffix:\n{new_prompt}")
         responses = self._llm.sample_completions(
@@ -51,6 +51,15 @@ class LLMOpenLoopApproach(BaseApproach):
         return self._llm_responses_to_plan(responses, task)
 
     def train(self, dataset: Dataset) -> None:
+        self._create_prompt_prefix(dataset)
+        # Embedding the training tasks:
+        if FLAGS.use_dynamic_examples:
+            train_tasks = [datum.task for datum in dataset]
+            embeddings = utils.embed_tasks(train_tasks)
+            self._list_embeddings_mapping = utils.make_embeddings_mapping(
+                embeddings, dataset)
+
+    def _create_prompt_prefix(self, dataset: Dataset) -> None:
         prompts = []
         for datum in dataset:
             prompt = self._create_prompt(datum.task, datum.solution)

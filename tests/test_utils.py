@@ -489,7 +489,7 @@ def test_get_closest_datums():
     most_sim = utils.get_closest_datums(blocks02, big_emb_map, 9)[-1]
     assert most_sim.task == utils.get_pyperplan_benchmark_task('blocks', 2)
 
-    # make test here that shows it selects a more similar 
+    # make test here that shows it selects a more similar
     # task in the same domain.
 
 
@@ -500,7 +500,7 @@ def test_get_cosine_sim():
     embedding2 = embedding_model.encode('hello')
     cos_sim1 = utils.get_cosine_sim(embedding1, embedding2)
     # cos_sim1 should be 1.
-    assert abs(cos_sim1-1)<0.00001
+    assert abs(cos_sim1 - 1) < 0.00001
     embedding3 = embedding_model.encode('hell')
     cos_sim2 = utils.get_cosine_sim(embedding1, embedding3)
     # cos_sim2 should not be 1.

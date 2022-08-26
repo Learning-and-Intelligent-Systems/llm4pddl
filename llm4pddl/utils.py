@@ -19,10 +19,10 @@ from pyperplan.planner import HEURISTICS, SEARCHES, search_plan
 from sentence_transformers import SentenceTransformer
 from sentence_transformers.util import cos_sim
 
-from llm4pddl.dataset import Dataset
 from llm4pddl.flags import FLAGS
-from llm4pddl.structs import Plan, PyperplanAction, PyperplanDomain, \
-    PyperplanPredicate, PyperplanProblem, PyperplanType, Task, TaskMetrics
+from llm4pddl.structs import Dataset, Datum, Embedding, Plan, \
+    PyperplanAction, PyperplanDomain, PyperplanPredicate, PyperplanProblem, \
+    PyperplanType, Task, TaskMetrics
 
 LLM_QUESTION_TOKEN = "Q:"
 LLM_ANSWER_TOKEN = "A:"
@@ -241,18 +241,17 @@ def minify_pddl_problem(problem: str) -> str:
     return new_problem
 
 
-def embed_tasks(tasks: List[Task]) -> List:
+def embed_tasks(tasks: List[Task]) -> List[Embedding]:
     """"Embeds a list of tasks.
 
-    Returns a list of embeddings with indices corresponding to its
-    task.
+    Returns a list of embeddings with indices corresponding to its task.
     """
     embedding_model = SentenceTransformer(FLAGS.embedding_model_name)
     embeddings = [embed_task(task, embedding_model) for task in tasks]
     return embeddings
 
 
-def embed_task(task: Task, embedding_model: SentenceTransformer) -> List:
+def embed_task(task: Task, embedding_model: SentenceTransformer) -> Embedding:
     """Embeds a task using embedding_model.
 
     Returns a numpy array.
@@ -264,8 +263,9 @@ def embed_task(task: Task, embedding_model: SentenceTransformer) -> List:
     return embedding
 
 
-def make_embeddings_mapping(embeddings: Sequence,
-                            dataset: Dataset) -> List[Dict]:
+def make_embeddings_mapping(
+        embeddings: List[Embedding],
+        dataset: Dataset) -> List[Dict[str, Embedding or Datum]]:
     """Makes embeddings mapping for training data."""
     assert len(embeddings) == len(dataset)
     return [{
@@ -274,8 +274,9 @@ def make_embeddings_mapping(embeddings: Sequence,
     } for emb, datum in zip(embeddings, dataset)]
 
 
-def get_closest_datums(task: Task, embeddings_mapping: List[Dict],
-                       num_closest: int) -> List:
+def get_closest_datums(task: Task,
+                       embeddings_mapping: List[Dict[str, Embedding or Datum]],
+                       num_closest: int) -> List[Datum]:
     """Returns the num_train most similar training tasks to the task, in
     reverse order of similarity."""
     assert num_closest <= len(embeddings_mapping)
@@ -293,7 +294,7 @@ def get_closest_datums(task: Task, embeddings_mapping: List[Dict],
     return closest_datums
 
 
-def get_cosine_sim(embedding1: List, embedding2: List) -> float:
+def get_cosine_sim(embedding1: Embedding, embedding2: Embedding) -> float:
     """Returns the cosine similarity between the two embeddings."""
     return cos_sim(embedding1, embedding2).item()
 
@@ -417,7 +418,11 @@ def str_to_identifier(x: str) -> str:
     """
     return hashlib.md5(x.encode('utf-8')).hexdigest()
 
-if __name__ == "__main__":
-    task = get_custom_task('dressed', 1)
-    model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
-    reset_flags({"embedding_model_name": "paraphrase-MiniLM-L6-v2", "llm_prompt_flatten_pddl": True})
+
+# if __name__ == "__main__":
+#     task = get_custom_task('dressed', 1)
+#     model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
+#     reset_flags({
+#         "embedding_model_name": "paraphrase-MiniLM-L6-v2",
+#         "llm_prompt_flatten_pddl": True
+#     })
