@@ -1,4 +1,5 @@
-"""Creates a collection of graphs summarizing results saved to a directory."""
+"""Creates a collection of graphs to compare the accuracy of approaches in
+different environments."""
 import argparse
 from typing import Dict
 
