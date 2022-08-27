@@ -3,12 +3,16 @@
 import logging
 from typing import Dict, List, Optional, Tuple
 
+import numpy as np
+from sentence_transformers import SentenceTransformer
+from sentence_transformers.util import cos_sim
+
 from llm4pddl import utils
 from llm4pddl.approaches.base_approach import BaseApproach
 from llm4pddl.flags import FLAGS
 from llm4pddl.llm_interface import OpenAILLM
-from llm4pddl.structs import Dataset, LLMResponse, Plan, PyperplanObject, \
-    PyperplanType, Task, TaskMetrics
+from llm4pddl.structs import Any, Dataset, Datum, Embedding, LLMResponse, \
+    Plan, PyperplanObject, PyperplanType, Task, TaskMetrics
 
 
 class LLMOpenLoopApproach(BaseApproach):
@@ -188,3 +192,61 @@ class LLMOpenLoopApproach(BaseApproach):
             # Update the unparsed response.
             unparsed = unparsed[right_parens_idx + 1:]
         return plan
+
+    def embed_task(self, task: Task,
+                   embedding_model: SentenceTransformer) -> Embedding:
+        """Embeds a task using embedding_model.
+
+        Returns a numpy array.
+        """
+        # note: task_string includes the Q: and A: pieces, not just the task string
+        task_string = self._create_prompt(task)
+        # this line is a work around for now:
+        task_string = task_string.split('\n')[1:-2][0]
+        embedding = embedding_model.encode(task_string)
+        return embedding
+
+    def embed_tasks(self, tasks: List[Task]) -> List[Embedding]:
+        """"Embeds a list of tasks.
+
+        Returns a list of embeddings with indices corresponding to its
+        task.
+        """
+        embedding_model = SentenceTransformer(FLAGS.embedding_model_name)
+        embeddings = [self.embed_task(task, embedding_model) for task in tasks]
+        return embeddings
+
+    def make_embeddings_mapping(self, embeddings: List[Embedding],
+                                dataset: Dataset) -> List[Dict[str, Any]]:
+        """Makes embeddings mapping for training data."""
+        assert len(embeddings) == len(dataset)
+        return [{
+            'embedding': emb,
+            'datum': datum
+        } for emb, datum in zip(embeddings, dataset)]
+
+    def get_closest_datums(self, task: Task,
+                           embeddings_mapping: List[Dict[str, Any]],
+                           num_closest: int) -> List[Datum]:
+        """Returns the num_train most similar training tasks to the task, in
+        reverse order of similarity."""
+        assert num_closest <= len(embeddings_mapping)
+        embedding_model = SentenceTransformer(FLAGS.embedding_model_name)
+        task_embedding = self.embed_task(task, embedding_model)
+        # now compare this embedding to all the other embeddings
+        other_embeddings = [
+            mapping['embedding'] for mapping in embeddings_mapping
+        ]
+        cos_sims = [
+            self.get_cosine_sim(task_embedding, other_emb)
+            for other_emb in other_embeddings
+        ]
+        # we will need a get_init_string() and get_goal_string() helper functions.
+        indicies = np.argsort(cos_sims)[-num_closest:]
+        closest_datums = [embeddings_mapping[ind]['datum'] for ind in indicies]
+        return closest_datums
+
+    def get_cosine_sim(self, embedding1: Embedding,
+                       embedding2: Embedding) -> float:
+        """Returns the cosine similarity between the two embeddings."""
+        return cos_sim(embedding1, embedding2).item()

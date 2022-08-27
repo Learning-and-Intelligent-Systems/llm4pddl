@@ -16,8 +16,6 @@ import numpy as np
 from pyperplan.grounding import ground as pyperplan_ground
 from pyperplan.pddl.parser import Parser
 from pyperplan.planner import HEURISTICS, SEARCHES, search_plan
-from sentence_transformers import SentenceTransformer
-from sentence_transformers.util import cos_sim
 
 from llm4pddl.flags import FLAGS
 from llm4pddl.structs import Dataset, Datum, Embedding, Plan, \
@@ -239,62 +237,6 @@ def minify_pddl_problem(problem: str) -> str:
         if new_problem[0] == '\n':
             new_problem = new_problem[1:]
     return new_problem
-
-
-def embed_tasks(tasks: List[Task]) -> List[Embedding]:
-    """"Embeds a list of tasks.
-
-    Returns a list of embeddings with indices corresponding to its task.
-    """
-    embedding_model = SentenceTransformer(FLAGS.embedding_model_name)
-    embeddings = [embed_task(task, embedding_model) for task in tasks]
-    return embeddings
-
-
-def embed_task(task: Task, embedding_model: SentenceTransformer) -> Embedding:
-    """Embeds a task using embedding_model.
-
-    Returns a numpy array.
-    """
-    with open(task.problem_file, 'r', encoding='utf-8') as f:
-        task_string = f.read()
-    task_string = minify_pddl_problem(task_string)
-    embedding = embedding_model.encode(task_string)
-    return embedding
-
-
-def make_embeddings_mapping(embeddings: List[Embedding],
-                            dataset: Dataset) -> List[Dict[str, Any]]:
-    """Makes embeddings mapping for training data."""
-    assert len(embeddings) == len(dataset)
-    return [{
-        'embedding': emb,
-        'datum': datum
-    } for emb, datum in zip(embeddings, dataset)]
-
-
-def get_closest_datums(task: Task, embeddings_mapping: List[Dict[str, Any]],
-                       num_closest: int) -> List[Datum]:
-    """Returns the num_train most similar training tasks to the task, in
-    reverse order of similarity."""
-    assert num_closest <= len(embeddings_mapping)
-    embedding_model = SentenceTransformer(FLAGS.embedding_model_name)
-    task_embedding = embed_task(task, embedding_model)
-    # now compare this embedding to all the other embeddings
-    other_embeddings = [mapping['embedding'] for mapping in embeddings_mapping]
-    cos_sims = [
-        get_cosine_sim(task_embedding, other_emb)
-        for other_emb in other_embeddings
-    ]
-    # we will need a get_init_string() and get_goal_string() helper functions.
-    indicies = np.argsort(cos_sims)[-num_closest:]
-    closest_datums = [embeddings_mapping[ind]['datum'] for ind in indicies]
-    return closest_datums
-
-
-def get_cosine_sim(embedding1: Embedding, embedding2: Embedding) -> float:
-    """Returns the cosine similarity between the two embeddings."""
-    return cos_sim(embedding1, embedding2).item()
 
 
 @functools.lru_cache(maxsize=None)

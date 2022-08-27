@@ -2,14 +2,18 @@
 
 import shutil
 
+import numpy as np
 import pytest
+from sentence_transformers import SentenceTransformer
+from sentence_transformers.util import cos_sim
 
 from llm4pddl import utils
 from llm4pddl.approaches import create_approach
+from llm4pddl.approaches.llm_open_loop_approach import LLMOpenLoopApproach
 from llm4pddl.dataset import create_dataset
 from llm4pddl.envs import ALL_ENVS, create_env
 from llm4pddl.llm_interface import LargeLanguageModel
-from llm4pddl.structs import LLMResponse
+from llm4pddl.structs import Datum, LLMResponse
 
 # Wrap text responses into LLMResponses with dummy entries.
 wrap_response = lambda text: LLMResponse("", text, [], [], {}, {})
@@ -179,3 +183,151 @@ def test_llm_multi_approach():
     assert not approach.is_planning_based
     assert approach._num_completions == 3  # pylint: disable=protected-access
     assert approach._temperature == 0.3  # pylint: disable=protected-access
+
+
+def test_embed_tasks():
+    """Tests for embed_tasks()."""
+    utils.reset_flags({
+        "embedding_model_name": "paraphrase-MiniLM-L6-v2",
+        "llm_prompt_flatten_pddl": True,
+        "llm_model_name": "davinci-002",
+        "llm_prompt_method": "standard"
+    })
+    approach: LLMOpenLoopApproach = create_approach('llm-standard')
+    tasks = [utils.get_custom_task('dressed', i) for i in range(1, 2)]
+    embedding_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
+    for j, emb in enumerate(approach.embed_tasks(tasks)):
+        assert np.all(emb == approach.embed_task(
+            utils.get_custom_task('dressed', j + 1), embedding_model))
+
+
+def test_embed_task():
+    """Tests for embed_task()."""
+    utils.reset_flags({
+        "embedding_model_name": "paraphrase-MiniLM-L6-v2",
+        "llm_prompt_flatten_pddl": True,
+        "llm_model_name": "davinci-002",
+        "llm_prompt_method": "standard"
+    })
+    approach: LLMOpenLoopApproach = create_approach('llm-standard')
+    embedding_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
+    task01 = utils.get_custom_task('dressed', 1)
+    embedding1 = approach.embed_task(task01, embedding_model)
+    task_string = approach._create_prompt(task01)  # pylint: disable=protected-access
+    task_string = task_string.split('\n')[1:-2][0]
+    embedding2 = embedding_model.encode(task_string)
+    assert np.all(embedding1 == embedding2)
+
+
+def test_make_embeddings_mapping():
+    """Tests make_embeddings_mapping()."""
+    utils.reset_flags({"llm_model_name": "davinci-002"})
+    approach: LLMOpenLoopApproach = create_approach('llm-standard')
+    embeddings = [[0.5], [0.1], [0.2]]
+    tasks = [utils.get_custom_task('dressed', i) for i in range(1, 4)]
+    dataset = [Datum(task, ['insert plan here']) for task in tasks]
+    mapping = approach.make_embeddings_mapping(embeddings, dataset)
+    assert len(mapping) == 3
+    assert mapping[0]['embedding'] == [0.5]
+    assert mapping[1]['embedding'] == [0.1]
+    assert mapping[0]['datum'].solution == ['insert plan here']
+
+
+def test_get_closest_datums():
+    """Tests for get_closest_datums()."""
+    utils.reset_flags({
+        "llm_prompt_flatten_pddl": True,
+        "embedding_model_name": "paraphrase-MiniLM-L6-v2",
+        "llm_model_name": "davinci-002",
+        "llm_prompt_method": "standard"
+    })
+    approach: LLMOpenLoopApproach = create_approach('llm-standard')
+    dressed01 = utils.get_custom_task('dressed', 1)
+    tasks = [utils.get_custom_task('dressed', i) for i in range(2, 5)]
+    blocks01 = utils.get_pyperplan_benchmark_task('blocks', 1)
+    blocks02 = utils.get_pyperplan_benchmark_task('blocks', 2)
+    depot01 = utils.get_pyperplan_benchmark_task('depot', 1)
+    tasks.append(blocks01)
+    embedding_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
+    embeddings = [approach.embed_task(task, embedding_model) for task in tasks]
+    dataset = [Datum(task, ['insert plan here']) for task in tasks]
+    embeddings_mapping = approach.make_embeddings_mapping(embeddings, dataset)
+    # checking correct output size
+    most_similar = approach.get_closest_datums(dressed01, embeddings_mapping,
+                                               1)
+    assert len(most_similar) == 1
+    most_similar2 = approach.get_closest_datums(dressed01, embeddings_mapping,
+                                                3)
+    assert len(most_similar2) == 3
+    most_similar3 = approach.get_closest_datums(dressed01, embeddings_mapping,
+                                                4)
+    assert len(most_similar3) == 4
+    # checking that blocks is the least likely:
+    assert most_similar3[0].task == utils.get_pyperplan_benchmark_task(
+        'blocks', 1)
+    dif_tasks = [dressed01, blocks01, depot01]
+    dif_embeddings = [
+        approach.embed_task(task, embedding_model) for task in dif_tasks
+    ]
+    dif_dataset = [Datum(task, ['insert plan here']) for task in dif_tasks]
+    dif_emb_map = approach.make_embeddings_mapping(dif_embeddings, dif_dataset)
+    most_sim1 = approach.get_closest_datums(blocks02, dif_emb_map, 1)
+    # checking that blocks is the most likely of the 3:
+    assert most_sim1[0].task == utils.get_pyperplan_benchmark_task('blocks', 1)
+    # big example selecting the correct tasks each time:
+    dressed = [utils.get_custom_task('dressed', i) for i in range(2, 5)]
+    depot = [
+        utils.get_pyperplan_benchmark_task('depot', i) for i in range(2, 5)
+    ]
+    blocks = [
+        utils.get_pyperplan_benchmark_task('blocks', i) for i in range(2, 5)
+    ]
+    big_tasks = dressed + depot + blocks
+    big_embeddings = [
+        approach.embed_task(task, embedding_model) for task in big_tasks
+    ]
+    big_dataset = [Datum(task, ['insert plan here']) for task in big_tasks]
+    big_emb_map = approach.make_embeddings_mapping(big_embeddings, big_dataset)
+    # comparing to dressed:
+    most_similar_dressed = approach.get_closest_datums(dressed01, big_emb_map,
+                                                       9)
+    assert len(most_similar_dressed) == len(big_tasks)
+    for datum in most_similar_dressed[-3:]:
+        assert datum.task in dressed
+
+    # comparing to blocks:
+    most_similar_blocks = approach.get_closest_datums(blocks01, big_emb_map, 9)
+    for datum in most_similar_blocks[-3:]:
+        assert datum.task in blocks
+
+    # comparing to depot:
+    most_similar_depot = approach.get_closest_datums(depot01, big_emb_map, 9)
+    for datum in most_similar_depot[-3:]:
+        assert datum.task in depot
+
+    # proving identical is considered best:
+    most_sim = approach.get_closest_datums(blocks02, big_emb_map, 9)[-1]
+    assert most_sim.task == utils.get_pyperplan_benchmark_task('blocks', 2)
+
+    # make test here that shows it selects a more similar
+    # task in the same domain.
+
+
+def test_get_cosine_sim():
+    """Tests get_cosine_sim()."""
+    utils.reset_flags({"llm_model_name": "davinci-002"})
+    approach: LLMOpenLoopApproach = create_approach('llm-standard')
+    embedding_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
+    embedding1 = embedding_model.encode('hello')
+    embedding2 = embedding_model.encode('hello')
+    cos_sim1 = approach.get_cosine_sim(embedding1, embedding2)
+    # cos_sim1 should be 1.
+    assert abs(cos_sim1 - 1) < 0.00001
+    embedding3 = embedding_model.encode('hell')
+    cos_sim2 = approach.get_cosine_sim(embedding1, embedding3)
+    # cos_sim2 should not be 1.
+    assert cos_sim2 != 1
+    embedding4 = embedding_model.encode('my name is')
+    embedding5 = embedding_model.encode('my dog is here')
+    cos_sim3 = approach.get_cosine_sim(embedding4, embedding5)
+    assert cos_sim3 == cos_sim(embedding4, embedding5).item()
