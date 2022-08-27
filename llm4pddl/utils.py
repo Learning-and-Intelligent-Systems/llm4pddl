@@ -10,7 +10,7 @@ import sys
 import tempfile
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Collection, Dict, List, Optional, Sequence, Set, Tuple
+from typing import Any, Collection, Dict, Optional, Sequence, Set, Tuple
 
 import numpy as np
 from pyperplan.grounding import ground as pyperplan_ground
@@ -18,9 +18,8 @@ from pyperplan.pddl.parser import Parser
 from pyperplan.planner import HEURISTICS, SEARCHES, search_plan
 
 from llm4pddl.flags import FLAGS
-from llm4pddl.structs import Dataset, Datum, Embedding, Plan, \
-    PyperplanAction, PyperplanDomain, PyperplanPredicate, PyperplanProblem, \
-    PyperplanType, Task, TaskMetrics
+from llm4pddl.structs import Plan, PyperplanAction, PyperplanDomain, \
+    PyperplanPredicate, PyperplanProblem, PyperplanType, Task, TaskMetrics
 
 LLM_QUESTION_TOKEN = "Q:"
 LLM_ANSWER_TOKEN = "A:"

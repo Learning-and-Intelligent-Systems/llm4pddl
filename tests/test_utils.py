@@ -3,13 +3,10 @@
 import os
 import tempfile
 
-import numpy as np
 import pytest
-from sentence_transformers import SentenceTransformer
-from sentence_transformers.util import cos_sim
 
 from llm4pddl import utils
-from llm4pddl.structs import Datum, Task
+from llm4pddl.structs import Task
 
 
 @pytest.fixture(scope="module", name="domain_file")

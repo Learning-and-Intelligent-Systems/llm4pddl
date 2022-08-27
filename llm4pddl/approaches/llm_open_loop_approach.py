@@ -42,7 +42,7 @@ class LLMOpenLoopApproach(BaseApproach):
     def solve(self, task: Task) -> Tuple[Optional[Plan], TaskMetrics]:
         new_prompt = self._create_prompt(task)
         if FLAGS.use_dynamic_examples:
-            closest_datums = utils.get_closest_datums(
+            closest_datums = self.get_closest_datums(
                 task, self._list_embeddings_mapping, FLAGS.num_train_tasks)
             self._create_prompt_prefix(closest_datums)
         prompt = self._prompt_prefix + new_prompt
@@ -59,8 +59,8 @@ class LLMOpenLoopApproach(BaseApproach):
         # Embedding the training tasks:
         if FLAGS.use_dynamic_examples:
             train_tasks = [datum.task for datum in dataset]
-            embeddings = utils.embed_tasks(train_tasks)
-            self._list_embeddings_mapping = utils.make_embeddings_mapping(
+            embeddings = self.embed_tasks(train_tasks)
+            self._list_embeddings_mapping = self.make_embeddings_mapping(
                 embeddings, dataset)
 
     def _create_prompt_prefix(self, dataset: Dataset) -> None:
@@ -199,7 +199,7 @@ class LLMOpenLoopApproach(BaseApproach):
 
         Returns a numpy array.
         """
-        # note: task_string includes the Q: and A: pieces, not just the task string
+        # note: task_string includes the Q: and A: parts, not just task string
         task_string = self._create_prompt(task)
         # this line is a work around for now:
         task_string = task_string.split('\n')[1:-2][0]
@@ -241,7 +241,7 @@ class LLMOpenLoopApproach(BaseApproach):
             self.get_cosine_sim(task_embedding, other_emb)
             for other_emb in other_embeddings
         ]
-        # we will need a get_init_string() and get_goal_string() helper functions.
+        # we will need a get_init_string() and get_goal_string() helper funcs.
         indicies = np.argsort(cos_sims)[-num_closest:]
         closest_datums = [embeddings_mapping[ind]['datum'] for ind in indicies]
         return closest_datums
