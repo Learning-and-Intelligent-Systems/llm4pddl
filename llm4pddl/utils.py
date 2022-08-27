@@ -5,12 +5,13 @@ import hashlib
 import logging
 import os
 import re
+import string
 import subprocess
 import sys
 import tempfile
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Collection, Dict, Optional, Sequence, Set, Tuple
+from typing import Any, Collection, Dict, List, Optional, Sequence, Set, Tuple
 
 import numpy as np
 from pyperplan.grounding import ground as pyperplan_ground
@@ -356,3 +357,15 @@ def str_to_identifier(x: str) -> str:
         https://stackoverflow.com/questions/5297448
     """
     return hashlib.md5(x.encode('utf-8')).hexdigest()
+
+
+def randomize_object_names(rng: np.random.Generator,
+                           objs: List[str]) -> List[str]:
+    """To prevent overfitting, replaces object names in prompt with randomly
+    generated strings."""
+    random_dict = {}
+    for obj in objs:
+        if obj not in random_dict:
+            random_dict[obj] = ''.join(
+                rng.choice(list(string.ascii_lowercase), len(obj)))
+    return list(random_dict.values())
