@@ -18,7 +18,6 @@ setup(name="llm4pddl",
           "pandas-stubs",
           "openai",
           "transformers",
-          "matplotlib"
       ],
       setup_requires=['setuptools_scm'],
       include_package_data=True,
