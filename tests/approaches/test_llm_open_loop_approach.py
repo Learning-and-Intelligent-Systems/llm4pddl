@@ -253,12 +253,12 @@ def test_llm_standard_approach_dynamic_big_example():
     })
     dynamic_approach = create_approach("llm-standard")
     dataset = [
-        Datum(utils.get_pyperplan_benchmark_task('blocks', i),
+        Datum(utils.get_task_from_dir(utils.PYPERPLAN_BENCHMARK_DIR / 'blocks', i),
               ['insert plan here']) for i in range(2, 32)
     ]
     non_dynamic_approach.train(dataset)
     dynamic_approach.train(dataset)
-    dynamic_approach.solve(utils.get_pyperplan_benchmark_task('blocks', 1))
+    dynamic_approach.solve(utils.get_task_from_dir(utils.PYPERPLAN_BENCHMARK_DIR / 'blocks', 1))
     assert len(non_dynamic_approach._list_embeddings_mapping) == len(  # pylint: disable=protected-access
         dynamic_approach._list_embeddings_mapping)  # pylint: disable=protected-access
     # they shouldn't be the plan because it is recognized
@@ -303,11 +303,11 @@ def test_embed_tasks():
         "llm_prompt_method": "standard"
     })
     approach: LLMOpenLoopApproach = create_approach('llm-standard')
-    tasks = [utils.get_custom_task('dressed', i) for i in range(1, 2)]
+    tasks = [utils.get_task_from_dir(utils.CUSTOM_BENCHMARK_DIR / 'dressed', i) for i in range(1, 2)]
     embedding_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
     for j, emb in enumerate(approach.embed_tasks(tasks)):
         assert np.all(emb == approach.embed_task(
-            utils.get_custom_task('dressed', j + 1), embedding_model))
+            utils.get_task_from_dir(utils.CUSTOM_BENCHMARK_DIR / 'dressed', j+1), embedding_model)) 
 
 
 def test_embed_task():
@@ -320,7 +320,7 @@ def test_embed_task():
     })
     approach: LLMOpenLoopApproach = create_approach('llm-standard')
     embedding_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
-    task01 = utils.get_custom_task('dressed', 1)
+    task01 = utils.get_task_from_dir(utils.CUSTOM_BENCHMARK_DIR / 'dressed', 1)
     embedding1 = approach.embed_task(task01, embedding_model)
     task_string = approach._create_prompt(task01)  # pylint: disable=protected-access
     task_string = task_string.split('\n')[1:-2][0]
@@ -333,7 +333,7 @@ def test_make_embeddings_mapping():
     utils.reset_flags({"llm_model_name": "davinci-002"})
     approach: LLMOpenLoopApproach = create_approach('llm-standard')
     embeddings = [[0.5], [0.1], [0.2]]
-    tasks = [utils.get_custom_task('dressed', i) for i in range(1, 4)]
+    tasks = [utils.get_task_from_dir(utils.CUSTOM_BENCHMARK_DIR / 'dressed', i) for i in range(1, 4)]
     dataset = [Datum(task, ['insert plan here']) for task in tasks]
     mapping = approach.make_embeddings_mapping(embeddings, dataset)
     assert len(mapping) == 3
@@ -351,11 +351,11 @@ def test_get_closest_datums():
         "llm_prompt_method": "standard"
     })
     approach: LLMOpenLoopApproach = create_approach('llm-standard')
-    dressed01 = utils.get_custom_task('dressed', 1)
-    tasks = [utils.get_custom_task('dressed', i) for i in range(2, 5)]
-    blocks01 = utils.get_pyperplan_benchmark_task('blocks', 1)
-    blocks02 = utils.get_pyperplan_benchmark_task('blocks', 2)
-    depot01 = utils.get_pyperplan_benchmark_task('depot', 1)
+    dressed01 = utils.get_task_from_dir(utils.CUSTOM_BENCHMARK_DIR / 'dressed', 1)
+    tasks = [utils.get_task_from_dir(utils.CUSTOM_BENCHMARK_DIR / 'dressed', i) for i in range(2, 5)]
+    blocks01 = utils.get_task_from_dir(utils.PYPERPLAN_BENCHMARK_DIR / 'blocks', 1)
+    blocks02 = utils.get_task_from_dir(utils.PYPERPLAN_BENCHMARK_DIR / 'blocks', 2)
+    depot01 = utils.get_task_from_dir(utils.PYPERPLAN_BENCHMARK_DIR / 'depot', 1)
     tasks.append(blocks01)
     embedding_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
     embeddings = [approach.embed_task(task, embedding_model) for task in tasks]
@@ -372,8 +372,7 @@ def test_get_closest_datums():
                                                 4)
     assert len(most_similar3) == 4
     # checking that blocks is the least likely:
-    assert most_similar3[0].task == utils.get_pyperplan_benchmark_task(
-        'blocks', 1)
+    assert most_similar3[0].task == utils.get_task_from_dir(utils.PYPERPLAN_BENCHMARK_DIR / 'blocks', 1)
     dif_tasks = [dressed01, blocks01, depot01]
     dif_embeddings = [
         approach.embed_task(task, embedding_model) for task in dif_tasks
@@ -382,14 +381,14 @@ def test_get_closest_datums():
     dif_emb_map = approach.make_embeddings_mapping(dif_embeddings, dif_dataset)
     most_sim1 = approach.get_closest_datums(blocks02, dif_emb_map, 1)
     # checking that blocks is the most likely of the 3:
-    assert most_sim1[0].task == utils.get_pyperplan_benchmark_task('blocks', 1)
+    assert most_sim1[0].task == utils.get_task_from_dir(utils.PYPERPLAN_BENCHMARK_DIR / 'blocks', 1)
     # big example selecting the correct tasks each time:
-    dressed = [utils.get_custom_task('dressed', i) for i in range(2, 5)]
+    dressed = [utils.get_task_from_dir(utils.CUSTOM_BENCHMARK_DIR / 'dressed', i) for i in range(2, 5)]
     depot = [
-        utils.get_pyperplan_benchmark_task('depot', i) for i in range(2, 5)
+        utils.get_task_from_dir(utils.PYPERPLAN_BENCHMARK_DIR / 'depot', i) for i in range(2, 5)
     ]
     blocks = [
-        utils.get_pyperplan_benchmark_task('blocks', i) for i in range(2, 5)
+        utils.get_task_from_dir(utils.PYPERPLAN_BENCHMARK_DIR / 'blocks', i) for i in range(2, 5)
     ]
     big_tasks = dressed + depot + blocks
     big_embeddings = [
@@ -416,11 +415,11 @@ def test_get_closest_datums():
 
     # proving identical is considered best:
     most_sim = approach.get_closest_datums(blocks02, big_emb_map, 9)[-1]
-    assert most_sim.task == utils.get_pyperplan_benchmark_task('blocks', 2)
+    assert most_sim.task == utils.get_task_from_dir(utils.PYPERPLAN_BENCHMARK_DIR / 'blocks', 2)
     # example to compare within a specific domain.
     dif_blocks_tasks = [
-        utils.get_pyperplan_benchmark_task('blocks', 3),
-        utils.get_pyperplan_benchmark_task('blocks', 35)
+        utils.get_task_from_dir(utils.PYPERPLAN_BENCHMARK_DIR / 'blocks', 3),
+        utils.get_task_from_dir(utils.PYPERPLAN_BENCHMARK_DIR / 'blocks', 35)
     ]
     dif_blocks_embeddings = [
         approach.embed_task(task, embedding_model) for task in dif_blocks_tasks
@@ -434,8 +433,7 @@ def test_get_closest_datums():
     # Heuristically, blocks03 should be considered more similar.
     most_sim_blocks_datum = approach.get_closest_datums(
         blocks01, dif_blocks_emb_map, 1)[0]
-    assert most_sim_blocks_datum.task == utils.get_pyperplan_benchmark_task(
-        'blocks', 3)
+    assert most_sim_blocks_datum.task == utils.get_task_from_dir(utils.PYPERPLAN_BENCHMARK_DIR / 'blocks', 3)
 
 
 def test_get_cosine_sim():
