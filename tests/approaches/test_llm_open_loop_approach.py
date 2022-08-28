@@ -205,10 +205,10 @@ def test_llm_standard_approach_dynamic_small_example():
     dynamic_approach.train(dataset)
     assert len(dynamic_approach._list_embeddings_mapping) == 1  # pylint: disable=protected-access
     # since training num is 1, these should be the same:
-    assert (dynamic_approach._prompt_prefix == # pylint: disable=protected-access
+    assert (dynamic_approach._prompt_prefix ==  # pylint: disable=protected-access
             non_dynamic_approach._prompt_prefix)  # pylint: disable=protected-access
     dynamic_approach.solve(utils.get_custom_task('dressed', 2))
-    assert (dynamic_approach._prompt_prefix == # pylint: disable=protected-access
+    assert (dynamic_approach._prompt_prefix ==  # pylint: disable=protected-access
             non_dynamic_approach._prompt_prefix)  # pylint: disable=protected-access
 
 
@@ -254,16 +254,16 @@ def test_llm_standard_approach_dynamic_big_example():
     non_dynamic_approach.train(dataset)
     dynamic_approach.train(dataset)
     dynamic_approach.solve(utils.get_pyperplan_benchmark_task('blocks', 1))
-    assert len(non_dynamic_approach._list_embeddings_mapping) == len( # pylint: disable=protected-access
+    assert len(non_dynamic_approach._list_embeddings_mapping) == len(  # pylint: disable=protected-access
         dynamic_approach._list_embeddings_mapping)  # pylint: disable=protected-access
     # they shouldn't be the plan because it is recognized
     # heuristically that the order should change and have questions with a
     # smaller question number closer to the end in the dynamic example
-    assert (non_dynamic_approach._prompt_prefix != # pylint: disable=protected-access
-            dynamic_approach._prompt_prefix) # pylint: disable=protected-access
+    assert (non_dynamic_approach._prompt_prefix !=  # pylint: disable=protected-access
+            dynamic_approach._prompt_prefix)  # pylint: disable=protected-access
     # however, length should be the same, since only order is changed.
-    assert len(non_dynamic_approach._prompt_prefix) == len( # pylint: disable=protected-access
-dynamic_approach._prompt_prefix)  # pylint: disable=protected-access
+    assert len(non_dynamic_approach._prompt_prefix) == len(  # pylint: disable=protected-access
+        dynamic_approach._prompt_prefix)  # pylint: disable=protected-access
 
 
 def test_llm_multi_approach():
