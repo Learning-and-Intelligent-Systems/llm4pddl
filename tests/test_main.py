@@ -58,7 +58,6 @@ def test_run_pipeline():
         "experiment_id": "dummy",
         "num_train_tasks": 1,
         "num_eval_tasks": 2,
-        "results_dir": temp_results_dir,
         "use_dynamic_examples": False,
         "train_task_offset": 0,
         "results_dir": temp_results_dir,
