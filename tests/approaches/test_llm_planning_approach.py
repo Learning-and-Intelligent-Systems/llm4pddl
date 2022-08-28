@@ -13,10 +13,12 @@ from llm4pddl.envs import create_env
 def test_llm_planning_planning_approach():
     """Tests for LLMPlanningApproach()."""
     cache_dir = "_fake_llm_cache_dir"
+    data_dir = "_fake_data_dir"
     utils.reset_flags({
         "llm_cache_dir": cache_dir,
         "num_train_tasks": 1,
         "num_eval_tasks": 1,
+        "train_task_offset": 0,
         "llm_model_name": "code-davinci-002",  # should not matter for test
         "llm_use_cache_only": False,
         "llm_max_total_tokens": 700,
@@ -26,8 +28,11 @@ def test_llm_planning_planning_approach():
         "llm_plan_guidance_method": "init-queue",
         "planner": "pyperplan",
         "data_gen_planner": "pyperplan",
+        "data_gen_method": "planning",
         "planning_timeout": 100,
-        "llm_prompt_flatten_pddl": False
+        "llm_prompt_flatten_pddl": False,
+        "data_dir": data_dir,
+        "load_data": False,
     })
     env = create_env("pyperplan-gripper")
     train_tasks = env.get_train_tasks()
@@ -84,3 +89,4 @@ def test_llm_planning_planning_approach():
     assert almost_ideal_nodes > ideal_nodes
 
     shutil.rmtree(cache_dir)
+    shutil.rmtree(data_dir)

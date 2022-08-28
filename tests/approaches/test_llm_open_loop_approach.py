@@ -39,18 +39,23 @@ class _MockLLM(LargeLanguageModel):
 def test_llm_standard_approach(env_name):
     """Tests for the LLM standard approach."""
     cache_dir = "_fake_llm_cache_dir"
+    data_dir = "_fake_data_dir"
     utils.reset_flags({
         "llm_cache_dir": cache_dir,
         "num_train_tasks": 1,
         "num_eval_tasks": 1,
+        "train_task_offset": 0,
         "llm_model_name": "code-davinci-002",  # should not matter for test
         "llm_use_cache_only": False,
         "llm_max_total_tokens": 700,
         "llm_prompt_method": "standard",
         "planner": "pyperplan",
         "data_gen_planner": "pyperplan",
+        "data_gen_method": "planning",
         "planning_timeout": 100,
-        "llm_prompt_flatten_pddl": False
+        "llm_prompt_flatten_pddl": False,
+        "data_dir": data_dir,
+        "load_data": False,
     })
     env = create_env(env_name)
     train_tasks = env.get_train_tasks()
@@ -78,6 +83,7 @@ def test_llm_standard_approach(env_name):
     assert utils.validate_plan(task, plan)
 
     shutil.rmtree(cache_dir)
+    shutil.rmtree(data_dir)
 
 
 @pytest.mark.parametrize("llm_prompt_method",
@@ -85,10 +91,12 @@ def test_llm_standard_approach(env_name):
 def test_llm_standard_approach_failure_cases(llm_prompt_method):
     """Tests failure cases for the LLM standard approach."""
     cache_dir = "_fake_llm_cache_dir"
+    data_dir = "_fake_data_dir"
     utils.reset_flags({
         "llm_cache_dir": cache_dir,
         "num_train_tasks": 1,
         "num_eval_tasks": 1,
+        "train_task_offset": 0,
         "llm_model_name": "code-davinci-002",  # should not matter for test
         "llm_use_cache_only": False,
         "llm_max_total_tokens": 700,
@@ -97,8 +105,11 @@ def test_llm_standard_approach_failure_cases(llm_prompt_method):
         "llm_prompt_method": llm_prompt_method,
         "planner": "pyperplan",
         "data_gen_planner": "pyperplan",
+        "data_gen_method": "planning",
         "planning_timeout": 100,
-        "llm_prompt_flatten_pddl": False
+        "llm_prompt_flatten_pddl": False,
+        "data_dir": data_dir,
+        "load_data": False,
     })
     env = create_env("pyperplan-miconic")
     train_tasks = env.get_train_tasks()
@@ -120,40 +131,38 @@ def test_llm_standard_approach_failure_cases(llm_prompt_method):
     # Test failure cases of _llm_response_to_plan().
     assert approach._llm_response_to_plan(wrap_response(ideal_response), task)  # pylint: disable=protected-access
     # Cases where a line contains malformed parentheses.
-    response = "()\n" + ideal_response
+    response = "()\n" + ideal_response  # should be skipped
     plan = approach._llm_response_to_plan(wrap_response(response), task)  # pylint: disable=protected-access
-    assert not plan
-    response = ")(\n" + ideal_response
+    assert len(plan) == len(ideal_plan)
+    response = ")(\n" + ideal_response  # should not parse any plan
     plan = approach._llm_response_to_plan(wrap_response(response), task)  # pylint: disable=protected-access
     assert not plan
     # Case where there is an unmatched left parenthesis.
-    response = ideal_response + "\n("
+    response = ideal_response + "\n("  # should be skipped
     plan = approach._llm_response_to_plan(wrap_response(response), task)  # pylint: disable=protected-access
     assert len(plan) == len(ideal_plan)
-    response = "()\n" + ideal_response
-    plan = approach._llm_response_to_plan(wrap_response(response), task)  # pylint: disable=protected-access
-    assert not plan
     # Case where object names are incorrect.
     assert "(up f0 f1)" in ideal_response
     response = ideal_response.replace("(up f0 f1)", "(up dummy f1)")
     plan = approach._llm_response_to_plan(wrap_response(response), task)  # pylint: disable=protected-access
-    assert not plan
+    assert len(plan) == len(ideal_plan) - 1
     # Case where operator names are incorrect.
     response = ideal_response.replace("(up f0 f1)", "(up-dummy f0 f1)")
     plan = approach._llm_response_to_plan(wrap_response(response), task)  # pylint: disable=protected-access
-    assert not plan
+    assert len(plan) == len(ideal_plan) - 1
     # Cases where the type signature of the operator is wrong.
     response = ideal_response.replace("(up f0 f1)", "(up f0)")
     plan = approach._llm_response_to_plan(wrap_response(response), task)  # pylint: disable=protected-access
-    assert not plan
+    assert len(plan) == len(ideal_plan) - 1
     response = ideal_response.replace("(up f0 f1)", "(up p0 f1)")
     plan = approach._llm_response_to_plan(wrap_response(response), task)  # pylint: disable=protected-access
-    assert not plan
+    assert len(plan) == len(ideal_plan) - 1
     response = ideal_response.replace("(up f0 f1)", "(up f0 f1 f1)")
     plan = approach._llm_response_to_plan(wrap_response(response), task)  # pylint: disable=protected-access
-    assert not plan
+    assert len(plan) == len(ideal_plan) - 1
 
     shutil.rmtree(cache_dir)
+    shutil.rmtree(data_dir)
 
 
 def test_llm_multi_approach():
@@ -163,12 +172,12 @@ def test_llm_multi_approach():
         "llm_cache_dir": cache_dir,
         "num_train_tasks": 1,
         "num_eval_tasks": 1,
+        "train_task_offset": 0,
         "llm_model_name": "code-davinci-002",  # should not matter for test
         "llm_max_total_tokens": 700,
         "llm_multi_temperature": 0.3,
         "llm_multi_num_completions": 3,
         "llm_prompt_method": "standard",
-        "planning_timeout": 100,
         "llm_prompt_flatten_pddl": False
     })
     approach = create_approach("llm-multi")

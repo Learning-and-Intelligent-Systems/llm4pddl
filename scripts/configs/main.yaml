@@ -22,9 +22,6 @@ APPROACHES:
     NAME: "llm-multi-plan"
     FLAGS: {}
 ENVS:
-  airport:
-    NAME: "pyperplan-airport"
-    FLAGS: {}
   blocks:
     NAME: "pyperplan-blocks"
     FLAGS: {}
@@ -49,17 +46,8 @@ ENVS:
   movie:
     NAME: "pyperplan-movie"
     FLAGS: {}
-  openstacks:
-    NAME: "pyperplan-openstacks"
-    FLAGS: {}
-  parcprinter:
-    NAME: "pyperplan-parcprinter"
-    FLAGS: {}
   pegsol:
     NAME: "pyperplan-pegsol"
-    FLAGS: {}
-  psr-small:
-    NAME: "pyperplan-psr-small"
     FLAGS: {}
   rovers:
     NAME: "pyperplan-rovers"
@@ -103,10 +91,13 @@ ENVS:
   medium-spanner:
     NAME: "custom-medium_spanner"
     FLAGS: {}
+  dressed:
+    NAME: "custom-dressed"
+    FLAGS: {}
 ARGS:
   - "debug"
 FLAGS:
-  num_train_tasks: 5
+  num_train_tasks: 3
   num_eval_tasks: 10
 START_SEED: 456
 NUM_SEEDS: 1
