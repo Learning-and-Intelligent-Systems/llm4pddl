@@ -58,7 +58,7 @@ def test_llm_standard_approach(env_name):
         "data_gen_method": "planning",
         "planning_timeout": 100,
         "llm_prompt_flatten_pddl": False,
-        "use_dynamic_examples": False
+        "use_dynamic_examples": False,
         "data_dir": data_dir,
         "load_data": False
     })
@@ -113,7 +113,7 @@ def test_llm_standard_approach_failure_cases(llm_prompt_method):
         "data_gen_method": "planning",
         "planning_timeout": 100,
         "llm_prompt_flatten_pddl": False,
-        "use_dynamic_examples": False
+        "use_dynamic_examples": False,
         "data_dir": data_dir,
         "load_data": False,
     })

@@ -31,7 +31,7 @@ def test_llm_planning_planning_approach():
         "data_gen_method": "planning",
         "planning_timeout": 100,
         "llm_prompt_flatten_pddl": False,
-        "use_dynamic_examples": False
+        "use_dynamic_examples": False,
         "data_dir": data_dir,
         "load_data": False
     })
