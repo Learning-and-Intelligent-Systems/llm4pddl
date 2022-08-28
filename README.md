@@ -1,4 +1,4 @@
-# llm4pddl
+# LLMs for PDDL
 
 Under development.
 
