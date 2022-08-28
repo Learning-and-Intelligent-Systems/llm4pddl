@@ -162,6 +162,110 @@ def test_llm_standard_approach_failure_cases(llm_prompt_method):
     shutil.rmtree(cache_dir)
 
 
+def test_llm_standard_approach_dynamic_small_example():
+    """Test for LLM standard approach using dynamic examples."""
+    cache_dir = "_fake_llm_cache_dir"
+    utils.reset_flags({
+        "llm_cache_dir": cache_dir,
+        "num_train_tasks": 1,
+        "num_eval_tasks": 1,
+        "llm_model_name": "code-davinci-002",
+        "llm_max_total_tokens": 700,
+        "llm_multi_temperature": 0.3,
+        # "llm_multi_num_completions": 3,
+        "llm_prompt_method": "standard",
+        "planning_timeout": 100,
+        "llm_prompt_flatten_pddl": True,
+        "use_dynamic_examples": False,  # this is the only one that differs
+        "embedding_model_name": "paraphrase-MiniLM-L6-v2",
+        "llm_use_cache_only": False
+    })
+    non_dynamic_approach = create_approach("llm-standard")
+    utils.reset_flags({
+        "llm_cache_dir": cache_dir,
+        "num_train_tasks": 1,
+        "num_eval_tasks": 1,
+        "llm_model_name": "code-davinci-002",
+        "llm_max_total_tokens": 700,
+        "llm_multi_temperature": 0.3,
+        # "llm_multi_num_completions": 3,
+        "llm_prompt_method": "standard",
+        "planning_timeout": 100,
+        "llm_prompt_flatten_pddl": True,
+        "use_dynamic_examples": True,  # this is the only one that differs
+        "embedding_model_name": "paraphrase-MiniLM-L6-v2",
+        "llm_use_cache_only": False
+    })
+    dynamic_approach = create_approach("llm-standard")
+    assert dynamic_approach._list_embeddings_mapping == []  # pylint: disable=protected-access
+    dataset = [
+        Datum(utils.get_custom_task('dressed', 1), ['Insert plan here'])
+    ]
+    non_dynamic_approach.train(dataset)
+    dynamic_approach.train(dataset)
+    assert len(dynamic_approach._list_embeddings_mapping) == 1  # pylint: disable=protected-access
+    # since training num is 1, these should be the same:
+    assert (dynamic_approach._prompt_prefix == # pylint: disable=protected-access
+            non_dynamic_approach._prompt_prefix)  # pylint: disable=protected-access
+    dynamic_approach.solve(utils.get_custom_task('dressed', 2))
+    assert (dynamic_approach._prompt_prefix == # pylint: disable=protected-access
+            non_dynamic_approach._prompt_prefix)  # pylint: disable=protected-access
+
+
+def test_llm_standard_approach_dynamic_big_example():
+    """Test for LLM standard approach using dynamic examples."""
+    cache_dir = "_fake_llm_cache_dir"
+    utils.reset_flags({
+        "llm_cache_dir": cache_dir,
+        "num_train_tasks": 30,
+        "num_eval_tasks": 1,
+        "llm_model_name": "code-davinci-002",
+        "llm_max_total_tokens": 700,
+        "llm_multi_temperature": 0.3,
+        # "llm_multi_num_completions": 3,
+        "llm_prompt_method": "standard",
+        "planning_timeout": 100,
+        "llm_prompt_flatten_pddl": True,
+        "use_dynamic_examples": False,  # this is the only one that differs
+        "embedding_model_name": "paraphrase-MiniLM-L6-v2",
+        "llm_use_cache_only": False
+    })
+    non_dynamic_approach = create_approach("llm-standard")
+    utils.reset_flags({
+        "llm_cache_dir": cache_dir,
+        "num_train_tasks": 30,
+        "num_eval_tasks": 1,
+        "llm_model_name": "code-davinci-002",
+        "llm_max_total_tokens": 700,
+        "llm_multi_temperature": 0.3,
+        # "llm_multi_num_completions": 3,
+        "llm_prompt_method": "standard",
+        "planning_timeout": 100,
+        "llm_prompt_flatten_pddl": True,
+        "use_dynamic_examples": True,  # this is the only one that differs
+        "embedding_model_name": "paraphrase-MiniLM-L6-v2",
+        "llm_use_cache_only": False
+    })
+    dynamic_approach = create_approach("llm-standard")
+    dataset = [
+        Datum(utils.get_pyperplan_benchmark_task('blocks', i),
+              ['insert plan here']) for i in range(2, 32)
+    ]
+    non_dynamic_approach.train(dataset)
+    dynamic_approach.train(dataset)
+    dynamic_approach.solve(utils.get_pyperplan_benchmark_task('blocks', 1))
+    assert len(non_dynamic_approach._list_embeddings_mapping) == len( # pylint: disable=protected-access
+        dynamic_approach._list_embeddings_mapping)  # pylint: disable=protected-access
+    # they shouldn't be the plan because it is recognized
+    # heuristically that the order should change and have questions with a
+    # smaller question number closer to the end in the dynamic example
+    assert (non_dynamic_approach._prompt_prefix != # pylint: disable=protected-access
+            dynamic_approach._prompt_prefix) # pylint: disable=protected-access
+    # however, length should be the same, since only order is changed.
+    assert len(non_dynamic_approach._prompt_prefix) == len( # pylint: disable=protected-access
+dynamic_approach._prompt_prefix)  # pylint: disable=protected-access
+
+
 def test_llm_multi_approach():
     """Tests for the LLM multi approach."""
     cache_dir = "_fake_llm_cache_dir"
@@ -308,9 +412,25 @@ def test_get_closest_datums():
     # proving identical is considered best:
     most_sim = approach.get_closest_datums(blocks02, big_emb_map, 9)[-1]
     assert most_sim.task == utils.get_pyperplan_benchmark_task('blocks', 2)
-
-    # make test here that shows it selects a more similar
-    # task in the same domain.
+    # example to compare within a specific domain.
+    dif_blocks_tasks = [
+        utils.get_pyperplan_benchmark_task('blocks', 3),
+        utils.get_pyperplan_benchmark_task('blocks', 35)
+    ]
+    dif_blocks_embeddings = [
+        approach.embed_task(task, embedding_model) for task in dif_blocks_tasks
+    ]
+    dif_blocks_dataset = [
+        Datum(task, ['insert plan here']) for task in dif_blocks_tasks
+    ]
+    dif_blocks_emb_map = approach.make_embeddings_mapping(
+        dif_blocks_embeddings, dif_blocks_dataset)
+    # Comparing blocks03 and blocks35 in their similarity to blocks01.
+    # Heuristically, blocks03 should be considered more similar.
+    most_sim_blocks_datum = approach.get_closest_datums(
+        blocks01, dif_blocks_emb_map, 1)[0]
+    assert most_sim_blocks_datum.task == utils.get_pyperplan_benchmark_task(
+        'blocks', 3)
 
 
 def test_get_cosine_sim():
