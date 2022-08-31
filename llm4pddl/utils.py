@@ -13,7 +13,6 @@ from pathlib import Path
 from typing import Any, Collection, Dict, List, Optional, Sequence, Set, Tuple
 
 import numpy as np
-from pyperplan.grounding import ground as pyperplan_ground
 from pyperplan.pddl.parser import Parser
 from pyperplan.planner import HEURISTICS, SEARCHES, search_plan
 
@@ -306,40 +305,6 @@ def get_task_size(task: Task) -> int:
     """A crude estimate of problem complexity."""
     _, prob = parse_task(task)
     return len(prob.objects) + len(prob.initial_state) + len(prob.goal)
-
-
-@functools.lru_cache(maxsize=None)
-def get_all_ground_operators(task: Task) -> Dict[str, PyperplanAction]:
-    """Ground all operators in a task.
-
-    Returns a dict mapping the string name of the operator to the
-    operator.
-    """
-    parser = Parser(task.domain_file, task.problem_file)
-    domain = parser.parse_domain()
-    problem = parser.parse_problem(domain)
-    logging.disable(logging.ERROR)
-    pyperplan_task = pyperplan_ground(problem)
-    logging.disable(logging.NOTSET)
-    return {o.name: o for o in pyperplan_task.operators}
-
-
-@functools.lru_cache(maxsize=None)
-def parse_plan_step(action_str: str, task: Task) -> Optional[PyperplanAction]:
-    """Parse a string action into a Pyperplan action (ground operator).
-
-    If the ground operator is invalid, returns None. This can be the
-    case when the ground operator has a static precondition that is not
-    in the initial state of the task, or if the operator is deemed
-    irrelevant for the task based on the relevance analysis in pyperplan
-    grounding.
-    """
-    # Match the action to a ground operator in the set of all ground operators
-    # from pyperplan. Note that the grounding is cached for efficiency. We
-    # do it this way, rather than reconstructing the operators, because
-    # pyperplan grounding removes static preconditions.
-    ground_ops = get_all_ground_operators(task)
-    return ground_ops.get(action_str, None)
 
 
 def pred_to_str(pred: PyperplanPredicate) -> str:

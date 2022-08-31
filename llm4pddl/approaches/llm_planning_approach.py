@@ -27,19 +27,7 @@ class LLMPlanningApproach(LLMOpenLoopApproach):
         partial_plans = []
         for response in responses:
             logging.debug(f"Processing response:\n{response.response_text}")
-            action_str_plan = self._llm_response_to_plan(response, task)
-            partial_plan = []
-            for action_str in action_str_plan:
-                action = utils.parse_plan_step(action_str, task)
-                # Continue if an invalid action is encountered.
-                # This is a tricky and rare case to cover, because most
-                # invalid actions are pruned by _llm_response_to_plan(),
-                # but if the action is invalid because it is irrelevant
-                # to the task, then this will only be caught during
-                # grounding.
-                if action is None:  # pragma: no cover
-                    continue
-                partial_plan.append(action)
+            partial_plan = self._llm_response_to_plan(response, task)
             partial_plans.append(partial_plan)
         # Use the partial plans to guide the planner.
         return utils.run_pyperplan_planning(
