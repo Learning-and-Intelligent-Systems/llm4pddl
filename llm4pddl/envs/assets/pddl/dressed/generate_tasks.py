@@ -135,50 +135,23 @@ if __name__ == "__main__":  # pragma: no cover
     import os
     loc = os.path.dirname(os.path.realpath(__file__))
 
-    # 4 levels of difficulty:
+    # 2 levels of difficulty:
     rng_default = np.random.default_rng(seed=0)
     generated_tasks: List[str] = []
     # level one:
     generated_tasks += _generate_dressing_problems(min_people=4,
-                                                   max_people=5,
+                                                   max_people=8,
                                                    min_casual=1,
                                                    max_casual=3,
                                                    min_formal_dress=1,
-                                                   max_formal_dress=2,
+                                                   max_formal_dress=3,
                                                    min_formal_suit=1,
-                                                   max_formal_suit=2,
+                                                   max_formal_suit=3,
                                                    min_extra_clothes=0,
-                                                   max_extra_clothes=2,
+                                                   max_extra_clothes=3,
                                                    num_probs=5,
                                                    rng=rng_default)
     # level two:
-    generated_tasks += _generate_dressing_problems(min_people=4,
-                                                   max_people=9,
-                                                   min_casual=2,
-                                                   max_casual=4,
-                                                   min_formal_dress=1,
-                                                   max_formal_dress=4,
-                                                   min_formal_suit=1,
-                                                   max_formal_suit=4,
-                                                   min_extra_clothes=0,
-                                                   max_extra_clothes=2,
-                                                   num_probs=9,
-                                                   rng=rng_default)
-
-    # level three:
-    generated_tasks += _generate_dressing_problems(min_people=7,
-                                                   max_people=13,
-                                                   min_casual=3,
-                                                   max_casual=6,
-                                                   min_formal_dress=2,
-                                                   max_formal_dress=5,
-                                                   min_formal_suit=2,
-                                                   max_formal_suit=5,
-                                                   min_extra_clothes=1,
-                                                   max_extra_clothes=4,
-                                                   num_probs=8,
-                                                   rng=rng_default)
-    # level four:
     generated_tasks += _generate_dressing_problems(min_people=10,
                                                    max_people=17,
                                                    min_casual=4,
@@ -189,7 +162,7 @@ if __name__ == "__main__":  # pragma: no cover
                                                    max_formal_suit=6,
                                                    min_extra_clothes=2,
                                                    max_extra_clothes=6,
-                                                   num_probs=8,
+                                                   num_probs=25,
                                                    rng=rng_default)
     assert len(generated_tasks) == 30
 
@@ -198,6 +171,5 @@ if __name__ == "__main__":  # pragma: no cover
     for q_num, q in enumerate(generated_tasks):
         q_num += 1
         file_path = loc + f'/task{str(q_num).zfill(2)}.pddl'
-        if not os.path.exists(file_path):
-            with open(file_path, 'w', encoding='utf-8') as f:
-                f.write(q)
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(q)

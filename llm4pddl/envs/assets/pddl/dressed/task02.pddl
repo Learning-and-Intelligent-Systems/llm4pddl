@@ -1,7 +1,7 @@
 (define (problem dressed)
   (:domain dressed)
-  (:objects person1 person2 person3 person4 - person
-            dress1 - dress
+  (:objects person1 person2 person3 person4 person5 - person
+            dress1 dress2 - dress
             sweatpants1 sweatpants2 - sweatpants
             sweatshirt1 sweatshirt2 - sweatshirt
             nice-pants1 - nice-pants
@@ -16,7 +16,10 @@
          (wearing-nothing-casual person3)
          (wearing-nothing-formal person4)
          (wearing-nothing-casual person4)
+         (wearing-nothing-formal person5)
+         (wearing-nothing-casual person5)
          (in-closet dress1)
+         (in-closet dress2)
          (in-closet sweatpants1)
          (in-closet sweatpants2)
          (in-closet sweatshirt1)
@@ -25,9 +28,10 @@
          (in-closet collared-shirt1)
          (in-closet suit-jacket1)
          )
-  (:goal (and (attending-casual-event person1)
-              (attending-formal-event person2)
-              (attending-casual-event person3)
+  (:goal (and (attending-formal-event person2)
+              (attending-casual-event person1)
+              (attending-casual-event person5)
               (attending-formal-event person4)
+              (attending-formal-event person3)
               ))
   )
