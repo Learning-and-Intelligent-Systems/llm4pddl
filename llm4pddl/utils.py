@@ -131,7 +131,7 @@ def run_fastdownward_planning(
     exec_str = os.path.join(fd_exec_path, "fast-downward.py")
     int_timeout = int(np.ceil(FLAGS.planning_timeout))
     cmd_str = (f'"{exec_str}" {alias_flag} '
-               f'--search-time-limit {int_timeout} '
+               f'--overall-time-limit {int_timeout} '
                f'--sas-file {sas_file} '
                f'"{task.domain_file}" "{task.problem_file}" '
                f'{search_flag}')
