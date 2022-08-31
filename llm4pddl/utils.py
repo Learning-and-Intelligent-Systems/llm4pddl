@@ -309,8 +309,10 @@ def get_task_size(task: Task) -> int:
 
 def pred_to_str(pred: PyperplanPredicate) -> str:
     """Create a string representation of a Pyperplan predicate (atom)."""
+    if not pred.signature:
+        return f"({pred.name})"
     arg_str = " ".join(str(o) for o, _ in pred.signature)
-    return f"{pred.name}({arg_str})"
+    return f"({pred.name} {arg_str})"
 
 
 def group_by_predicate(preds: Collection[PyperplanPredicate]) -> Set[str]:
