@@ -11,9 +11,17 @@ import pandas as pd
 
 from llm4pddl.structs import TaskMetrics
 
+
+def _get_approach_id(metrics: TaskMetrics) -> str:
+    if "experiment_id" in metrics and "-" in metrics["experiment_id"]:
+        return metrics["experiment_id"].split("-", 1)[1]
+    print(metrics)
+    return "no-id-" + metrics["approach"]
+
+
 _DERIVED_COLS: Dict[str, Callable[[TaskMetrics], Any]] = {
     "success": lambda d: float(d["result"] == "success"),
-    "approach_id": lambda d: d["experiment_id"].split("-", 1)[1]
+    "approach_id": _get_approach_id
 }
 
 
@@ -56,8 +64,6 @@ def _load_results(results_dir: str) -> pd.DataFrame:
             }
             # Exclude solve_time because it's misleading.
             del datum["solve_time"]
-            # Approach replaced by approach_id.
-            del datum["approach"]
             for col, derive_fn in _DERIVED_COLS.items():
                 datum[col] = derive_fn(datum)
             all_data.append(datum)
