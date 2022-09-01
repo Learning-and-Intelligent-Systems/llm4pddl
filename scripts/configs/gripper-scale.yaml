@@ -1,0 +1,23 @@
+# Experiments for gripper with large numbers of objects.
+---
+APPROACHES:
+  fd-only:
+    NAME: "pure-planning"
+    FLAGS:
+      planner: fastdownward
+  llm-standard:
+    NAME: "llm-standard"
+    FLAGS: {}
+ENVS:
+  gripper:
+    NAME: "custom-gripper"
+    FLAGS: {}
+ARGS:
+  - "debug"
+  - "llm_prompt_flatten_pddl"
+FLAGS:
+  llm_prompt_method: "group-by-predicate"  # NOTE!
+  num_train_tasks: 1
+  num_eval_tasks: 20
+START_SEED: 456
+NUM_SEEDS: 5

@@ -4,7 +4,7 @@ import argparse
 import glob
 import pickle
 from pathlib import Path
-from typing import Any, Callable, Dict, Set, Tuple
+from typing import Any, Callable, Dict, Optional, Set, Tuple
 
 import numpy as np
 import pandas as pd
@@ -44,7 +44,12 @@ def _main() -> None:
         _create_summary_table(_load_results(args.results_dir))
 
 
-def _load_results(results_dir: str) -> pd.DataFrame:
+def _load_results(
+    results_dir: str,
+    derived_cols: Optional[Dict[str, Callable[[TaskMetrics], Any]]] = None
+) -> pd.DataFrame:
+    if derived_cols is None:
+        derived_cols = _DERIVED_COLS
     all_data = []
     git_commit_hashes = set()
     for filepath in sorted(glob.glob(f"{results_dir}/*")):
@@ -62,9 +67,7 @@ def _load_results(results_dir: str) -> pd.DataFrame:
                 "task_id": task_id,
                 **task_results,
             }
-            # Exclude solve_time because it's misleading.
-            del datum["solve_time"]
-            for col, derive_fn in _DERIVED_COLS.items():
+            for col, derive_fn in derived_cols.items():
                 datum[col] = derive_fn(datum)
             all_data.append(datum)
     if not all_data:
