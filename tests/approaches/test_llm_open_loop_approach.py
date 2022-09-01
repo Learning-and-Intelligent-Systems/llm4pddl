@@ -171,58 +171,61 @@ def test_llm_standard_approach_failure_cases(llm_prompt_method):
     shutil.rmtree(data_dir)
 
 
-# def test_llm_standard_approach_dynamic_small_example():
-#     """Test for LLM standard approach using dynamic examples."""
-#     cache_dir = "_fake_llm_cache_dir"
-#     utils.reset_flags({
-#         "llm_cache_dir": cache_dir,
-#         "num_train_tasks": 1,
-#         "num_eval_tasks": 1,
-#         "llm_model_name": "code-davinci-002",
-#         "llm_max_total_tokens": 700,
-#         "llm_multi_temperature": 0.3,
-#         "llm_prompt_method": "standard",
-#         "planning_timeout": 100,
-#         "llm_prompt_flatten_pddl": True,
-#         "use_dynamic_examples": False,  # this is the only one that differs
-#         "embedding_model_name": "paraphrase-MiniLM-L6-v2",
-#         "llm_use_cache_only": False
-#     })
-#     utils.reset_flags({
-#         "llm_cache_dir": cache_dir,
-#         "num_train_tasks": 1,
-#         "num_eval_tasks": 1,
-#         "llm_model_name": "code-davinci-002",
-#         "llm_max_total_tokens": 700,
-#         "llm_multi_temperature": 0.3,
-#         "llm_prompt_method": "standard",
-#         "planning_timeout": 100,
-#         "llm_prompt_flatten_pddl": True,
-#         "use_dynamic_examples": True,  # this is the only one that differs
-#         "embedding_model_name": "paraphrase-MiniLM-L6-v2",
-#         "llm_use_cache_only": False
-#     })
-#     dataset = [
-#         Datum(
-#             utils.get_task_from_dir(utils.CUSTOM_BENCHMARK_DIR /
-#             'dressed', 1),
-#             ['Insert plan here'])
-#     ]
+def test_llm_standard_approach_dynamic_small_example():
+    """Test for LLM standard approach using dynamic examples."""
+    cache_dir = "_fake_llm_cache_dir"
+    utils.reset_flags({
+        "llm_cache_dir": cache_dir,
+        "num_train_tasks": 1,
+        "num_eval_tasks": 1,
+        "llm_model_name": "code-davinci-002",
+        "llm_max_total_tokens": 700,
+        "llm_multi_temperature": 0.3,
+        "llm_prompt_method": "standard",
+        "planning_timeout": 100,
+        "llm_prompt_flatten_pddl": True,
+        "use_dynamic_examples": False,  # this is the only one that differs
+        "embedding_model_name": "paraphrase-MiniLM-L6-v2",
+        "llm_use_cache_only": False
+    })
+    utils.reset_flags({
+        "llm_cache_dir": cache_dir,
+        "num_train_tasks": 1,
+        "num_eval_tasks": 1,
+        "llm_model_name": "code-davinci-002",
+        "llm_max_total_tokens": 700,
+        "llm_multi_temperature": 0.3,
+        "llm_prompt_method": "standard",
+        "planning_timeout": 100,
+        "llm_prompt_flatten_pddl": True,
+        "use_dynamic_examples": True,  # this is the only one that differs
+        "embedding_model_name": "paraphrase-MiniLM-L6-v2",
+        "llm_use_cache_only": False
+    })
+    dataset = [
+        Datum(
+            utils.get_task_from_dir(utils.CUSTOM_BENCHMARK_DIR / 'dressed', 1),
+            ['Insert plan here'])
+    ]
 
-#     non_dynamic_approach = create_approach("llm-standard")
-#     dynamic_approach = create_approach("llm-standard")
-#     # assert dynamic_approach._list_embeddings_mapping == []  # pylint: disable=protected-access
-#     non_dynamic_approach.train(dataset)
-#     dynamic_approach.train(dataset)
+    non_dynamic_approach = create_approach("llm-standard")
+    dynamic_approach = create_approach("llm-standard")
+    llm = _MockLLM()
+    llm.response = 'doesnt matter'
+    non_dynamic_approach._llm = llm # pylint: disable=protected-access
+    dynamic_approach._llm = llm  # pylint: disable=protected-access
+    # assert dynamic_approach._list_embeddings_mapping == []  # pylint: disable=protected-access
+    non_dynamic_approach.train(dataset)
+    dynamic_approach.train(dataset)
 
-#     assert len(dynamic_approach._list_embeddings_mapping) == 1  # pylint: disable=protected-access
-#     # since training num is 1, these should be the same:
-#     assert (dynamic_approach._prompt_prefix ==  # pylint: disable=protected-access
-#             non_dynamic_approach._prompt_prefix)  # pylint: disable=protected-access
-#     dynamic_approach.solve(
-#         utils.get_task_from_dir(utils.CUSTOM_BENCHMARK_DIR / 'dressed', 1))
-#     assert (dynamic_approach._prompt_prefix ==  # pylint: disable=protected-access
-#             non_dynamic_approach._prompt_prefix)  # pylint: disable=protected-access
+    assert len(dynamic_approach._list_embeddings_mapping) == 1  # pylint: disable=protected-access
+    # since training num is 1, these should be the same:
+    assert (dynamic_approach._prompt_prefix ==  # pylint: disable=protected-access
+            non_dynamic_approach._prompt_prefix)  # pylint: disable=protected-access
+    dynamic_approach.solve(
+        utils.get_task_from_dir(utils.CUSTOM_BENCHMARK_DIR / 'dressed', 1))
+    assert (dynamic_approach._prompt_prefix ==  # pylint: disable=protected-access
+            non_dynamic_approach._prompt_prefix)  # pylint: disable=protected-access
 
 
 def test_llm_standard_approach_dynamic_big_example():
@@ -265,6 +268,10 @@ def test_llm_standard_approach_dynamic_big_example():
 
     non_dynamic_approach = create_approach("llm-standard")
     dynamic_approach = create_approach("llm-standard")
+    llm = _MockLLM()
+    llm.response = 'doesnt matter'
+    non_dynamic_approach._llm = llm # pylint: disable=protected-access
+    dynamic_approach._llm = llm  # pylint: disable=protected-access
     non_dynamic_approach.train(dataset)
     dynamic_approach.train(dataset)
     dynamic_approach.solve(
