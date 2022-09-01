@@ -414,8 +414,8 @@ def test_get_closest_datums():
         approach._embed_task(task) for task in dif_tasks  # pylint: disable=protected-access
     ]
     dif_dataset = [Datum(task, ['insert plan here']) for task in dif_tasks]
-    dif_emb_map = approach._make_embeddings_mapping(
-        dif_embeddings,  # pylint: disable=protected-access
+    dif_emb_map = approach._make_embeddings_mapping(  # pylint: disable=protected-access
+        dif_embeddings,
         dif_dataset)
     most_sim1 = approach._get_closest_datums(blocks02, dif_emb_map, 1)  # pylint: disable=protected-access
     # checking that blocks is the most likely of the 3:
@@ -439,8 +439,8 @@ def test_get_closest_datums():
         approach._embed_task(task) for task in big_tasks  # pylint: disable=protected-access
     ]
     big_dataset = [Datum(task, ['insert plan here']) for task in big_tasks]
-    big_emb_map = approach._make_embeddings_mapping(
-        big_embeddings,  # pylint: disable=protected-access
+    big_emb_map = approach._make_embeddings_mapping(  # pylint: disable=protected-access
+        big_embeddings,
         big_dataset)
     # comparing to dressed:
     most_similar_dressed = approach._get_closest_datums(  # pylint: disable=protected-access
@@ -450,9 +450,9 @@ def test_get_closest_datums():
         assert datum.task in dressed
 
     # comparing to blocks:
-    most_similar_blocks = approach._get_closest_datums(
+    most_similar_blocks = approach._get_closest_datums(  # pylint: disable=protected-access
         blocks01,
-        big_emb_map,  # pylint: disable=protected-access
+        big_emb_map,
         9)
     for datum in most_similar_blocks[-3:]:
         assert datum.task in blocks
