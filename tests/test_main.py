@@ -65,7 +65,7 @@ def test_run_pipeline():
         "load_data": False,
         "data_gen_planner": "pyperplan",
         "data_gen_method": "planning",
-        "planning_timeout": 10
+        "planning_timeout": 10,
     })
     # Cover cases where approach is None or invalid.
     plan_sequence = [None, []]

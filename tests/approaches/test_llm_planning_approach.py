@@ -33,7 +33,7 @@ def test_llm_planning_planning_approach():
         "llm_prompt_flatten_pddl": False,
         "use_dynamic_examples": False,
         "data_dir": data_dir,
-        "load_data": False
+        "load_data": False,
     })
     env = create_env("pyperplan-gripper")
     train_tasks = env.get_train_tasks()

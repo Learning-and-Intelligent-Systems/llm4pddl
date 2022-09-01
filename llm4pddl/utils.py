@@ -417,12 +417,3 @@ def str_to_identifier(x: str) -> str:
         https://stackoverflow.com/questions/5297448
     """
     return hashlib.md5(x.encode('utf-8')).hexdigest()
-
-
-# if __name__ == "__main__":
-#     task = get_custom_task('dressed', 1)
-#     model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
-#     reset_flags({
-#         "embedding_model_name": "paraphrase-MiniLM-L6-v2",
-#         "llm_prompt_flatten_pddl": True
-#     })

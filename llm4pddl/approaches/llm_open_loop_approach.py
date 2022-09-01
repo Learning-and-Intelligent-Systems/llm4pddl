@@ -251,6 +251,7 @@ class LLMOpenLoopApproach(BaseApproach):
         ]
         # we will need a get_init_string() and get_goal_string() helper funcs.
         indicies = np.argsort(cos_sims)[-num_closest:]
+        print(f'indicies:{indicies}')
         closest_datums = [embeddings_mapping[ind]['datum'] for ind in indicies]
         return closest_datums
 
