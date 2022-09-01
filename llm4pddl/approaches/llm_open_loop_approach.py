@@ -28,9 +28,9 @@ class LLMOpenLoopApproach(BaseApproach):
         self._prompt_prefix = ""
         # _list_embeddings_mapping is a list of dictionaries of the form
         # {'embedding': Embedding, 'datum': Datum}, representing a Datum
-        # in the training set and its that datum's task string's embedding.
+        # in the training set and that datum's task string's embedding.
         self._list_embeddings_mapping: List[Dict[str, Any]] = []
-        self.embedding_model = SentenceTransformer(FLAGS.embedding_model_name)
+        self._embedding_model = SentenceTransformer(FLAGS.embedding_model_name)
 
     @property
     def is_learning_based(self) -> bool:
@@ -209,7 +209,7 @@ class LLMOpenLoopApproach(BaseApproach):
         """Embeds a task using embedding_model."""
         # note: task_string includes the Q: and A: parts, not just task string
         task_string = self._create_prompt(task)
-        embedding = self.embedding_model.encode(task_string)
+        embedding = self._embedding_model.encode(task_string)
         return embedding
 
     def _embed_tasks(self, tasks: List[Task]) -> List[Embedding]:
