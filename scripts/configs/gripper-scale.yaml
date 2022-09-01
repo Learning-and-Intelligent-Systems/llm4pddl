@@ -18,6 +18,6 @@ ARGS:
 FLAGS:
   llm_prompt_method: "group-by-predicate"  # NOTE!
   num_train_tasks: 1
-  num_eval_tasks: 20
+  num_eval_tasks: 19
 START_SEED: 456
 NUM_SEEDS: 5
