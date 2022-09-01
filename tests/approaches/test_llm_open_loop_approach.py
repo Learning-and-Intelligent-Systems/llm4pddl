@@ -212,7 +212,7 @@ def test_llm_standard_approach_dynamic_small_example():
     dynamic_approach = create_approach("llm-standard")
     llm = _MockLLM()
     llm.response = 'doesnt matter'
-    non_dynamic_approach._llm = llm # pylint: disable=protected-access
+    non_dynamic_approach._llm = llm  # pylint: disable=protected-access
     dynamic_approach._llm = llm  # pylint: disable=protected-access
     # assert dynamic_approach._list_embeddings_mapping == []  # pylint: disable=protected-access
     non_dynamic_approach.train(dataset)
@@ -270,7 +270,7 @@ def test_llm_standard_approach_dynamic_big_example():
     dynamic_approach = create_approach("llm-standard")
     llm = _MockLLM()
     llm.response = 'doesnt matter'
-    non_dynamic_approach._llm = llm # pylint: disable=protected-access
+    non_dynamic_approach._llm = llm  # pylint: disable=protected-access
     dynamic_approach._llm = llm  # pylint: disable=protected-access
     non_dynamic_approach.train(dataset)
     dynamic_approach.train(dataset)
