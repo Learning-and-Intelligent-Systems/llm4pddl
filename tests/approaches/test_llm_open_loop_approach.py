@@ -61,6 +61,7 @@ def test_llm_standard_approach(env_name):
         "use_dynamic_examples": False,
         "data_dir": data_dir,
         "load_data": False,
+        "embedding_model_name": "paraphrase-MiniLM-L6-v2"
     })
     env = create_env(env_name)
     train_tasks = env.get_train_tasks()
@@ -116,6 +117,7 @@ def test_llm_standard_approach_failure_cases(llm_prompt_method):
         "use_dynamic_examples": False,
         "data_dir": data_dir,
         "load_data": False,
+        "embedding_model_name": "paraphrase-MiniLM-L6-v2"
     })
     env = create_env("pyperplan-miconic")
     train_tasks = env.get_train_tasks()
@@ -300,7 +302,8 @@ def test_llm_multi_approach():
         "llm_multi_temperature": 0.3,
         "llm_multi_num_completions": 3,
         "llm_prompt_method": "standard",
-        "llm_prompt_flatten_pddl": False
+        "llm_prompt_flatten_pddl": False,
+        "embedding_model_name": "paraphrase-MiniLM-L6-v2"
     })
     approach = create_approach("llm-multi")
     assert approach.get_name() == "llm-open-loop"
@@ -316,18 +319,17 @@ def test_embed_tasks():
         "embedding_model_name": "paraphrase-MiniLM-L6-v2",
         "llm_prompt_flatten_pddl": True,
         "llm_model_name": "davinci-002",
-        "llm_prompt_method": "standard"
+        "llm_prompt_method": "standard",
     })
     approach: LLMOpenLoopApproach = create_approach('llm-standard')
     tasks = [
         utils.get_task_from_dir(utils.CUSTOM_BENCHMARK_DIR / 'dressed', i)
         for i in range(1, 2)
     ]
-    embedding_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
-    for j, emb in enumerate(approach.embed_tasks(tasks)):
-        assert np.all(emb == approach.embed_task(
+    for j, emb in enumerate(approach._embed_tasks(tasks)):  # pylint: disable=protected-access
+        assert np.all(emb == approach._embed_task(  # pylint: disable=protected-access
             utils.get_task_from_dir(utils.CUSTOM_BENCHMARK_DIR / 'dressed', j +
-                                    1), embedding_model))
+                                    1)))
 
 
 def test_embed_task():
@@ -336,21 +338,23 @@ def test_embed_task():
         "embedding_model_name": "paraphrase-MiniLM-L6-v2",
         "llm_prompt_flatten_pddl": True,
         "llm_model_name": "davinci-002",
-        "llm_prompt_method": "standard"
+        "llm_prompt_method": "standard",
     })
     approach: LLMOpenLoopApproach = create_approach('llm-standard')
     embedding_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
     task01 = utils.get_task_from_dir(utils.CUSTOM_BENCHMARK_DIR / 'dressed', 1)
-    embedding1 = approach.embed_task(task01, embedding_model)
+    embedding1 = approach._embed_task(task01)  # pylint: disable=protected-access
     task_string = approach._create_prompt(task01)  # pylint: disable=protected-access
-    task_string = task_string.split('\n')[1:-2][0]
     embedding2 = embedding_model.encode(task_string)
     assert np.all(embedding1 == embedding2)
 
 
 def test_make_embeddings_mapping():
     """Tests make_embeddings_mapping()."""
-    utils.reset_flags({"llm_model_name": "davinci-002"})
+    utils.reset_flags({
+        "llm_model_name": "davinci-002",
+        "embedding_model_name": "paraphrase-MiniLM-L6-v2"
+    })
     approach: LLMOpenLoopApproach = create_approach('llm-standard')
     embeddings = [[0.5], [0.1], [0.2]]
     tasks = [
@@ -358,7 +362,7 @@ def test_make_embeddings_mapping():
         for i in range(1, 4)
     ]
     dataset = [Datum(task, ['insert plan here']) for task in tasks]
-    mapping = approach.make_embeddings_mapping(embeddings, dataset)
+    mapping = approach._make_embeddings_mapping(embeddings, dataset)  # pylint: disable=protected-access
     assert len(mapping) == 3
     assert mapping[0]['embedding'] == [0.5]
     assert mapping[1]['embedding'] == [0.1]
@@ -371,7 +375,7 @@ def test_get_closest_datums():
         "llm_prompt_flatten_pddl": True,
         "embedding_model_name": "paraphrase-MiniLM-L6-v2",
         "llm_model_name": "davinci-002",
-        "llm_prompt_method": "standard"
+        "llm_prompt_method": "standard",
     })
     approach: LLMOpenLoopApproach = create_approach('llm-standard')
     dressed01 = utils.get_task_from_dir(utils.CUSTOM_BENCHMARK_DIR / 'dressed',
@@ -387,30 +391,33 @@ def test_get_closest_datums():
     depot01 = utils.get_task_from_dir(utils.PYPERPLAN_BENCHMARK_DIR / 'depot',
                                       1)
     tasks.append(blocks01)
-    embedding_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
-    embeddings = [approach.embed_task(task, embedding_model) for task in tasks]
+    embeddings = [
+        approach._embed_task(task) for task in tasks  # pylint: disable=protected-access
+    ]
     dataset = [Datum(task, ['insert plan here']) for task in tasks]
-    embeddings_mapping = approach.make_embeddings_mapping(embeddings, dataset)
+    embeddings_mapping = approach._make_embeddings_mapping(embeddings, dataset)  # pylint: disable=protected-access
     # checking correct output size
-    most_similar = approach.get_closest_datums(dressed01, embeddings_mapping,
-                                               1)
+    most_similar = approach._get_closest_datums(  # pylint: disable=protected-access
+        dressed01, embeddings_mapping, 1)
     assert len(most_similar) == 1
-    most_similar2 = approach.get_closest_datums(dressed01, embeddings_mapping,
-                                                3)
+    most_similar2 = approach._get_closest_datums(  # pylint: disable=protected-access
+        dressed01, embeddings_mapping, 3)
     assert len(most_similar2) == 3
-    most_similar3 = approach.get_closest_datums(dressed01, embeddings_mapping,
-                                                4)
+    most_similar3 = approach._get_closest_datums(  # pylint: disable=protected-access
+        dressed01, embeddings_mapping, 4)
     assert len(most_similar3) == 4
     # checking that blocks is the least likely:
     assert most_similar3[0].task == utils.get_task_from_dir(
         utils.PYPERPLAN_BENCHMARK_DIR / 'blocks', 1)
     dif_tasks = [dressed01, blocks01, depot01]
     dif_embeddings = [
-        approach.embed_task(task, embedding_model) for task in dif_tasks
+        approach._embed_task(task) for task in dif_tasks  # pylint: disable=protected-access
     ]
     dif_dataset = [Datum(task, ['insert plan here']) for task in dif_tasks]
-    dif_emb_map = approach.make_embeddings_mapping(dif_embeddings, dif_dataset)
-    most_sim1 = approach.get_closest_datums(blocks02, dif_emb_map, 1)
+    dif_emb_map = approach._make_embeddings_mapping(
+        dif_embeddings,  # pylint: disable=protected-access
+        dif_dataset)
+    most_sim1 = approach._get_closest_datums(blocks02, dif_emb_map, 1)  # pylint: disable=protected-access
     # checking that blocks is the most likely of the 3:
     assert most_sim1[0].task == utils.get_task_from_dir(
         utils.PYPERPLAN_BENCHMARK_DIR / 'blocks', 1)
@@ -429,29 +436,34 @@ def test_get_closest_datums():
     ]
     big_tasks = dressed + depot + blocks
     big_embeddings = [
-        approach.embed_task(task, embedding_model) for task in big_tasks
+        approach._embed_task(task) for task in big_tasks  # pylint: disable=protected-access
     ]
     big_dataset = [Datum(task, ['insert plan here']) for task in big_tasks]
-    big_emb_map = approach.make_embeddings_mapping(big_embeddings, big_dataset)
+    big_emb_map = approach._make_embeddings_mapping(
+        big_embeddings,  # pylint: disable=protected-access
+        big_dataset)
     # comparing to dressed:
-    most_similar_dressed = approach.get_closest_datums(dressed01, big_emb_map,
-                                                       9)
+    most_similar_dressed = approach._get_closest_datums(  # pylint: disable=protected-access
+        dressed01, big_emb_map, 9)
     assert len(most_similar_dressed) == len(big_tasks)
     for datum in most_similar_dressed[-3:]:
         assert datum.task in dressed
 
     # comparing to blocks:
-    most_similar_blocks = approach.get_closest_datums(blocks01, big_emb_map, 9)
+    most_similar_blocks = approach._get_closest_datums(
+        blocks01,
+        big_emb_map,  # pylint: disable=protected-access
+        9)
     for datum in most_similar_blocks[-3:]:
         assert datum.task in blocks
 
     # comparing to depot:
-    most_similar_depot = approach.get_closest_datums(depot01, big_emb_map, 9)
+    most_similar_depot = approach._get_closest_datums(depot01, big_emb_map, 9)  # pylint: disable=protected-access
     for datum in most_similar_depot[-3:]:
         assert datum.task in depot
 
     # proving identical is considered best:
-    most_sim = approach.get_closest_datums(blocks02, big_emb_map, 9)[-1]
+    most_sim = approach._get_closest_datums(blocks02, big_emb_map, 9)[-1]  # pylint: disable=protected-access
     assert most_sim.task == utils.get_task_from_dir(
         utils.PYPERPLAN_BENCHMARK_DIR / 'blocks', 2)
     # example to compare within a specific domain.
@@ -460,16 +472,17 @@ def test_get_closest_datums():
         utils.get_task_from_dir(utils.PYPERPLAN_BENCHMARK_DIR / 'blocks', 35)
     ]
     dif_blocks_embeddings = [
-        approach.embed_task(task, embedding_model) for task in dif_blocks_tasks
+        approach._embed_task(task)  # pylint: disable=protected-access
+        for task in dif_blocks_tasks
     ]
     dif_blocks_dataset = [
         Datum(task, ['insert plan here']) for task in dif_blocks_tasks
     ]
-    dif_blocks_emb_map = approach.make_embeddings_mapping(
+    dif_blocks_emb_map = approach._make_embeddings_mapping(  # pylint: disable=protected-access
         dif_blocks_embeddings, dif_blocks_dataset)
     # Comparing blocks03 and blocks35 in their similarity to blocks01.
     # Heuristically, blocks03 should be considered more similar.
-    most_sim_blocks_datum = approach.get_closest_datums(
+    most_sim_blocks_datum = approach._get_closest_datums(  # pylint: disable=protected-access
         blocks01, dif_blocks_emb_map, 1)[0]
     assert most_sim_blocks_datum.task == utils.get_task_from_dir(
         utils.PYPERPLAN_BENCHMARK_DIR / 'blocks', 3)
@@ -477,19 +490,22 @@ def test_get_closest_datums():
 
 def test_get_cosine_sim():
     """Tests get_cosine_sim()."""
-    utils.reset_flags({"llm_model_name": "davinci-002"})
+    utils.reset_flags({
+        "llm_model_name": "davinci-002",
+        "embedding_model_name": "paraphrase-MiniLM-L6-v2"
+    })
     approach: LLMOpenLoopApproach = create_approach('llm-standard')
     embedding_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
     embedding1 = embedding_model.encode('hello')
     embedding2 = embedding_model.encode('hello')
-    cos_sim1 = approach.get_cosine_sim(embedding1, embedding2)
+    cos_sim1 = approach._get_cosine_sim(embedding1, embedding2)  # pylint: disable=protected-access
     # cos_sim1 should be 1.
     assert abs(cos_sim1 - 1) < 0.00001
     embedding3 = embedding_model.encode('hell')
-    cos_sim2 = approach.get_cosine_sim(embedding1, embedding3)
+    cos_sim2 = approach._get_cosine_sim(embedding1, embedding3)  # pylint: disable=protected-access
     # cos_sim2 should not be 1.
     assert cos_sim2 != 1
     embedding4 = embedding_model.encode('my name is')
     embedding5 = embedding_model.encode('my dog is here')
-    cos_sim3 = approach.get_cosine_sim(embedding4, embedding5)
+    cos_sim3 = approach._get_cosine_sim(embedding4, embedding5)  # pylint: disable=protected-access
     assert cos_sim3 == cos_sim(embedding4, embedding5).item()
