@@ -204,7 +204,8 @@ def test_llm_standard_approach_failure_cases(llm_prompt_method):
 #     })
 #     dataset = [
 #         Datum(
-#             utils.get_task_from_dir(utils.CUSTOM_BENCHMARK_DIR / 'dressed', 1),
+#             utils.get_task_from_dir(utils.CUSTOM_BENCHMARK_DIR /
+#             'dressed', 1),
 #             ['Insert plan here'])
 #     ]
 
