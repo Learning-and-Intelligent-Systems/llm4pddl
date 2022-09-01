@@ -4,6 +4,8 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any, Dict, List
 
+import numpy as np
+from numpy.typing import NDArray
 from pyperplan.pddl.pddl import Action as _PyperplanAction
 from pyperplan.pddl.pddl import Domain as _PyperplanDomain
 from pyperplan.pddl.pddl import Predicate as _PyperplanPredicate
@@ -87,3 +89,6 @@ class Datum:
 
 # A training dataset.
 Dataset = List[Datum]
+
+# An embedding.
+Embedding = NDArray[np.float32]
