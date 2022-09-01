@@ -15,7 +15,6 @@ from llm4pddl.structs import TaskMetrics
 def _get_approach_id(metrics: TaskMetrics) -> str:
     if "experiment_id" in metrics and "-" in metrics["experiment_id"]:
         return metrics["experiment_id"].split("-", 1)[1]
-    print(metrics)
     return "no-id-" + metrics["approach"]
 
 
