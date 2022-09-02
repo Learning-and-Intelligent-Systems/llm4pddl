@@ -14,6 +14,7 @@ def test_create_approach():
         "llm_max_total_tokens": 700,
         "llm_multi_num_completions": 5,
         "llm_multi_temperature": 0.5,
+        "embedding_model_name": "paraphrase-MiniLM-L6-v2"
     })
     approach = create_approach("pure-planning")
     assert approach.get_name() == "pure-planning"

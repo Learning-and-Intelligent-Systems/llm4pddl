@@ -25,14 +25,16 @@ def test_llm_planning_planning_approach():
         "llm_multi_num_completions": 5,
         "llm_multi_temperature": 0.5,
         "llm_prompt_method": "standard",
-        "llm_plan_guidance_method": "init-queue",
+        "llm_plan_guidance_method": "init-queue-continue",
         "planner": "pyperplan",
         "data_gen_planner": "pyperplan",
         "data_gen_method": "planning",
         "planning_timeout": 100,
         "llm_prompt_flatten_pddl": False,
+        "use_dynamic_examples": False,
         "data_dir": data_dir,
         "load_data": False,
+        "embedding_model_name": "paraphrase-MiniLM-L6-v2"
     })
     env = create_env("pyperplan-gripper")
     train_tasks = env.get_train_tasks()

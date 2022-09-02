@@ -19,7 +19,7 @@ def parse_flags() -> None:
     parser.add_argument("--planner", default="pyperplan", type=str)
     parser.add_argument("--data_gen_method", default="planning", type=str)
     parser.add_argument("--data_gen_planner", default="fastdownward", type=str)
-    parser.add_argument("--planning_timeout", default=100.0, type=float)
+    parser.add_argument("--planning_timeout", default=300.0, type=float)
     parser.add_argument("--results_dir", default="results", type=str)
     parser.add_argument("--llm_cache_dir", default="llm_cache", type=str)
     parser.add_argument("--llm_use_cache_only", action="store_true")
@@ -32,11 +32,11 @@ def parse_flags() -> None:
     parser.add_argument("--llm_multi_temperature", default=0.5, type=float)
     # Note that this num_completions is only used by the multi LLM approaches,
     # not by the standard (single response) approach, which always uses 1.
-    parser.add_argument("--llm_multi_num_completions", default=10, type=int)
+    parser.add_argument("--llm_multi_num_completions", default=5, type=int)
     parser.add_argument("--llm_max_total_tokens", default=4096, type=int)
     parser.add_argument("--llm_prompt_method", default="standard", type=str)
     parser.add_argument("--llm_plan_guidance_method",
-                        default="init-queue",
+                        default="init-queue-continue",
                         type=str)
     parser.add_argument('--debug',
                         action="store_const",
@@ -44,5 +44,8 @@ def parse_flags() -> None:
                         const=logging.DEBUG,
                         default=logging.INFO)
     parser.add_argument('--llm_prompt_flatten_pddl', action='store_true')
+    parser.add_argument('--use_dynamic_examples', action='store_true')
+    parser.add_argument('--embedding_model_name',
+                        default='paraphrase-MiniLM-L6-v2')
     args = parser.parse_args()
     FLAGS.__dict__.update(args.__dict__)

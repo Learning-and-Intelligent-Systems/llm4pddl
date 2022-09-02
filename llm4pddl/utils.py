@@ -14,8 +14,6 @@ from typing import Any, Collection, Dict, List, Optional, Sequence, Set, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
-from pyperplan.grounding import ground as pyperplan_ground
 from pyperplan.pddl.parser import Parser
 from pyperplan.planner import HEURISTICS, SEARCHES, search_plan
 
@@ -134,7 +132,7 @@ def run_fastdownward_planning(
     exec_str = os.path.join(fd_exec_path, "fast-downward.py")
     int_timeout = int(np.ceil(FLAGS.planning_timeout))
     cmd_str = (f'"{exec_str}" {alias_flag} '
-               f'--search-time-limit {int_timeout} '
+               f'--overall-time-limit {int_timeout} '
                f'--sas-file {sas_file} '
                f'"{task.domain_file}" "{task.problem_file}" '
                f'{search_flag}')
@@ -310,44 +308,12 @@ def get_task_size(task: Task) -> int:
     return len(prob.objects) + len(prob.initial_state) + len(prob.goal)
 
 
-@functools.lru_cache(maxsize=None)
-def get_all_ground_operators(task: Task) -> Dict[str, PyperplanAction]:
-    """Ground all operators in a task.
-
-    Returns a dict mapping the string name of the operator to the
-    operator.
-    """
-    parser = Parser(task.domain_file, task.problem_file)
-    domain = parser.parse_domain()
-    problem = parser.parse_problem(domain)
-    logging.disable(logging.ERROR)
-    pyperplan_task = pyperplan_ground(problem)
-    logging.disable(logging.NOTSET)
-    return {o.name: o for o in pyperplan_task.operators}
-
-
-@functools.lru_cache(maxsize=None)
-def parse_plan_step(action_str: str, task: Task) -> Optional[PyperplanAction]:
-    """Parse a string action into a Pyperplan action (ground operator).
-
-    If the ground operator is invalid, returns None. This can be the
-    case when the ground operator has a static precondition that is not
-    in the initial state of the task, or if the operator is deemed
-    irrelevant for the task based on the relevance analysis in pyperplan
-    grounding.
-    """
-    # Match the action to a ground operator in the set of all ground operators
-    # from pyperplan. Note that the grounding is cached for efficiency. We
-    # do it this way, rather than reconstructing the operators, because
-    # pyperplan grounding removes static preconditions.
-    ground_ops = get_all_ground_operators(task)
-    return ground_ops.get(action_str, None)
-
-
 def pred_to_str(pred: PyperplanPredicate) -> str:
     """Create a string representation of a Pyperplan predicate (atom)."""
+    if not pred.signature:
+        return f"({pred.name})"
     arg_str = " ".join(str(o) for o, _ in pred.signature)
-    return f"{pred.name}({arg_str})"
+    return f"({pred.name} {arg_str})"
 
 
 def group_by_predicate(preds: Collection[PyperplanPredicate]) -> Set[str]:
@@ -421,56 +387,3 @@ def str_to_identifier(x: str) -> str:
     return hashlib.md5(x.encode('utf-8')).hexdigest()
 
 
-def get_visualization(input_path: str, output_dir: str) -> None:
-    """Creates visualization of planner accuracy across all environments."""
-    df = pd.read_csv(input_path)
-    column_labels = []
-    _ = [column_labels.append(col) for col in df.columns]
-    env_column_index = column_labels.index('env')
-    approach_column_index = column_labels.index('approach')
-    accuracy_column_index = column_labels.index('success')
-    experiment_name_index = column_labels.index('experiment_id')
-
-    llm_multi_accuracies = {}
-    llm_standard_plan_accuracies = {}
-    llm_multi_plan_accuracies = {}
-    fd_accuracies = {}
-    pyperplan_accuracies = {}
-    for _, row_raw in df.iterrows():
-        row = row_raw.tolist()
-        approach_name = row[approach_column_index]
-        environment_name = row[env_column_index]
-        accuracy = row[accuracy_column_index]
-        accuracy = float(accuracy[0:accuracy.index(' ')])
-        experiment_name = row[experiment_name_index]
-        if approach_name == "llm-multi":
-            llm_multi_accuracies[environment_name] = accuracy
-        elif approach_name == "llm-standard-plan":
-            llm_standard_plan_accuracies[environment_name] = accuracy
-        elif approach_name == "llm-multi-plan":
-            llm_multi_plan_accuracies[environment_name] = accuracy
-        elif approach_name == "pure-planning" and "fd-only" in experiment_name:
-            fd_accuracies[environment_name] = accuracy
-        elif approach_name == "pure-planning" and ("pyperplan"
-                                                   in experiment_name):
-            pyperplan_accuracies[environment_name] = accuracy
-
-    llm_approaches = [
-        "standard-plan", "multi", "multi-plan", "fd", "pyperplan"
-    ]
-    fig, axs = plt.subplots(nrows=5, ncols=6, figsize=(30, 25))
-    for ax, env in zip(axs.flat, llm_multi_accuracies.keys()):
-        llm_accuracies = [
-            llm_standard_plan_accuracies[env], llm_multi_accuracies[env],
-            llm_multi_plan_accuracies[env], fd_accuracies[env],
-            pyperplan_accuracies[env]
-        ]
-        ax.bar(llm_approaches, llm_accuracies, color="blue")
-        ax.set_title(env)
-        ax.set_ylabel("accuracy")
-    fig.savefig(output_dir + "/final_output.png",
-                facecolor='w',
-                bbox_inches="tight",
-                pad_inches=0.3,
-                transparent=True)
-    plt.close(fig)

@@ -4,16 +4,23 @@ import argparse
 import glob
 import pickle
 from pathlib import Path
-from typing import Any, Callable, Dict, Set, Tuple
+from typing import Any, Callable, Dict, Optional, Set, Tuple
 
 import numpy as np
 import pandas as pd
 
 from llm4pddl.structs import TaskMetrics
 
+
+def _get_approach_id(metrics: TaskMetrics) -> str:
+    if "experiment_id" in metrics and "-" in metrics["experiment_id"]:
+        return metrics["experiment_id"].split("-", 1)[1]
+    return "no-id-" + metrics["approach"]
+
+
 _DERIVED_COLS: Dict[str, Callable[[TaskMetrics], Any]] = {
     "success": lambda d: float(d["result"] == "success"),
-    "approach_id": lambda d: d["experiment_id"].split("-", 1)[1]
+    "approach_id": _get_approach_id
 }
 
 
@@ -36,7 +43,12 @@ def _main() -> None:
         _create_summary_table(_load_results(args.results_dir))
 
 
-def _load_results(results_dir: str) -> pd.DataFrame:
+def _load_results(
+    results_dir: str,
+    derived_cols: Optional[Dict[str, Callable[[TaskMetrics], Any]]] = None
+) -> pd.DataFrame:
+    if derived_cols is None:
+        derived_cols = _DERIVED_COLS
     all_data = []
     git_commit_hashes = set()
     for filepath in sorted(glob.glob(f"{results_dir}/*")):
@@ -54,11 +66,7 @@ def _load_results(results_dir: str) -> pd.DataFrame:
                 "task_id": task_id,
                 **task_results,
             }
-            # Exclude solve_time because it's misleading.
-            del datum["solve_time"]
-            # Approach replaced by approach_id.
-            del datum["approach"]
-            for col, derive_fn in _DERIVED_COLS.items():
+            for col, derive_fn in derived_cols.items():
                 datum[col] = derive_fn(datum)
             all_data.append(datum)
     if not all_data:
@@ -102,7 +110,7 @@ def _create_summary_table(raw_results: pd.DataFrame,
         print("\n\nAGGREGATED DATA OVER EVAL TASKS AND SEEDS:")
         summary = summary.reset_index()
         envs = summary.env.unique()
-        metrics = ["nodes_created", "nodes_expanded", "success"]
+        metrics = ["nodes_created", "nodes_expanded", "success", "num_seeds"]
         # env -> approach X metric -> value
         reshaped_data: Dict[str, Dict[Tuple[str, str],
                                       float]] = {env: {}
