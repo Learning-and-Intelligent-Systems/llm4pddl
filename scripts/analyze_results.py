@@ -110,7 +110,7 @@ def _create_summary_table(raw_results: pd.DataFrame,
         print("\n\nAGGREGATED DATA OVER EVAL TASKS AND SEEDS:")
         summary = summary.reset_index()
         envs = summary.env.unique()
-        metrics = ["nodes_created", "nodes_expanded", "success"]
+        metrics = ["nodes_created", "nodes_expanded", "success", "num_seeds"]
         # env -> approach X metric -> value
         reshaped_data: Dict[str, Dict[Tuple[str, str],
                                       float]] = {env: {}
