@@ -460,14 +460,14 @@ def test_get_init_str():
     #     assert init_str == "CLEAR(C) CLEAR(A) CLEAR(B) CLEAR(D) ONTABLE(C) \
     # ONTABLE(A) ONTABLE(B) ONTABLE(D) HANDEMPTY()".lower()
     assert init_str == "(CLEAR C) (CLEAR A) (CLEAR B) (CLEAR D) (ONTABLE C)\
-    (ONTABLE A) (ONTABLE B) (ONTABLE D) (HANDEMPTY)".lower()
+(ONTABLE A) (ONTABLE B) (ONTABLE D) (HANDEMPTY)".lower()
     task02 = utils.get_task_from_dir(utils.PYPERPLAN_BENCHMARK_DIR / 'blocks',
                                      2)
     init_str2 = utils.get_init_str(task02)
     #     assert init_str2 == "CLEAR(B) ONTABLE(D) ON(B C) \
     # ON(C A) ON(A D) HANDEMPTY()".lower()
     assert init_str2 == "(CLEAR B) (ONTABLE D) (ON B C) \
-    (ON C A) (ON A D) (HANDEMPTY)".lower()
+(ON C A) (ON A D) (HANDEMPTY)".lower()
 
 
 def test_get_goal_str():
