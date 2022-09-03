@@ -70,13 +70,15 @@ class LLMOpenLoopApproach(BaseApproach):
     def _create_prompt_prefix(self, dataset: Dataset) -> None:
         prompts = []
         for datum in dataset:
-            prompt = self._create_prompt(datum.task, datum.solution)
+            prompt = self._create_prompt(datum.task, datum.solution, self._rng)
             prompts.append(prompt)
         self._prompt_prefix = "\n\n".join(prompts) + "\n\n"
         logging.debug(f"Created prompt prefix:\n{self._prompt_prefix}")
 
     @staticmethod
-    def _create_prompt(task: Task, plan: Optional[Plan] = None) -> str:
+    def _create_prompt(task: Task,
+                       plan: Optional[Plan] = None,
+                       rng: Optional[np.random.Generator] = None) -> str:
         """Create a prompt entry for a single task and (maybe partial) plan."""
         # Extract only the objects, init, and goal from the problem file,
         # stripping out any comments or other extraneous text.
@@ -97,6 +99,8 @@ class LLMOpenLoopApproach(BaseApproach):
         for typ, objs in type_to_objs.items():
             if not objs:
                 continue
+            if rng:
+                objs = utils.randomize_object_names(rng, objs)
             typ_str = " ".join(objs) + " - " + str(typ)
             objects_strs.append(typ_str)
         # Create the objects string.
