@@ -13,6 +13,8 @@ def create_manual_plan(task: Task) -> Plan:
         return _create_manual_blocks_plan(task)
     if "miconic" in task.task_id.lower():
         return _create_manual_miconic_plan(task)
+    if "logistics" in task.task_id.lower():
+        return _create_manual_logistics_plan(task)
     assert "gripper" in task.task_id.lower()
     return _create_manual_gripper_plan(task)
 
@@ -198,5 +200,122 @@ def _create_manual_miconic_plan(task: Task) -> Plan:
         current_lift_loc = next_lift_dest
         # Drop off the passenger.
         plan.append(f"(depart {current_lift_loc} {passenger})")
+
+    return plan
+
+
+def _create_manual_logistics_plan(task: Task) -> Plan:
+    _, problem = utils.parse_task(task)
+
+    # Parse the problem.
+    def _atoms_to_ats(
+        atoms: Collection[PyperplanPredicate]
+    ) -> Dict[PyperplanObject, PyperplanObject]:
+        ats = {}
+        for atom in atoms:
+            if atom.name.lower() != "at":
+                continue
+            (vehicle, _), (loc, _) = atom.signature
+            ats[vehicle] = loc
+        return ats
+
+    init_ats = _atoms_to_ats(problem.initial_state)
+    goal_ats = _atoms_to_ats(problem.goal)
+    pos_to_city = {}
+    objects = problem.objects
+    trucks = {o for o in objects if objects[o].name == "truck"}
+    airports = {o for o in objects if objects[o].name == "airport"}
+    packages = {o for o in objects if objects[o].name == "package"}
+    airplanes = {o for o in objects if objects[o].name == "airplane"}
+    assert set(goal_ats).issubset(packages)
+    for atom in problem.initial_state:
+        if atom.name.lower() != "in-city":
+            continue
+        (loc, _), (city, _) = atom.signature
+        pos_to_city[loc] = city
+    truck_to_city = {truck: pos_to_city[init_ats[truck]] for truck in trucks}
+    airport_to_city = {airport: pos_to_city[airport] for airport in airports}
+    # We only need one truck and airport per city.
+    assert len(truck_to_city) == len(set(truck_to_city.values()))
+    city_to_truck = {c: t for t, c in truck_to_city.items()}
+    assert len(airport_to_city) == len(set(airport_to_city.values()))
+    city_to_airport = {c: a for a, c in airport_to_city.items()}
+    # We'll only ever use one airplane to keep the policy simple.
+    airplane = sorted(airplanes)[0]
+
+    # Construct the plan.
+    plan = []
+
+    # Process packages one at a time.
+    current_ats = init_ats.copy()
+
+    def _get_truck_subplan(package: str, truck: str, city: str,
+                           package_dest: str) -> Plan:
+        # Note that current_ats is used and updated internally.
+        assert pos_to_city[package_dest] == city
+        subplan = []
+        # Move the truck to the package init.
+        package_init = current_ats[package]
+        truck_init = current_ats[truck]
+        subplan.append(f"(drive-truck {truck} {truck_init} "
+                       f"{package_init} {city})")
+        current_ats[truck] = package_init
+        # Load the truck.
+        subplan.append(f"(load-truck {package} {truck} {package_init})")
+        # Drive the truck to the package dest.
+        subplan.append(f"(drive-truck {truck} {package_init} "
+                       f"{package_dest} {city})")
+        current_ats[truck] = package_dest
+        # Unload the truck.
+        subplan.append(f"(unload-truck {package} {truck} {package_dest})")
+        current_ats[package] = package_dest
+        return subplan
+
+    def _get_plane_subplan(package: str, plane: str, init_airport: str,
+                           dest_airport: str) -> Plan:
+        # Note that current_ats is used and updated internally.
+        assert init_airport != dest_airport
+        assert current_ats[package] == init_airport
+        subplan = []
+        # Fly the plane to the init airport.
+        plane_init = current_ats[plane]
+        subplan.append(f"(fly-airplane {plane} {plane_init} {init_airport})")
+        current_ats[plane] = init_airport
+        # Load the plane.
+        subplan.append(f"(load-airplane {package} {plane} {init_airport})")
+        # Fly the plane to the dest airport.
+        subplan.append(f"(fly-airplane {plane} {init_airport} {dest_airport})")
+        current_ats[plane] = dest_airport
+        # Unload the plane.
+        subplan.append(f"(unload-airplane {package} {plane} {dest_airport})")
+        current_ats[package] = dest_airport
+        return subplan
+
+    for package in sorted(goal_ats):
+        package_init = current_ats[package]
+        package_dest = goal_ats[package]
+        init_city = pos_to_city[package_init]
+        dest_city = pos_to_city[package_dest]
+        # If the package is not yet in the goal city, we need to fly it.
+        if init_city != dest_city:
+            # If the package is not yet at an airport, we need to deliver it.
+            if package_init not in airports:
+                truck = city_to_truck[init_city]
+                port = city_to_airport[init_city]
+                subplan = _get_truck_subplan(package, truck, init_city, port)
+                plan.extend(subplan)
+                package_init = port
+            # Now that the package is at an airport, we need to fly it.
+            dest_airport = city_to_airport[dest_city]
+            subplan = _get_plane_subplan(package, airplane, package_init,
+                                         dest_airport)
+            plan.extend(subplan)
+            package_init = dest_airport
+        # If the package is not yet at its destination, we need to drive it.
+        if package_init != package_dest:
+            truck = city_to_truck[dest_city]
+            subplan = _get_truck_subplan(package, truck, dest_city,
+                                         package_dest)
+            plan.extend(subplan)
 
     return plan

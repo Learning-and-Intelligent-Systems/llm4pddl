@@ -7,8 +7,10 @@ from llm4pddl.approaches.manual_planning_approach import ManualPlanningApproach
 from llm4pddl.envs import create_env
 
 
-@pytest.mark.parametrize(
-    "env_name", ["pyperplan-blocks", "pyperplan-gripper", "pyperplan-miconic"])
+@pytest.mark.parametrize("env_name", [
+    "pyperplan-blocks", "pyperplan-gripper", "pyperplan-miconic",
+    "pyperplan-logistics"
+])
 def test_manual_planning_approach(env_name):
     """Tests for ManualPlanningApproach()."""
     utils.reset_flags({
