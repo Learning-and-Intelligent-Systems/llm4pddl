@@ -78,9 +78,8 @@ ENVS:
     FLAGS: {}
 ARGS:
   - "debug"
-  - "llm_prompt_flatten_pddl"
 FLAGS:
   num_train_tasks: 2
   num_eval_tasks: 10
 START_SEED: 456
-NUM_SEEDS: 1
+NUM_SEEDS: 5
