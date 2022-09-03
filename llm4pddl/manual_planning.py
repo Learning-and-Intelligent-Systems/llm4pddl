@@ -1,5 +1,6 @@
 """Domain-specific plan creation."""
 
+from collections import defaultdict
 from typing import Collection, Dict, List, Set
 
 from llm4pddl import utils
@@ -10,6 +11,8 @@ def create_manual_plan(task: Task) -> Plan:
     """Generate a plan for the task using env-specific code."""
     if "blocks" in task.task_id.lower():
         return _create_manual_blocks_plan(task)
+    if "miconic" in task.task_id.lower():
+        return _create_manual_miconic_plan(task)
     assert "gripper" in task.task_id.lower()
     return _create_manual_gripper_plan(task)
 
@@ -139,5 +142,61 @@ def _create_manual_gripper_plan(task: Task) -> Plan:
         # If there are more to go, move back.
         if remaining_balls:
             plan.append(f"(move {goal_ball_loc} {init_ball_loc})")
+
+    return plan
+
+
+def _create_manual_miconic_plan(task: Task) -> Plan:
+    _, problem = utils.parse_task(task)
+
+    # Parse the passengers and floors.
+    floor_to_above_floors = defaultdict(set)
+    passenger_to_origin = {}
+    passenger_to_dest = {}
+    lift_origin = None
+    for atom in problem.initial_state:
+        if atom.name.lower() == "above":
+            (below, _), (above, _) = atom.signature
+            floor_to_above_floors[below].add(above)
+        elif atom.name.lower() == "origin":
+            (passenger, _), (origin, _) = atom.signature
+            passenger_to_origin[passenger] = origin
+        elif atom.name.lower() == "destin":
+            (passenger, _), (dest, _) = atom.signature
+            passenger_to_dest[passenger] = dest
+        elif atom.name.lower() == "lift-at":
+            (lift_origin, _), = atom.signature
+    assert lift_origin is not None
+
+    # Construct the plan. Serve passengers one at a time, in lexicographic
+    # order. Not a very efficient elevator, but a simple policy.
+    plan = []
+
+    remaining_passengers = sorted(passenger_to_dest)
+    current_lift_loc = lift_origin
+    next_lift_dest = None
+
+    def _get_move_action(start: str, end: str) -> str:
+        assert start != end
+        if end in floor_to_above_floors[start]:
+            return "up"
+        return "down"
+
+    while remaining_passengers:
+        passenger = remaining_passengers.pop(0)
+        # Move to pick up the passenger.
+        next_lift_dest = passenger_to_origin[passenger]
+        move = _get_move_action(current_lift_loc, next_lift_dest)
+        plan.append(f"({move} {current_lift_loc} {next_lift_dest})")
+        current_lift_loc = next_lift_dest
+        # Board the passenger.
+        plan.append(f"(board {current_lift_loc} {passenger})")
+        # Move to the passenger's destination.
+        next_lift_dest = passenger_to_dest[passenger]
+        move = _get_move_action(current_lift_loc, next_lift_dest)
+        plan.append(f"({move} {current_lift_loc} {next_lift_dest})")
+        current_lift_loc = next_lift_dest
+        # Drop off the passenger.
+        plan.append(f"(depart {current_lift_loc} {passenger})")
 
     return plan
