@@ -386,17 +386,6 @@ def str_to_identifier(x: str) -> str:
     return hashlib.md5(x.encode('utf-8')).hexdigest()
 
 
-def construct_pred(pred: PyperplanPredicate) -> str:
-    """This is a helper function for get_init_str() and get_goal_str().
-
-    Constructs string according to PDDL syntax.
-    """
-    arg_str = " ".join(str(o) for o, _ in pred.signature)
-    if len(arg_str) != 0:
-        arg_str = " " + arg_str
-    return f"({pred.name}{arg_str})"
-
-
 def get_init_str(task: Task) -> str:
     """Returns the init string of a PDDL task."""
     domain, problem = parse_task(task)
