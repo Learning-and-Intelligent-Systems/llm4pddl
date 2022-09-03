@@ -1,11 +1,15 @@
 """Tests for ManualPlanningApproach()."""
 
+import pytest
+
 from llm4pddl import utils
 from llm4pddl.approaches.manual_planning_approach import ManualPlanningApproach
 from llm4pddl.envs import create_env
 
 
-def test_manual_planning_approach():
+@pytest.mark.parametrize(
+    "env_name", ["pyperplan-blocks", "pyperplan-gripper", "pyperplan-miconic"])
+def test_manual_planning_approach(env_name):
     """Tests for ManualPlanningApproach()."""
     utils.reset_flags({
         "num_train_tasks": 0,
@@ -17,7 +21,7 @@ def test_manual_planning_approach():
     approach = ManualPlanningApproach()
     assert not approach.is_learning_based
     assert not approach.is_planning_based
-    env = create_env("pyperplan-blocks")
+    env = create_env(env_name)
     for task in env.get_eval_tasks():
         plan, _ = approach.solve(task)
         assert plan is not None
