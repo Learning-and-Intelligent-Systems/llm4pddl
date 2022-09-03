@@ -3,10 +3,13 @@
 import pytest
 
 from llm4pddl import utils
-from llm4pddl.envs import ALL_ENVS, create_env
+from llm4pddl.envs import create_env
 
 
-@pytest.mark.parametrize("env_name", ALL_ENVS)
+@pytest.mark.parametrize("env_name", [
+    "pyperplan-blocks", "custom-dressed", "augmented-pyperplan-blocks",
+    "manual-pyperplan-gripper"
+])
 def test_create_env(env_name):
     """Tests for create_env()."""
     utils.reset_flags({

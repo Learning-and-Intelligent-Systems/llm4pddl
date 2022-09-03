@@ -14,7 +14,6 @@ from pathlib import Path
 from typing import Iterator, List, Sequence
 
 from llm4pddl import utils
-from llm4pddl.envs import PYPERPLAN_BENCHMARKS
 from llm4pddl.flags import FLAGS
 from llm4pddl.structs import PyperplanProblem, Task
 
@@ -225,7 +224,10 @@ def _generate_tasks_for_env(original_task_dir: Path, out_dir: Path,
 
 
 def _main(num_original_train_tasks: int, max_num_iters: int) -> None:
-    for benchmark_name in PYPERPLAN_BENCHMARKS:
+    benchmarks = sorted(f.name
+                        for f in os.scandir(utils.PYPERPLAN_BENCHMARK_DIR)
+                        if f.is_dir())
+    for benchmark_name in benchmarks:
         print(f"******** Starting augmentation for {benchmark_name} *********")
         original_task_dir = utils.PYPERPLAN_BENCHMARK_DIR / benchmark_name
         out_dir = utils.AUGMENTED_BENCHMARK_DIR / f"pyperplan-{benchmark_name}"
