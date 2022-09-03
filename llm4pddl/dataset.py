@@ -33,7 +33,7 @@ def create_dataset(train_tasks: Sequence[Task],
                 assert solution is not None
             else:
                 assert FLAGS.data_gen_method == "manual"
-                solution = create_manual_plan(task, FLAGS.env)
+                solution = create_manual_plan(task)
             with open(cache_path, "wb") as f:
                 pickle.dump(solution, f)
             logging.debug(f"Saved solution to {cache_path}")

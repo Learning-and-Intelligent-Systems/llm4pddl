@@ -6,13 +6,12 @@ from llm4pddl import utils
 from llm4pddl.structs import Plan, PyperplanObject, PyperplanPredicate, Task
 
 
-def create_manual_plan(task: Task, env_name: str) -> Plan:
+def create_manual_plan(task: Task) -> Plan:
     """Generate a plan for the task using env-specific code."""
-    if "blocks" in env_name:
+    if "blocks" in task.task_id.lower():
         return _create_manual_blocks_plan(task)
-    if "gripper" in env_name:
-        return _create_manual_gripper_plan(task)
-    raise NotImplementedError(f"Manual plan not implemented for {env_name}")
+    assert "gripper" in task.task_id.lower()
+    return _create_manual_gripper_plan(task)
 
 
 def _create_manual_blocks_plan(task: Task) -> Plan:

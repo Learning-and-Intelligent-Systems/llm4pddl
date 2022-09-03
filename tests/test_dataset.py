@@ -7,7 +7,6 @@ import pytest
 from llm4pddl import utils
 from llm4pddl.dataset import create_dataset
 from llm4pddl.envs import create_env
-from llm4pddl.manual_planning import create_manual_plan
 
 MANUAL_ENVS = ["pyperplan-blocks", "pyperplan-gripper"]
 
@@ -33,10 +32,3 @@ def test_manual_data_generation(env_name):
     for d in dataset:
         assert utils.validate_plan(d.task, d.solution)
     shutil.rmtree(data_dir)
-
-
-def test_manual_data_generation_failure():
-    """Tests for manual data generation failure cases."""
-    with pytest.raises(NotImplementedError) as e:
-        create_manual_plan(None, "not a real env")
-    assert "Manual plan not implemented" in str(e)
