@@ -117,11 +117,9 @@ class LLMOpenLoopApproach(BaseApproach):
         else:
             assert FLAGS.llm_prompt_method == "group-by-predicate"
             # Create the init string.
-            init_str_groups = utils.group_by_predicate(problem.initial_state)
-            init_str = "\n".join(sorted(init_str_groups))
+            init_str = utils.get_init_str(task)
             # Create the goal string.
-            goal_str_groups = utils.group_by_predicate(problem.goal)
-            goal_str = "\n".join(sorted(goal_str_groups))
+            goal_str = utils.get_goal_str(task)
         # Create the prompt.
         prompt = f"""{utils.LLM_QUESTION_TOKEN}
     (:objects
