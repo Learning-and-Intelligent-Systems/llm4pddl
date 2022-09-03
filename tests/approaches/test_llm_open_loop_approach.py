@@ -11,7 +11,7 @@ from llm4pddl import utils
 from llm4pddl.approaches import create_approach
 from llm4pddl.approaches.llm_open_loop_approach import LLMOpenLoopApproach
 from llm4pddl.dataset import create_dataset
-from llm4pddl.envs import ALL_ENVS, create_env
+from llm4pddl.envs import create_env
 from llm4pddl.llm_interface import LargeLanguageModel
 from llm4pddl.structs import Datum, LLMResponse
 
@@ -39,7 +39,9 @@ class _MockLLM(LargeLanguageModel):
         return [response]
 
 
-@pytest.mark.parametrize('env_name', ALL_ENVS)
+@pytest.mark.parametrize(
+    'env_name',
+    ["pyperplan-blocks", "custom-easy_spanner", "pyperplan-woodworking"])
 def test_llm_standard_approach(env_name):
     """Tests for the LLM standard approach."""
     cache_dir = "_fake_llm_cache_dir"
