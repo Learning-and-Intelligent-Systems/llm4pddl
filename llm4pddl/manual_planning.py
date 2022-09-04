@@ -1,7 +1,7 @@
 """Domain-specific plan creation."""
 
 from collections import defaultdict
-from typing import Collection, Dict, List, Set
+from typing import Collection, Dict, List, Set, Tuple
 
 from llm4pddl import utils
 from llm4pddl.structs import Plan, PyperplanObject, PyperplanPredicate, Task
@@ -15,6 +15,8 @@ def create_manual_plan(task: Task) -> Plan:
         return _create_manual_miconic_plan(task)
     if "logistics" in task.task_id.lower():
         return _create_manual_logistics_plan(task)
+    if "satellite" in task.task_id.lower():
+        return _create_manual_satellite_plan(task)
     assert "gripper" in task.task_id.lower()
     return _create_manual_gripper_plan(task)
 
@@ -317,5 +319,90 @@ def _create_manual_logistics_plan(task: Task) -> Plan:
             subplan = _get_truck_subplan(package, truck, dest_city,
                                          package_dest)
             plan.extend(subplan)
+
+    return plan
+
+
+def _create_manual_satellite_plan(task: Task) -> Plan:
+    _, problem = utils.parse_task(task)
+
+    # Parse the initial state.
+    instrument_to_satellite: Dict[str, str] = {}
+    init_satellite_to_direction: Dict[str, str] = {}
+    init_power_avails = set()  # satellites
+    instrument_modes: Set[Tuple[str, str]] = set()  # mode, instrument
+    calibration_targets: Dict[str, str] = {}  # instrument: direction
+
+    for atom in problem.initial_state:
+        assert atom.name.lower() != "calibrated"  # all uncalibrated
+        assert atom.name.lower() != "power_on"  # all power off
+        if atom.name.lower() == "on_board":
+            (instrument, _), (satellite, _) = atom.signature
+            assert instrument not in instrument_to_satellite
+            instrument_to_satellite[instrument] = satellite
+        elif atom.name.lower() == "power_avail":
+            (satellite, _), = atom.signature
+            init_power_avails.add(satellite)
+        elif atom.name.lower() == "calibration_target":
+            (instrument, _), (direction, _) = atom.signature
+            assert instrument not in calibration_targets
+            calibration_targets[instrument] = direction
+        elif atom.name.lower() == "supports":
+            (instrument, _), (mode, _) = atom.signature
+            instrument_modes.add((mode, instrument))
+        elif atom.name.lower() == "pointing":
+            (satellite, _), (direction, _) = atom.signature
+            assert satellite not in init_satellite_to_direction
+            init_satellite_to_direction[satellite] = direction
+
+    # Only need one instrument per mode.
+    mode_to_instrument = dict(sorted(instrument_modes, reverse=True))
+
+    # Parse the goals.
+    pointing_goals: Dict[str, str] = {}  # instrument: direction
+    image_goals: Set[Tuple[str, str]] = set()  # direction, mode
+
+    for atom in problem.goal:
+        if atom.name.lower() == "pointing":
+            (instrument, _), (direction, _) = atom.signature
+            pointing_goals[instrument] = direction
+        else:
+            assert atom.name.lower() == "have_image"
+            (direction, _), (mode, _) = atom.signature
+            image_goals.add((direction, mode))
+
+    # Construct the plan. Start with the image goals.
+    plan = []
+
+    current_satellite_to_direction = init_satellite_to_direction.copy()
+    assert init_power_avails.issuperset(set(current_satellite_to_direction))
+    for image_dir, mode in sorted(image_goals):
+        instrument = mode_to_instrument[mode]
+        satellite = instrument_to_satellite[instrument]
+        # Turn the instrument on.
+        plan.append(f"(switch_on {instrument} {satellite})")
+        # Turn to the calibration target.
+        current_dir = current_satellite_to_direction[satellite]
+        target_dir = calibration_targets[instrument]
+        plan.append(f"(turn_to {satellite} {target_dir} {current_dir})")
+        current_satellite_to_direction[satellite] = target_dir
+        current_dir = target_dir
+        # Calibrate.
+        plan.append(f"(calibrate {satellite} {instrument} {current_dir})")
+        # Turn to the image target.
+        plan.append(f"(turn_to {satellite} {image_dir} {current_dir})")
+        current_satellite_to_direction[satellite] = image_dir
+        current_dir = image_dir
+        # Take the image.
+        plan.append(f"(take_image {satellite} {current_dir} "
+                    f"{instrument} {mode})")
+        # Switch the instrument off now so we can use other instruments later.
+        plan.append(f"(switch_off {instrument} {satellite})")
+
+    # Now handle the pointing goals.
+    for satellite in sorted(pointing_goals):
+        point_dir = pointing_goals[satellite]
+        current_dir = current_satellite_to_direction[satellite]
+        plan.append(f"(turn_to {satellite} {point_dir} {current_dir})")
 
     return plan
