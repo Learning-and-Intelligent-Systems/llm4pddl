@@ -331,7 +331,7 @@ def _create_manual_satellite_plan(task: Task) -> Plan:
     init_satellite_to_direction: Dict[str, str] = {}
     init_power_avails = set()  # satellites
     instrument_modes: Set[Tuple[str, str]] = set()  # mode, instrument
-    calibration_targets: Dict[str, str] = {}   # instrument: direction
+    calibration_targets: Dict[str, str] = {}  # instrument: direction
 
     for atom in problem.initial_state:
         assert atom.name.lower() != "calibrated"  # all uncalibrated
@@ -360,7 +360,7 @@ def _create_manual_satellite_plan(task: Task) -> Plan:
 
     # Parse the goals.
     pointing_goals: Dict[str, str] = {}  # instrument: direction
-    image_goals: Dict[str, str] = {}  # direction: mode
+    image_goals: Set[Tuple[str, str]] = set()  # direction, mode
 
     for atom in problem.goal:
         if atom.name.lower() == "pointing":
@@ -369,15 +369,14 @@ def _create_manual_satellite_plan(task: Task) -> Plan:
         else:
             assert atom.name.lower() == "have_image"
             (direction, _), (mode, _) = atom.signature
-            image_goals[direction] = mode
+            image_goals.add((direction, mode))
 
     # Construct the plan. Start with the image goals.
     plan = []
 
     current_satellite_to_direction = init_satellite_to_direction.copy()
     assert init_power_avails.issuperset(set(current_satellite_to_direction))
-    for image_dir in sorted(image_goals):
-        mode = image_goals[image_dir]
+    for image_dir, mode in sorted(image_goals):
         instrument = mode_to_instrument[mode]
         satellite = instrument_to_satellite[instrument]
         # Turn the instrument on.
