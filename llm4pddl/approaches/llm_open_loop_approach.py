@@ -109,11 +109,9 @@ class LLMOpenLoopApproach(BaseApproach):
             solution_str = utils.LLM_ANSWER_TOKEN + "\n" + plan_str
         if FLAGS.llm_prompt_method == "standard":
             # Create the init string.
-            init_strs = [utils.pred_to_str(p) for p in problem.initial_state]
-            init_str = "\n".join(init_strs)
+            init_str = utils.get_init_str(task)
             # Create the goal string.
-            goal_strs = [utils.pred_to_str(p) for p in problem.goal]
-            goal_str = "\n".join(goal_strs)
+            goal_str = utils.get_goal_str(task)
         else:
             assert FLAGS.llm_prompt_method == "group-by-predicate"
             # Create the init string.
