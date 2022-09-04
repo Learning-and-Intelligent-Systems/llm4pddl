@@ -389,7 +389,7 @@ def str_to_identifier(x: str) -> str:
 
 
 def randomize_object_names(rng: np.random.Generator,
-                           objs: List[str]) -> List[str]:
+                           objs: List[str]) -> dict[str, str]:
     """To prevent overfitting, replaces object names in prompt with randomly
     generated strings."""
     random_dict = {}
@@ -397,4 +397,19 @@ def randomize_object_names(rng: np.random.Generator,
         if obj not in random_dict:
             random_dict[obj] = ''.join(
                 rng.choice(list(string.ascii_lowercase), len(obj)))
-    return list(random_dict.values())
+    return random_dict
+
+
+def replace_with_random_objects(orig_str: str, random_dict: dict) -> str:
+    """Replaces objects in init or goal string with random object names."""
+    orig_str = orig_str.split("\n")
+    for line in orig_str:
+        objects_substring_start = line.index(" ") + 1
+        objects_substring_end = line.index(")")
+        objects_substring = line[objects_substring_start:objects_substring_end]
+        objs = objects_substring.split(" ")
+        orig_index = orig_str.index(line)
+        for obj in objs:
+            line = line.replace(obj, random_dict[obj])
+        orig_str[orig_index] = line
+    return "\n".join(orig_str)
