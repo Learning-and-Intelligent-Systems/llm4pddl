@@ -391,7 +391,7 @@ def get_init_str(task: Task) -> str:
     _, problem = parse_task(task)
     # Create the init string.
     init_strs = [pred_to_str(p) for p in problem.initial_state]
-    init_str = " ".join(init_strs)
+    init_str = "\n".join(init_strs)
     return init_str
 
 
@@ -400,5 +400,5 @@ def get_goal_str(task: Task) -> str:
     _, problem = parse_task(task)
     # Create the goal string.
     goal_strs = [pred_to_str(p) for p in problem.goal]
-    goal_str = " ".join(goal_strs)
+    goal_str = "\n".join(goal_strs)
     return goal_str
