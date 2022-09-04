@@ -44,12 +44,13 @@ class LLMOpenLoopApproach(BaseApproach):
         return "llm-open-loop"
 
     def solve(self, task: Task) -> Tuple[Optional[Plan], TaskMetrics]:
-        new_prompt = self._create_prompt(task)
+        new_prompt = self._create_prompt(task, self._rng)
         if FLAGS.use_dynamic_examples:
             closest_datums = self._get_closest_datums(
                 task, self._list_embeddings_mapping, FLAGS.num_train_tasks)
             self._create_prompt_prefix(closest_datums)
         prompt = self._prompt_prefix + new_prompt
+
         logging.debug(f"Querying with prompt suffix:\n{new_prompt}")
         responses = self._llm.sample_completions(
             prompt=prompt,
@@ -60,6 +61,7 @@ class LLMOpenLoopApproach(BaseApproach):
 
     def train(self, dataset: Dataset) -> None:
         self._create_prompt_prefix(dataset)
+
         # Embedding the training tasks:
         if FLAGS.use_dynamic_examples:
             train_tasks = [datum.task for datum in dataset]
@@ -96,11 +98,13 @@ class LLMOpenLoopApproach(BaseApproach):
             obj_type = domain.constants[obj]
             type_to_objs[obj_type].append(obj)
         objects_strs: List[str] = []
+        objs_dict = {}
         for typ, objs in type_to_objs.items():
             if not objs:
                 continue
             if rng:
-                objs = utils.randomize_object_names(rng, objs)
+                objs_dict = utils.randomize_object_names(rng, objs)
+                objs = list(objs_dict.values())
             typ_str = " ".join(objs) + " - " + str(typ)
             objects_strs.append(typ_str)
         # Create the objects string.
@@ -126,6 +130,8 @@ class LLMOpenLoopApproach(BaseApproach):
             # Create the goal string.
             goal_str_groups = utils.group_by_predicate(problem.goal)
             goal_str = "\n".join(sorted(goal_str_groups))
+        init_str = utils.replace_with_random_objects(init_str, objs_dict)
+        goal_str = utils.replace_with_random_objects(goal_str, objs_dict)
         # Create the prompt.
         prompt = f"""{utils.LLM_QUESTION_TOKEN}
     (:objects
