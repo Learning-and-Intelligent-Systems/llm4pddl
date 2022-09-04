@@ -457,15 +457,11 @@ def test_get_init_str():
     task01 = utils.get_task_from_dir(utils.PYPERPLAN_BENCHMARK_DIR / 'blocks',
                                      1)
     init_str = utils.get_init_str(task01)
-    #     assert init_str == "CLEAR(C) CLEAR(A) CLEAR(B) CLEAR(D) ONTABLE(C) \
-    # ONTABLE(A) ONTABLE(B) ONTABLE(D) HANDEMPTY()".lower()
     assert init_str == "(CLEAR C) (CLEAR A) (CLEAR B) (CLEAR D) (ONTABLE C) \
 (ONTABLE A) (ONTABLE B) (ONTABLE D) (HANDEMPTY)".lower()
     task02 = utils.get_task_from_dir(utils.PYPERPLAN_BENCHMARK_DIR / 'blocks',
                                      2)
     init_str2 = utils.get_init_str(task02)
-    #     assert init_str2 == "CLEAR(B) ONTABLE(D) ON(B C) \
-    # ON(C A) ON(A D) HANDEMPTY()".lower()
     assert init_str2 == "(CLEAR B) (ONTABLE D) (ON B C) \
 (ON C A) (ON A D) (HANDEMPTY)".lower()
 
@@ -475,10 +471,8 @@ def test_get_goal_str():
     task01 = utils.get_task_from_dir(utils.PYPERPLAN_BENCHMARK_DIR / 'blocks',
                                      1)
     goal_str = utils.get_goal_str(task01)
-    # assert goal_str == "on(d c) on(c b) on(b a)"
     assert goal_str == "(on d c) (on c b) (on b a)"
     task02 = utils.get_task_from_dir(utils.PYPERPLAN_BENCHMARK_DIR / 'blocks',
                                      2)
     goal_str2 = utils.get_goal_str(task02)
-    # assert goal_str2 == "ON(D C) ON(C A) ON(A B)".lower()
     assert goal_str2 == "(ON D C) (ON C A) (ON A B)".lower()

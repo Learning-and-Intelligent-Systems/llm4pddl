@@ -388,8 +388,7 @@ def str_to_identifier(x: str) -> str:
 
 def get_init_str(task: Task) -> str:
     """Returns the init string of a PDDL task."""
-    domain, problem = parse_task(task)
-    del domain
+    _, problem = parse_task(task)
     # Create the init string.
     init_strs = [pred_to_str(p) for p in problem.initial_state]
     init_str = " ".join(init_strs)
@@ -398,8 +397,7 @@ def get_init_str(task: Task) -> str:
 
 def get_goal_str(task: Task) -> str:
     """Returns the goal string of a PDDL task."""
-    domain, problem = parse_task(task)
-    del domain
+    _, problem = parse_task(task)
     # Create the goal string.
     goal_strs = [pred_to_str(p) for p in problem.goal]
     goal_str = " ".join(goal_strs)
