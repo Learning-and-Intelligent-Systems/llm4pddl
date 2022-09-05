@@ -390,8 +390,8 @@ def str_to_identifier(x: str) -> str:
 
 def randomize_object_names(rng: np.random.Generator,
                            objs: List[str]) -> dict[str, str]:
-    """To prevent overfitting, replaces object names in prompt with randomly
-    generated strings."""
+    """To prevent overfitting, creates dictionary mapping object names to
+    random strings."""
     random_dict = {}
     for obj in objs:
         if obj not in random_dict:
@@ -401,15 +401,18 @@ def randomize_object_names(rng: np.random.Generator,
 
 
 def replace_with_random_objects(orig_str: str, random_dict: dict) -> str:
-    """Replaces objects in init or goal string with random object names."""
+    """Replaces objects in init, goal, solution string with random object
+    names."""
     orig_str = orig_str.split("\n")
-    for line in orig_str:
-        objects_substring_start = line.index(" ") + 1
-        objects_substring_end = line.index(")")
-        objects_substring = line[objects_substring_start:objects_substring_end]
-        objs = objects_substring.split(" ")
-        orig_index = orig_str.index(line)
-        for obj in objs:
-            line = line.replace(obj, random_dict[obj])
-        orig_str[orig_index] = line
+    for i, line in enumerate(orig_str):
+        if " " in line:
+            line = line[line.index("("):]
+            objects_substring_start = line.index(" ") + 1
+            objects_substring_end = line.index(")")
+            objects_substring = line[
+                objects_substring_start:objects_substring_end]
+            objs = objects_substring.split(" ")
+            for obj in objs:
+                line = line.replace(obj, random_dict[obj])
+            orig_str[i] = line
     return "\n".join(orig_str)

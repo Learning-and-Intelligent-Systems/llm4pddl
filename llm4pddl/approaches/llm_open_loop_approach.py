@@ -44,13 +44,12 @@ class LLMOpenLoopApproach(BaseApproach):
         return "llm-open-loop"
 
     def solve(self, task: Task) -> Tuple[Optional[Plan], TaskMetrics]:
-        new_prompt = self._create_prompt(task, self._rng)
+        new_prompt = self._create_prompt(task)
         if FLAGS.use_dynamic_examples:
             closest_datums = self._get_closest_datums(
                 task, self._list_embeddings_mapping, FLAGS.num_train_tasks)
             self._create_prompt_prefix(closest_datums)
         prompt = self._prompt_prefix + new_prompt
-
         logging.debug(f"Querying with prompt suffix:\n{new_prompt}")
         responses = self._llm.sample_completions(
             prompt=prompt,
@@ -60,7 +59,7 @@ class LLMOpenLoopApproach(BaseApproach):
         return self._llm_responses_to_plan(responses, task)
 
     def train(self, dataset: Dataset) -> None:
-        self._create_prompt_prefix(dataset)
+        self._create_prompt_prefix(dataset, self._rng)
 
         # Embedding the training tasks:
         if FLAGS.use_dynamic_examples:
@@ -69,10 +68,16 @@ class LLMOpenLoopApproach(BaseApproach):
             self._list_embeddings_mapping = self._make_embeddings_mapping(
                 embeddings, dataset)
 
-    def _create_prompt_prefix(self, dataset: Dataset) -> None:
+    def _create_prompt_prefix(
+            self,
+            dataset: Dataset,
+            rng: Optional[np.random.Generator] = None) -> None:
         prompts = []
         for datum in dataset:
-            prompt = self._create_prompt(datum.task, datum.solution, self._rng)
+            if rng:
+                prompt = self._create_prompt(datum.task, datum.solution, rng)
+            else:
+                prompt = self._create_prompt(datum.task, datum.solution)
             prompts.append(prompt)
         self._prompt_prefix = "\n\n".join(prompts) + "\n\n"
         logging.debug(f"Created prompt prefix:\n{self._prompt_prefix}")
@@ -130,8 +135,12 @@ class LLMOpenLoopApproach(BaseApproach):
             # Create the goal string.
             goal_str_groups = utils.group_by_predicate(problem.goal)
             goal_str = "\n".join(sorted(goal_str_groups))
-        init_str = utils.replace_with_random_objects(init_str, objs_dict)
-        goal_str = utils.replace_with_random_objects(goal_str, objs_dict)
+        # Randomize objects in init, goal, solution strings.
+        if rng:
+            init_str = utils.replace_with_random_objects(init_str, objs_dict)
+            goal_str = utils.replace_with_random_objects(goal_str, objs_dict)
+            solution_str = utils.replace_with_random_objects(
+                solution_str, objs_dict)
         # Create the prompt.
         prompt = f"""{utils.LLM_QUESTION_TOKEN}
     (:objects
