@@ -13,7 +13,6 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any, Collection, Dict, List, Optional, Sequence, Set, Tuple
 
-import matplotlib.pyplot as plt
 import numpy as np
 from pyperplan.pddl.parser import Parser
 from pyperplan.planner import HEURISTICS, SEARCHES, search_plan
@@ -403,8 +402,8 @@ def randomize_object_names(rng: np.random.Generator,
 def replace_with_random_objects(orig_str: str, random_dict: dict) -> str:
     """Replaces objects in init, goal, solution string with random object
     names."""
-    orig_str = orig_str.split("\n")
-    for i, line in enumerate(orig_str):
+    orig_str_array = orig_str.split("\n")
+    for i, line in enumerate(orig_str_array):
         if " " in line:
             line = line[line.index("("):]
             objects_substring_start = line.index(" ") + 1
@@ -414,5 +413,5 @@ def replace_with_random_objects(orig_str: str, random_dict: dict) -> str:
             objs = objects_substring.split(" ")
             for obj in objs:
                 line = line.replace(obj, random_dict[obj])
-            orig_str[i] = line
-    return "\n".join(orig_str)
+            orig_str_array[i] = line
+    return "\n".join(orig_str_array)
