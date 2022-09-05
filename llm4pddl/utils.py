@@ -388,7 +388,7 @@ def str_to_identifier(x: str) -> str:
 
 
 def randomize_object_names(rng: np.random.Generator,
-                           objs: List[str]) -> dict[str, str]:
+                           objs: List[str]) -> Dict[str, str]:
     """To prevent overfitting, creates dictionary mapping object names to
     random strings."""
     random_dict = {}
