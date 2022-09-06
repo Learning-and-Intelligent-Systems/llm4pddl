@@ -13,12 +13,14 @@ from pathlib import Path
 from typing import Any, Collection, Dict, List, Optional, Sequence, Set, Tuple
 
 import numpy as np
+from pyperplan.grounding import ground as pyperplan_ground
 from pyperplan.pddl.parser import Parser
 from pyperplan.planner import HEURISTICS, SEARCHES, search_plan
 
 from llm4pddl.flags import FLAGS
 from llm4pddl.structs import Plan, PyperplanAction, PyperplanDomain, \
-    PyperplanPredicate, PyperplanProblem, PyperplanType, Task, TaskMetrics
+    PyperplanPredicate, PyperplanProblem, PyperplanTask, PyperplanType, Task, \
+    TaskMetrics
 
 # Global constants.
 LLM_QUESTION_TOKEN = "Q:"
@@ -306,6 +308,22 @@ def get_task_size(task: Task) -> int:
     """A crude estimate of problem complexity."""
     _, prob = parse_task(task)
     return len(prob.objects) + len(prob.initial_state) + len(prob.goal)
+
+
+@functools.lru_cache(maxsize=None)
+def get_pyperplan_task(task: Task) -> PyperplanTask:
+    """Ground all operators in a task.
+
+    Returns a dict mapping the string name of the operator to the
+    operator.
+    """
+    parser = Parser(task.domain_file, task.problem_file)
+    domain = parser.parse_domain()
+    problem = parser.parse_problem(domain)
+    logging.disable(logging.ERROR)
+    pyperplan_task = pyperplan_ground(problem)
+    logging.disable(logging.NOTSET)
+    return pyperplan_task
 
 
 def pred_to_str(pred: PyperplanPredicate) -> str:
