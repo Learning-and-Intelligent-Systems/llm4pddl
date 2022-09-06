@@ -25,6 +25,7 @@ def test_llm_planning_planning_approach():
         "llm_multi_num_completions": 5,
         "llm_multi_temperature": 0.5,
         "llm_prompt_method": "standard",
+        "llm_autoregressive_prompting": False,
         "llm_plan_guidance_method": "init-queue-continue",
         "planner": "pyperplan",
         "data_gen_planner": "pyperplan",

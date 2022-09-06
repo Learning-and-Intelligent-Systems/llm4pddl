@@ -15,9 +15,6 @@ from llm4pddl.envs import create_env
 from llm4pddl.llm_interface import LargeLanguageModel
 from llm4pddl.structs import Datum, LLMResponse
 
-# Wrap text responses into LLMResponses with dummy entries.
-wrap_response = lambda text: LLMResponse("", text, [], [], {}, {})
-
 # Create a mock LLM so that we can control the outputs.
 
 
@@ -36,7 +33,7 @@ class _MockLLM(LargeLanguageModel):
                             stop_token,
                             num_completions=1):
         del prompt, temperature, seed, stop_token, num_completions  # unused
-        response = wrap_response(self.response)
+        response = LLMResponse("", self.response, [], [], {}, {})
         return [response]
 
 
@@ -61,6 +58,7 @@ def test_llm_standard_approach(env_name):
         "data_gen_method": "planning",
         "planning_timeout": 100,
         "llm_prompt_flatten_pddl": False,
+        "llm_autoregressive_prompting": False,
         "use_dynamic_examples": False,
         "data_dir": data_dir,
         "load_data": False,
@@ -112,6 +110,7 @@ def test_llm_standard_approach_failure_cases(llm_prompt_method):
         "llm_multi_num_completions": 5,
         "llm_multi_temperature": 0.5,
         "llm_prompt_method": llm_prompt_method,
+        "llm_autoregressive_prompting": False,
         "planner": "pyperplan",
         "data_gen_planner": "pyperplan",
         "data_gen_method": "planning",
@@ -140,36 +139,36 @@ def test_llm_standard_approach_failure_cases(llm_prompt_method):
     assert plan is None
 
     # Test failure cases of _llm_response_to_plan().
-    assert approach._llm_response_to_plan(wrap_response(ideal_response), task)  # pylint: disable=protected-access
+    assert approach._llm_response_to_plan(ideal_response, task)  # pylint: disable=protected-access
     # Cases where a line contains malformed parentheses.
     response = "()\n" + ideal_response  # should be skipped
-    plan = approach._llm_response_to_plan(wrap_response(response), task)  # pylint: disable=protected-access
+    plan = approach._llm_response_to_plan(response, task)  # pylint: disable=protected-access
     assert len(plan) == len(ideal_plan)
     response = ")(\n" + ideal_response  # should not parse any plan
-    plan = approach._llm_response_to_plan(wrap_response(response), task)  # pylint: disable=protected-access
+    plan = approach._llm_response_to_plan(response, task)  # pylint: disable=protected-access
     assert not plan
     # Case where there is an unmatched left parenthesis.
     response = ideal_response + "\n("  # should be skipped
-    plan = approach._llm_response_to_plan(wrap_response(response), task)  # pylint: disable=protected-access
+    plan = approach._llm_response_to_plan(response, task)  # pylint: disable=protected-access
     assert len(plan) == len(ideal_plan)
     # Case where object names are incorrect.
     assert "(up f0 f1)" in ideal_response
     response = ideal_response.replace("(up f0 f1)", "(up dummy f1)")
-    plan = approach._llm_response_to_plan(wrap_response(response), task)  # pylint: disable=protected-access
+    plan = approach._llm_response_to_plan(response, task)  # pylint: disable=protected-access
     assert len(plan) == len(ideal_plan) - 1
     # Case where operator names are incorrect.
     response = ideal_response.replace("(up f0 f1)", "(up-dummy f0 f1)")
-    plan = approach._llm_response_to_plan(wrap_response(response), task)  # pylint: disable=protected-access
+    plan = approach._llm_response_to_plan(response, task)  # pylint: disable=protected-access
     assert len(plan) == len(ideal_plan) - 1
     # Cases where the type signature of the operator is wrong.
     response = ideal_response.replace("(up f0 f1)", "(up f0)")
-    plan = approach._llm_response_to_plan(wrap_response(response), task)  # pylint: disable=protected-access
+    plan = approach._llm_response_to_plan(response, task)  # pylint: disable=protected-access
     assert len(plan) == len(ideal_plan) - 1
     response = ideal_response.replace("(up f0 f1)", "(up p0 f1)")
-    plan = approach._llm_response_to_plan(wrap_response(response), task)  # pylint: disable=protected-access
+    plan = approach._llm_response_to_plan(response, task)  # pylint: disable=protected-access
     assert len(plan) == len(ideal_plan) - 1
     response = ideal_response.replace("(up f0 f1)", "(up f0 f1 f1)")
-    plan = approach._llm_response_to_plan(wrap_response(response), task)  # pylint: disable=protected-access
+    plan = approach._llm_response_to_plan(response, task)  # pylint: disable=protected-access
     assert len(plan) == len(ideal_plan) - 1
 
     shutil.rmtree(cache_dir)
@@ -194,6 +193,7 @@ def test_llm_standard_approach_dynamic_small_example():
         "llm_max_total_tokens": 700,
         "llm_multi_temperature": 0.3,
         "llm_prompt_method": "standard",
+        "llm_autoregressive_prompting": False,
         "planning_timeout": 100,
         "llm_prompt_flatten_pddl": True,
         "use_dynamic_examples": False,  # this is the only one that differs
@@ -212,6 +212,7 @@ def test_llm_standard_approach_dynamic_small_example():
         "llm_max_total_tokens": 700,
         "llm_multi_temperature": 0.3,
         "llm_prompt_method": "standard",
+        "llm_autoregressive_prompting": False,
         "planning_timeout": 100,
         "llm_prompt_flatten_pddl": True,
         "use_dynamic_examples": True,  # this is the only one that differs
@@ -251,6 +252,7 @@ def test_llm_standard_approach_dynamic_big_example():
         "llm_max_total_tokens": 700,
         "llm_multi_temperature": 0.3,
         "llm_prompt_method": "standard",
+        "llm_autoregressive_prompting": False,
         "planning_timeout": 100,
         "llm_prompt_flatten_pddl": True,
         "use_dynamic_examples": False,  # this is the only one that differs
@@ -269,6 +271,7 @@ def test_llm_standard_approach_dynamic_big_example():
         "llm_max_total_tokens": 700,
         "llm_multi_temperature": 0.3,
         "llm_prompt_method": "standard",
+        "llm_autoregressive_prompting": False,
         "planning_timeout": 100,
         "llm_prompt_flatten_pddl": True,
         "use_dynamic_examples": True,  # this is the only one that differs
@@ -305,6 +308,7 @@ def test_llm_multi_approach():
         "llm_multi_temperature": 0.3,
         "llm_multi_num_completions": 3,
         "llm_prompt_method": "standard",
+        "llm_autoregressive_prompting": False,
         "llm_prompt_flatten_pddl": False,
         "embedding_model_name": "paraphrase-MiniLM-L6-v2"
     })
@@ -323,6 +327,7 @@ def test_embed_tasks():
         "llm_prompt_flatten_pddl": True,
         "llm_model_name": "davinci-002",
         "llm_prompt_method": "standard",
+        "llm_autoregressive_prompting": False,
     })
     approach: LLMOpenLoopApproach = create_approach('llm-standard')
     tasks = [
@@ -342,6 +347,7 @@ def test_embed_task():
         "llm_prompt_flatten_pddl": True,
         "llm_model_name": "davinci-002",
         "llm_prompt_method": "standard",
+        "llm_autoregressive_prompting": False,
     })
     approach: LLMOpenLoopApproach = create_approach('llm-standard')
     embedding_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
@@ -379,6 +385,7 @@ def test_get_closest_datums():
         "embedding_model_name": "paraphrase-MiniLM-L6-v2",
         "llm_model_name": "davinci-002",
         "llm_prompt_method": "standard",
+        "llm_autoregressive_prompting": False,
     })
     approach: LLMOpenLoopApproach = create_approach('llm-standard')
     dressed01 = utils.get_task_from_dir(utils.CUSTOM_BENCHMARK_DIR / 'dressed',
