@@ -396,9 +396,12 @@ def test_embed_tasks():
         for i in range(1, 2)
     ]
     for j, emb in enumerate(approach._embed_tasks(tasks)):  # pylint: disable=protected-access
-        assert np.all(emb == approach._embed_task(  # pylint: disable=protected-access
+        assert np.all(emb['init'] == approach._embed_task(  # pylint: disable=protected-access
             utils.get_task_from_dir(utils.CUSTOM_BENCHMARK_DIR / 'dressed', j +
-                                    1)))
+                                    1))['init'])
+        assert np.all(emb['goal'] == approach._embed_task(  # pylint: disable=protected-access
+            utils.get_task_from_dir(utils.CUSTOM_BENCHMARK_DIR / 'dressed', j +
+                                    1))['goal'])
 
 
 def test_embed_task():
@@ -414,9 +417,12 @@ def test_embed_task():
     embedding_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
     task01 = utils.get_task_from_dir(utils.CUSTOM_BENCHMARK_DIR / 'dressed', 1)
     embedding1 = approach._embed_task(task01)  # pylint: disable=protected-access
-    task_string = approach._create_prompt(task01)  # pylint: disable=protected-access
-    embedding2 = embedding_model.encode(task_string)
-    assert np.all(embedding1 == embedding2)
+    goal_string = utils.get_goal_str(task01)
+    init_string = utils.get_init_str(task01)
+    goal_embedding2 = embedding_model.encode(goal_string)
+    init_embedding2 = embedding_model.encode(init_string)
+    assert np.all(embedding1['goal'] == goal_embedding2)
+    assert np.all(embedding1['init'] == init_embedding2)
 
 
 def test_make_embeddings_mapping():
@@ -427,6 +433,16 @@ def test_make_embeddings_mapping():
     })
     approach: LLMOpenLoopApproach = create_approach('llm-standard')
     embeddings = [[0.5], [0.1], [0.2]]
+    embeddings = [{
+        'init': [0.5],
+        'goal': [0]
+    }, {
+        'init': [0.1],
+        'goal': [0]
+    }, {
+        'init': [0.2],
+        'goal': [0.3]
+    }]
     tasks = [
         utils.get_task_from_dir(utils.CUSTOM_BENCHMARK_DIR / 'dressed', i)
         for i in range(1, 4)
@@ -434,8 +450,9 @@ def test_make_embeddings_mapping():
     dataset = [Datum(task, ['insert plan here']) for task in tasks]
     mapping = approach._make_embeddings_mapping(embeddings, dataset)  # pylint: disable=protected-access
     assert len(mapping) == 3
-    assert mapping[0]['embedding'] == [0.5]
-    assert mapping[1]['embedding'] == [0.1]
+    assert mapping[0]['init_emb'] == [0.5]
+    assert mapping[1]['init_emb'] == [0.1]
+    assert mapping[2]['goal_emb'] == [0.3]
     assert mapping[0]['datum'].solution == ['insert plan here']
 
 

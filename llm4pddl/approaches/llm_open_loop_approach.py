@@ -27,8 +27,9 @@ class LLMOpenLoopApproach(BaseApproach):
         # Set after learning.
         self._prompt_prefix = ""
         # _list_embeddings_mapping is a list of dictionaries of the form
-        # {'embedding': Embedding, 'datum': Datum}, representing a Datum
-        # in the training set and that datum's task string's embedding.
+        # {'init_emb': Embedding, 'datum': Datum, 'goal_emb: Embedding},
+        # representing a Datum in the training set and that datum's
+        # init string embedding and goal string embedding.
         self._list_embeddings_mapping: List[Dict[str, Any]] = []
         self._embedding_model = SentenceTransformer(FLAGS.embedding_model_name)
 
@@ -256,14 +257,16 @@ class LLMOpenLoopApproach(BaseApproach):
         # Failed.
         return None
 
-    def _embed_task(self, task: Task) -> Embedding:
+    def _embed_task(self, task: Task) -> Dict[str, Embedding]:
         """Embeds a task using embedding_model."""
         # note: task_string includes the Q: and A: parts, not just task string
-        task_string = self._create_prompt(task)
-        embedding = self._embedding_model.encode(task_string)
-        return embedding
+        init_str = utils.get_init_str(task)
+        goal_str = utils.get_goal_str(task)
+        init_embedding = self._embedding_model.encode(init_str)
+        goal_embedding = self._embedding_model.encode(goal_str)
+        return {'init': init_embedding, 'goal': goal_embedding}
 
-    def _embed_tasks(self, tasks: List[Task]) -> List[Embedding]:
+    def _embed_tasks(self, tasks: List[Task]) -> List[Dict[str, Embedding]]:
         """"Embeds a list of tasks.
 
         Returns a list of embeddings with indices corresponding to its
@@ -272,12 +275,13 @@ class LLMOpenLoopApproach(BaseApproach):
         embeddings = [self._embed_task(task) for task in tasks]
         return embeddings
 
-    def _make_embeddings_mapping(self, embeddings: List[Embedding],
+    def _make_embeddings_mapping(self, embeddings: List[Dict[str, Embedding]],
                                  dataset: Dataset) -> List[Dict[str, Any]]:
         """Makes embeddings mapping for training data."""
         assert len(embeddings) == len(dataset)
         return [{
-            'embedding': emb,
+            'init_emb': emb['init'],
+            'goal_emb': emb['goal'],
             'datum': datum
         } for emb, datum in zip(embeddings, dataset)]
 
@@ -287,17 +291,34 @@ class LLMOpenLoopApproach(BaseApproach):
         """Returns the num_closest most similar training tasks to the task, in
         order of from least to most similar."""
         assert num_closest <= len(embeddings_mapping)
-        task_embedding = self._embed_task(task)
-        # now compare this embedding to all the other embeddings
-        other_embeddings = [
-            mapping['embedding'] for mapping in embeddings_mapping
+        embeddings = self._embed_task(task)
+
+        total_cos_sims = np.array(
+            [0.0 for _ in range(len(embeddings_mapping))])
+
+        # finding cos sims for init str:
+        task_init_embedding = embeddings['init']
+        other_init_embeddings = [
+            mapping['init_emb'] for mapping in embeddings_mapping
         ]
-        cos_sims = [
-            self._get_cosine_sim(task_embedding, other_emb)
-            for other_emb in other_embeddings
+        init_cos_sims = np.array([
+            self._get_cosine_sim(task_init_embedding, other_emb)
+            for other_emb in other_init_embeddings
+        ])
+        total_cos_sims += init_cos_sims
+
+        # finding cos sims for goal str:
+        task_goal_embedding = embeddings['goal']
+        other_goal_embeddings = [
+            mapping['goal_emb'] for mapping in embeddings_mapping
         ]
-        # we will need a get_init_string() and get_goal_string() helper funcs.
-        indices = np.argsort(cos_sims)[-num_closest:]
+        goal_cos_sims = np.array([
+            self._get_cosine_sim(task_goal_embedding, other_emb)
+            for other_emb in other_goal_embeddings
+        ])
+        total_cos_sims += goal_cos_sims
+
+        indices = np.argsort(total_cos_sims)[-num_closest:]
         closest_datums = [embeddings_mapping[ind]['datum'] for ind in indices]
         return closest_datums
 
