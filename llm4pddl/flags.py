@@ -35,6 +35,7 @@ def parse_flags() -> None:
     parser.add_argument("--llm_multi_num_completions", default=5, type=int)
     parser.add_argument("--llm_max_total_tokens", default=4096, type=int)
     parser.add_argument("--llm_prompt_method", default="standard", type=str)
+    parser.add_argument("--llm_autoregressive_prompting", action="store_true")
     parser.add_argument("--llm_plan_guidance_method",
                         default="init-queue-continue",
                         type=str)
@@ -44,6 +45,7 @@ def parse_flags() -> None:
                         const=logging.DEBUG,
                         default=logging.INFO)
     parser.add_argument('--llm_prompt_flatten_pddl', action='store_true')
+    parser.add_argument("--llm_autoregress_max_loops", default=4096, type=int)
     parser.add_argument('--use_dynamic_examples', action='store_true')
     parser.add_argument('--embedding_model_name',
                         default='paraphrase-MiniLM-L6-v2')

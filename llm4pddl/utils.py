@@ -30,7 +30,7 @@ AUGMENTED_BENCHMARK_DIR = CUSTOM_BENCHMARK_DIR / "augmented"
 MANUAL_TRAIN_BENCHMARK_DIR = CUSTOM_BENCHMARK_DIR / "manual"
 
 
-def validate_plan(task: Task, plan: Plan) -> bool:
+def validate_plan(task: Task, plan: Plan, verbose: bool = True) -> bool:
     """Use VAL to check if a plan solves a PDDL problem."""
     plan_str = ""
     for t, action in enumerate(plan):
@@ -51,7 +51,8 @@ def validate_plan(task: Task, plan: Plan) -> bool:
     os.remove(plan_file)
     if "Plan valid" in output:
         return True
-    logging.debug(output)
+    if verbose:
+        logging.debug(output)
     return False
 
 
