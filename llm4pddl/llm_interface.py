@@ -52,7 +52,8 @@ class LargeLanguageModel(abc.ABC):
                            temperature: float,
                            seed: int,
                            stop_token: str,
-                           num_completions: int = 1) -> List[LLMResponse]:
+                           num_completions: int = 1,
+                           disable_cache: bool = False) -> List[LLMResponse]:
         """Sample one or more completions from a prompt.
 
         Higher temperatures will increase the variance in the responses.
@@ -72,7 +73,7 @@ class LargeLanguageModel(abc.ABC):
             config_id = f"{temperature}_{seed}_{num_completions}_{stop_token}"
         cache_filename = f"{llm_id}_{config_id}_{prompt_id}.pkl"
         cache_filepath = Path(FLAGS.llm_cache_dir) / cache_filename
-        if not os.path.exists(cache_filepath):
+        if disable_cache or not os.path.exists(cache_filepath):
             if FLAGS.llm_use_cache_only:
                 raise ValueError("No cached response found for LLM prompt.")
             logging.debug(f"Querying LLM {llm_id} with new prompt.")

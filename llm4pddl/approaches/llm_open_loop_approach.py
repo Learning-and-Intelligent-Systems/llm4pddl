@@ -51,6 +51,19 @@ class LLMOpenLoopApproach(BaseApproach):
             self._create_prompt_prefix(closest_datums)
         prompt = self._prompt_prefix + new_prompt
         logging.debug(f"Querying with prompt suffix:\n{new_prompt}")
+        if FLAGS.llm_autoregressive_prompting:
+            metrics: TaskMetrics = {}
+            # Since auto-regressive prompting will lead to divergent queries,
+            # we need to just prompt separately once per num_completions.
+            # Furthermore, to get variance, we need to disable the cache.
+            disable_cache = (self._num_completions > 1)
+            for _ in range(self._num_completions):
+                plan = self._prompt_autoregressive(prompt, task, disable_cache)
+                # Return immediately if we succeeded.
+                if plan is not None:
+                    return plan, metrics
+            # We failed, give up.
+            return None, metrics
         responses = self._llm.sample_completions(
             prompt=prompt,
             temperature=self._temperature,
@@ -145,13 +158,13 @@ class LLMOpenLoopApproach(BaseApproach):
         metrics: TaskMetrics = {}
         for response in responses:
             logging.debug(f"Processing response:\n{response.response_text}")
-            plan = self._llm_response_to_plan(response, task)
+            plan = self._llm_response_to_plan(response.response_text, task)
             if utils.validate_plan(task, plan):
                 return plan, metrics
         return None, metrics
 
     @staticmethod
-    def _llm_response_to_plan(response: LLMResponse, task: Task) -> Plan:
+    def _llm_response_to_plan(response_text: str, task: Task) -> Plan:
         # We assume the LLM's output is such that each line contains
         # (operator-name object1-name object2-name ...) with optional
         # whitespace allowed everywhere. Furthermore, the signature of the
@@ -163,7 +176,10 @@ class LLMOpenLoopApproach(BaseApproach):
         object_names = set(problem.objects) | set(domain.constants)
         obj_to_type = {**problem.objects, **domain.constants}
         plan: Plan = []
-        unparsed = response.response_text
+        unparsed = response_text
+        # Make sure we don't go past the next question.
+        if utils.LLM_QUESTION_TOKEN in unparsed:
+            unparsed, _ = unparsed.split(utils.LLM_QUESTION_TOKEN, 1)
         while "(" in unparsed:
             left_parens_idx = unparsed.index("(")
             # If there is no matching ), the response is malformed.
@@ -203,6 +219,42 @@ class LLMOpenLoopApproach(BaseApproach):
             action = f"({op} {objects_str})"
             plan.append(action)
         return plan
+
+    def _prompt_autoregressive(self,
+                               prompt: str,
+                               task: Task,
+                               disable_cache: bool = False) -> Optional[Plan]:
+        """Prompt the LLM for one action at a time."""
+        # Loop until the next question token is reached, or an invalid response
+        # is returned. Note that this will terminate at most when the maximum
+        # token length is reached, in which case an empty (invalid) response
+        # will be returned by the LLM.
+        last_plan: Plan = []
+        cumulative_response = ""
+        for _ in range(FLAGS.llm_autoregress_max_loops):
+            # Note: since the prompts are potentially different, we have to
+            # query the LLM once per num_completion.
+            responses = self._llm.sample_completions(
+                prompt=prompt,
+                temperature=self._temperature,
+                seed=FLAGS.seed,
+                stop_token=")",  # end of the action
+                num_completions=1,  # num_completions handled in outer loop
+                disable_cache=disable_cache)
+            assert len(responses) == 1
+            response = responses[0].response_text + ")"
+            cumulative_response += response
+            prompt += response
+            plan = self._llm_response_to_plan(cumulative_response, task)
+            # Check for success.
+            if utils.validate_plan(task, plan, verbose=False):
+                return plan
+            # Check if the last plan is no different from this one.
+            if len(last_plan) == len(plan):
+                break
+            last_plan = plan
+        # Failed.
+        return None
 
     def _embed_task(self, task: Task) -> Embedding:
         """Embeds a task using embedding_model."""

@@ -27,7 +27,8 @@ class LLMPlanningApproach(LLMOpenLoopApproach):
         partial_plans = []
         for response in responses:
             logging.debug(f"Processing response:\n{response.response_text}")
-            partial_plan = self._llm_response_to_plan(response, task)
+            partial_plan = self._llm_response_to_plan(response.response_text,
+                                                      task)
             partial_plans.append(partial_plan)
         # Use the partial plans to guide the planner.
         return utils.run_pyperplan_planning(
