@@ -33,8 +33,9 @@ class _MockLLM(LargeLanguageModel):
                             prompt,
                             temperature,
                             seed,
+                            stop_token,
                             num_completions=1):
-        del prompt, temperature, seed, num_completions  # unused
+        del prompt, temperature, seed, stop_token, num_completions  # unused
         response = wrap_response(self.response)
         return [response]
 

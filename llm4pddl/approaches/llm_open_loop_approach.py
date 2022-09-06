@@ -55,6 +55,7 @@ class LLMOpenLoopApproach(BaseApproach):
             prompt=prompt,
             temperature=self._temperature,
             seed=FLAGS.seed,
+            stop_token=utils.LLM_QUESTION_TOKEN,  # start of next question
             num_completions=self._num_completions)
         return self._llm_responses_to_plan(responses, task)
 
