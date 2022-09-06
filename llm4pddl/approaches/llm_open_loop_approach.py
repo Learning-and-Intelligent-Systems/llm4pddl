@@ -209,7 +209,6 @@ class LLMOpenLoopApproach(BaseApproach):
         # note: task_string includes the Q: and A: parts, not just task string
         init_str = utils.get_init_str(task)
         goal_str = utils.get_goal_str(task)
-        # task_string = self._create_prompt(task)
         init_embedding = self._embedding_model.encode(init_str)
         goal_embedding = self._embedding_model.encode(goal_str)
         return {'init': init_embedding, 'goal': goal_embedding}
@@ -266,15 +265,6 @@ class LLMOpenLoopApproach(BaseApproach):
         ])
         total_cos_sims += goal_cos_sims
 
-        # # now compare this embedding to all the other embeddings
-        # other_embeddings = [
-        #     mapping['embedding'] for mapping in embeddings_mapping
-        # ]
-        # cos_sims = [
-        #     self._get_cosine_sim(task_embedding, other_emb)
-        #     for other_emb in other_embeddings
-        # ]
-        # # we will need a get_init_string() and get_goal_string() helper funcs.
         indices = np.argsort(total_cos_sims)[-num_closest:]
         closest_datums = [embeddings_mapping[ind]['datum'] for ind in indices]
         return closest_datums
