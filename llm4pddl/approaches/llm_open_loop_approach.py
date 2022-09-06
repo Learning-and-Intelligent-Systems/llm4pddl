@@ -55,8 +55,10 @@ class LLMOpenLoopApproach(BaseApproach):
             metrics: TaskMetrics = {}
             # Since auto-regressive prompting will lead to divergent queries,
             # we need to just prompt separately once per num_completions.
+            # Furthermore, to get variance, we need to disable the cache.
+            disable_cache = (self._num_completions > 1)
             for _ in range(self._num_completions):
-                plan = self._prompt_autoregressive(prompt, task)
+                plan = self._prompt_autoregressive(prompt, task, disable_cache)
                 # Return immediately if we succeeded.
                 if plan is not None:
                     return plan, metrics
@@ -218,8 +220,10 @@ class LLMOpenLoopApproach(BaseApproach):
             plan.append(action)
         return plan
 
-    def _prompt_autoregressive(self, prompt: str,
-                               task: Task) -> Optional[Plan]:
+    def _prompt_autoregressive(self,
+                               prompt: str,
+                               task: Task,
+                               disable_cache: bool = False) -> Optional[Plan]:
         """Prompt the LLM for one action at a time."""
         # Loop until the next question token is reached, or an invalid response
         # is returned. Note that this will terminate at most when the maximum
@@ -235,7 +239,8 @@ class LLMOpenLoopApproach(BaseApproach):
                 temperature=self._temperature,
                 seed=FLAGS.seed,
                 stop_token=")",  # end of the action
-                num_completions=1)  # num_completions handled in outer loop
+                num_completions=1,  # num_completions handled in outer loop
+                disable_cache=disable_cache)
             assert len(responses) == 1
             response = responses[0].response_text + ")"
             cumulative_response += response
