@@ -227,7 +227,7 @@ class LLMOpenLoopApproach(BaseApproach):
         # will be returned by the LLM.
         last_plan: Plan = []
         cumulative_response = ""
-        while True:
+        for _ in range(FLAGS.llm_autoregress_max_loops):
             # Note: since the prompts are potentially different, we have to
             # query the LLM once per num_completion.
             responses = self._llm.sample_completions(
