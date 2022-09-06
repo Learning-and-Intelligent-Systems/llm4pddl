@@ -287,7 +287,8 @@ class LLMOpenLoopApproach(BaseApproach):
                     for a, act_emb in action_to_emb.items()
                 }
                 # Replace the output with the most similar applicable act.
-                new_action_str = max(applicable_actions, key=action_to_sim.get)
+                new_action_str = max(applicable_actions,
+                                     key=action_to_sim.get)  # type: ignore
                 score = action_to_sim[new_action_str]
                 logging.debug(f"Replacing inapplicable {action_str} with "
                               f"{new_action_str} (score={score})")
@@ -323,6 +324,7 @@ class LLMOpenLoopApproach(BaseApproach):
         embeddings = [self._embed_task(task) for task in tasks]
         return embeddings
 
+    @functools.lru_cache(maxsize=None)
     def _embed_str_with_cache(self, s: str) -> Embedding:
         return self._embedding_model.encode(s)
 
