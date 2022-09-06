@@ -251,6 +251,8 @@ class LLMOpenLoopApproach(BaseApproach):
                 stop_token=")",  # end of the action
                 num_completions=1,  # num_completions handled in outer loop
                 disable_cache=disable_cache)
+            if not responses:
+                break
             assert len(responses) == 1
             response = responses[0].response_text + ")"
             cumulative_response += response
