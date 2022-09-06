@@ -203,42 +203,6 @@ class LLMOpenLoopApproach(BaseApproach):
             action = f"({op} {objects_str})"
             plan.append(action)
         return plan
-    
-    def _prompt_autoregressive(self,
-                               prompt: str,
-                               task: Task,
-                               disable_cache: bool = False) -> Optional[Plan]:
-        """Prompt the LLM for one action at a time."""
-        # Loop until the next question token is reached, or an invalid response
-        # is returned. Note that this will terminate at most when the maximum
-        # token length is reached, in which case an empty (invalid) response
-        # will be returned by the LLM.
-        last_plan: Plan = []
-        cumulative_response = ""
-        for _ in range(FLAGS.llm_autoregress_max_loops):
-            # Note: since the prompts are potentially different, we have to
-            # query the LLM once per num_completion.
-            responses = self._llm.sample_completions(
-                prompt=prompt,
-                temperature=self._temperature,
-                seed=FLAGS.seed,
-                stop_token=")",  # end of the action
-                num_completions=1,  # num_completions handled in outer loop
-                disable_cache=disable_cache)
-            assert len(responses) == 1
-            response = responses[0].response_text + ")"
-            cumulative_response += response
-            prompt += response
-            plan = self._llm_response_to_plan(cumulative_response, task)
-            # Check for success.
-            if utils.validate_plan(task, plan, verbose=False):
-                return plan
-            # Check if the last plan is no different from this one.
-            if len(last_plan) == len(plan):
-                break
-            last_plan = plan
-        # Failed.
-        return None
 
     def _embed_task(self, task: Task) -> Dict[str, Embedding]:
         """Embeds a task using embedding_model."""
