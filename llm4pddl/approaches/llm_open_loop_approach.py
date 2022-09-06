@@ -27,7 +27,7 @@ class LLMOpenLoopApproach(BaseApproach):
         # Set after learning.
         self._prompt_prefix = ""
         # _list_embeddings_mapping is a list of dictionaries of the form
-        # {'init_emb': Embedding, 'datum': Datum, 'goal_emb: Embedding}, 
+        # {'init_emb': Embedding, 'datum': Datum, 'goal_emb: Embedding},
         # representing a Datum in the training set and that datum's
         # init string embedding and goal string embedding.
         self._list_embeddings_mapping: List[Dict[str, Any]] = []
@@ -204,7 +204,7 @@ class LLMOpenLoopApproach(BaseApproach):
             plan.append(action)
         return plan
 
-    def _embed_task(self, task: Task) -> Dict[str,Embedding]:
+    def _embed_task(self, task: Task) -> Dict[str, Embedding]:
         """Embeds a task using embedding_model."""
         # note: task_string includes the Q: and A: parts, not just task string
         init_str = utils.get_init_str(task)
@@ -212,9 +212,9 @@ class LLMOpenLoopApproach(BaseApproach):
         # task_string = self._create_prompt(task)
         init_embedding = self._embedding_model.encode(init_str)
         goal_embedding = self._embedding_model.encode(goal_str)
-        return {'init':init_embedding, 'goal':goal_embedding}
+        return {'init': init_embedding, 'goal': goal_embedding}
 
-    def _embed_tasks(self, tasks: List[Task]) -> List[Dict[str,Embedding]]:
+    def _embed_tasks(self, tasks: List[Task]) -> List[Dict[str, Embedding]]:
         """"Embeds a list of tasks.
 
         Returns a list of embeddings with indices corresponding to its
@@ -223,7 +223,7 @@ class LLMOpenLoopApproach(BaseApproach):
         embeddings = [self._embed_task(task) for task in tasks]
         return embeddings
 
-    def _make_embeddings_mapping(self, embeddings: List[Dict[str,Embedding]],
+    def _make_embeddings_mapping(self, embeddings: List[Dict[str, Embedding]],
                                  dataset: Dataset) -> List[Dict[str, Any]]:
         """Makes embeddings mapping for training data."""
         assert len(embeddings) == len(dataset)
@@ -240,19 +240,30 @@ class LLMOpenLoopApproach(BaseApproach):
         order of from least to most similar."""
         assert num_closest <= len(embeddings_mapping)
         embeddings = self._embed_task(task)
-        
-        total_cos_sims = np.array([0.0 for _ in range(len(embeddings_mapping))])
+
+        total_cos_sims = np.array(
+            [0.0 for _ in range(len(embeddings_mapping))])
 
         # finding cos sims for init str:
         task_init_embedding = embeddings['init']
-        other_init_embeddings = [mapping['init_emb'] for mapping in embeddings_mapping]
-        init_cos_sims = np.array([self._get_cosine_sim(task_init_embedding, other_emb) for other_emb in other_init_embeddings])
+        other_init_embeddings = [
+            mapping['init_emb'] for mapping in embeddings_mapping
+        ]
+        init_cos_sims = np.array([
+            self._get_cosine_sim(task_init_embedding, other_emb)
+            for other_emb in other_init_embeddings
+        ])
         total_cos_sims += init_cos_sims
 
         # finding cos sims for goal str:
         task_goal_embedding = embeddings['goal']
-        other_goal_embeddings = [mapping['goal_emb'] for mapping in embeddings_mapping]
-        goal_cos_sims = np.array([self._get_cosine_sim(task_goal_embedding, other_emb) for other_emb in other_goal_embeddings])
+        other_goal_embeddings = [
+            mapping['goal_emb'] for mapping in embeddings_mapping
+        ]
+        goal_cos_sims = np.array([
+            self._get_cosine_sim(task_goal_embedding, other_emb)
+            for other_emb in other_goal_embeddings
+        ])
         total_cos_sims += goal_cos_sims
 
         # # now compare this embedding to all the other embeddings

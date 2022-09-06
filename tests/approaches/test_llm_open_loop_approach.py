@@ -365,7 +365,16 @@ def test_make_embeddings_mapping():
     })
     approach: LLMOpenLoopApproach = create_approach('llm-standard')
     embeddings = [[0.5], [0.1], [0.2]]
-    embeddings = [{'init':[0.5], 'goal':[0]}, {'init':[0.1], 'goal':[0]}, {'init':[0.2], 'goal':[0.3]}]
+    embeddings = [{
+        'init': [0.5],
+        'goal': [0]
+    }, {
+        'init': [0.1],
+        'goal': [0]
+    }, {
+        'init': [0.2],
+        'goal': [0.3]
+    }]
     tasks = [
         utils.get_task_from_dir(utils.CUSTOM_BENCHMARK_DIR / 'dressed', i)
         for i in range(1, 4)
