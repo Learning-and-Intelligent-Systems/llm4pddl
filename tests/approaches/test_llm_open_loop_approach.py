@@ -1,6 +1,7 @@
 """Test cases for LLM approaches."""
 
 import shutil
+from typing import List
 
 import numpy as np
 import pytest
@@ -41,6 +42,22 @@ class _MockLLM(LargeLanguageModel):
             next_response, _ = next_response.split(stop_token, 1)
         response = LLMResponse("", next_response, [], [], {}, {})
         return [response]
+
+    def sample_completions(self,
+                           prompt: str,
+                           temperature: float,
+                           seed: int,
+                           stop_token: str,
+                           num_completions: int = 1,
+                           disable_cache: bool = False) -> List[LLMResponse]:
+        # Always disable the cache for tests.
+        del disable_cache
+        return super().sample_completions(prompt,
+                                          temperature,
+                                          seed,
+                                          stop_token,
+                                          num_completions,
+                                          disable_cache=True)
 
 
 @pytest.mark.parametrize(
@@ -146,16 +163,25 @@ def test_autoregressive_prompting():
     plan, _ = approach.solve(task)
     assert utils.validate_plan(task, plan)
     # Adding a next question should not matter.
-    llm.responses = list(plan)
+    llm.responses = list(ideal_plan)
     llm.responses[-1] += f"\n{utils.LLM_QUESTION_TOKEN} garbage"
     plan, _ = approach.solve(task)
+    assert utils.validate_plan(task, plan)
+    # Test successful usage, where the LLM output is very close to a plan.
+    llm.responses = list(ideal_plan)
+    assert llm.responses[0] == "(unstack b c)"
+    llm.responses[0] = "(unstck b c)"
+    plan, _ = approach.solve(task)
+    assert plan[0] == "(unstack b c)"
     assert utils.validate_plan(task, plan)
     # Test failure, where the LLM output is trivial.
     llm.responses = [""]
     plan, _ = approach.solve(task)
+    assert plan is None
     # Test failure, where the LLM output is insufficient.
     llm.responses = [ideal_plan[0][:-1]]
     plan, _ = approach.solve(task)
+    assert plan is None
     shutil.rmtree(cache_dir)
     shutil.rmtree(data_dir)
 
