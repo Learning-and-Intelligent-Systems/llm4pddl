@@ -237,8 +237,7 @@ class LLMOpenLoopApproach(BaseApproach):
         # is returned. Note that this will terminate at most when the maximum
         # token length is reached, in which case an empty (invalid) response
         # will be returned by the LLM.
-        last_plan: Plan = []
-        cumulative_response = ""
+        plan: Plan = []
         current_facts = pyperplan_task.initial_state
         sep = "" if FLAGS.llm_prompt_flatten_pddl else "\n"
         for _ in range(FLAGS.llm_autoregress_max_loops):
@@ -255,18 +254,17 @@ class LLMOpenLoopApproach(BaseApproach):
                 break
             assert len(responses) == 1
             response = responses[0].response_text + ")"
-            cumulative_response += response
             # Handle syntax.
-            plan = self._llm_response_to_plan(cumulative_response,
-                                              task,
-                                              disable_name_checks=True)
-            assert len(plan) <= len(last_plan) + 1
-            # Failed to find a new action.
-            if len(plan) == len(last_plan):
+            response_plan = self._llm_response_to_plan(
+                response, task, disable_name_checks=True)
+            # No valid response from LLM, give up.
+            if not response_plan:
                 break
-            action_str = plan[-1]
+            # Should be guaranteed 1 because the LLM will stop at ")".
+            assert len(response_plan) == 1
+            action_str = response_plan[0]
             logging.debug(f"Autoregressive parsed output: {action_str}")
-            # Check if the action is valid.
+            # If the action is invalid, replace it with the nearest valid one.
             if (action_str not in ground_ops) or (
                     not ground_ops[action_str].applicable(current_facts)):
                 # Find the nearest applicable action.
@@ -295,17 +293,20 @@ class LLMOpenLoopApproach(BaseApproach):
                 logging.debug(f"Replacing inapplicable {action_str} with "
                               f"{new_action_str} (score={score})")
                 action_str = new_action_str
-            ground_op = ground_ops[action_str]
+            # Update the prompt with action_str. This is the autoregress.
             prompt += sep + action_str
+            # Update the plan.
+            plan.append(action_str)
+            # Update the current facts for the next applicability checks.
+            ground_op = ground_ops[action_str]
             current_facts = ground_op.apply(current_facts)
             # Check for success.
             if utils.validate_plan(task, plan, verbose=False):
                 return plan
-            # Check if the last plan is no different from this one.
-            if len(last_plan) == len(plan):
-                break
-            last_plan = plan
         # Failed.
+        failed_plan_str = "\n".join(plan)
+        logging.debug("Autoregressive prompting failed. Final failed plan: "
+                      f"{failed_plan_str}")
         return None
 
     def _embed_task(self, task: Task) -> Dict[str, Embedding]:
