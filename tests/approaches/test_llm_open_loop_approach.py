@@ -162,11 +162,6 @@ def test_autoregressive_prompting():
     llm.responses = list(ideal_plan)
     plan, _ = approach.solve(task)
     assert utils.validate_plan(task, plan)
-    # Adding a next question should not matter.
-    llm.responses = list(ideal_plan)
-    llm.responses[-1] += f"\n{utils.LLM_QUESTION_TOKEN} garbage"
-    plan, _ = approach.solve(task)
-    assert utils.validate_plan(task, plan)
     # Test successful usage, where the LLM output is very close to a plan.
     llm.responses = list(ideal_plan)
     assert llm.responses[0] == "(unstack b c)"
@@ -175,7 +170,7 @@ def test_autoregressive_prompting():
     assert plan[0] == "(unstack b c)"
     assert utils.validate_plan(task, plan)
     # Test failure, where the LLM output is trivial.
-    llm.responses = [""]
+    llm.responses = [f"\n{utils.LLM_QUESTION_TOKEN} garbage"]
     plan, _ = approach.solve(task)
     assert plan is None
     # Test failure, where the LLM output is insufficient.
