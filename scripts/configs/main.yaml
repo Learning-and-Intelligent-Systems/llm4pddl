@@ -78,7 +78,7 @@ ENVS:
     FLAGS: {}
 ARGS:
   - "debug"
-  - "llm_autoregress_max_loops"
+  - "llm_autoregressive_prompting"
 FLAGS:
   num_train_tasks: 2
   num_eval_tasks: 10
