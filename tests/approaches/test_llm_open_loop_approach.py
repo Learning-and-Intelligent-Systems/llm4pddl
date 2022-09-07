@@ -1,6 +1,7 @@
 """Test cases for LLM approaches."""
 
 import shutil
+from typing import List
 
 import numpy as np
 import pytest
@@ -21,10 +22,11 @@ from llm4pddl.structs import Datum, LLMResponse
 class _MockLLM(LargeLanguageModel):
 
     def __init__(self):
-        self.response = None
+        self.responses = []
 
     def get_id(self):
-        return f"dummy-{hash(self.response)}"
+        responses = "-".join(self.responses)
+        return f"dummy-{hash(responses)}"
 
     def _sample_completions(self,
                             prompt,
@@ -32,9 +34,30 @@ class _MockLLM(LargeLanguageModel):
                             seed,
                             stop_token,
                             num_completions=1):
-        del prompt, temperature, seed, stop_token, num_completions  # unused
-        response = LLMResponse("", self.response, [], [], {}, {})
+        del prompt, temperature, seed, num_completions  # unused
+        if not self.responses:
+            return []
+        next_response = self.responses.pop(0)
+        if stop_token in next_response:
+            next_response, _ = next_response.split(stop_token, 1)
+        response = LLMResponse("", next_response, [], [], {}, {})
         return [response]
+
+    def sample_completions(self,
+                           prompt: str,
+                           temperature: float,
+                           seed: int,
+                           stop_token: str,
+                           num_completions: int = 1,
+                           disable_cache: bool = False) -> List[LLMResponse]:
+        # Always disable the cache for tests.
+        del disable_cache
+        return super().sample_completions(prompt,
+                                          temperature,
+                                          seed,
+                                          stop_token,
+                                          num_completions,
+                                          disable_cache=True)
 
 
 @pytest.mark.parametrize(
@@ -84,7 +107,7 @@ def test_llm_standard_approach(env_name):
     ideal_response = "\n".join(plan)
     # Add an empty line to the ideal response, should be no problem.
     ideal_response = "\n" + ideal_response
-    llm.response = ideal_response
+    llm.responses = [ideal_response]
     # Run the approach.
     plan, _ = approach.solve(task)
     assert utils.validate_plan(task, plan)
@@ -113,7 +136,7 @@ def test_autoregressive_prompting():
         "planning_timeout": 100,
         "llm_prompt_flatten_pddl": False,
         "llm_autoregressive_prompting": True,  # note
-        "llm_autoregress_max_loops": 2,  # note
+        "llm_autoregress_max_loops": 25,
         "use_dynamic_examples": False,
         "data_dir": data_dir,
         "load_data": False,
@@ -136,20 +159,24 @@ def test_autoregressive_prompting():
     task_idx = 0
     task = train_tasks[task_idx]
     ideal_plan, _ = utils.run_planning(task)
-    ideal_response = "\n".join(ideal_plan)
-    llm.response = ideal_response
+    llm.responses = list(ideal_plan)
     plan, _ = approach.solve(task)
     assert utils.validate_plan(task, plan)
-    # Adding a next question should not matter.
-    llm.response = ideal_response + f"\n{utils.LLM_QUESTION_TOKEN} garbage"
+    # Test successful usage, where the LLM output is very close to a plan.
+    llm.responses = list(ideal_plan)
+    assert llm.responses[0] == "(unstack b c)"
+    llm.responses[0] = "(unstck b c)"
     plan, _ = approach.solve(task)
+    assert plan[0] == "(unstack b c)"
     assert utils.validate_plan(task, plan)
     # Test failure, where the LLM output is trivial.
-    llm.response = ""
+    llm.responses = [f"\n{utils.LLM_QUESTION_TOKEN} garbage"]
     plan, _ = approach.solve(task)
+    assert plan is None
     # Test failure, where the LLM output is insufficient.
-    llm.response = ideal_plan[0][:-1]
+    llm.responses = [ideal_plan[0][:-1]]
     plan, _ = approach.solve(task)
+    assert plan is None
     shutil.rmtree(cache_dir)
     shutil.rmtree(data_dir)
 
@@ -195,7 +222,7 @@ def test_llm_standard_approach_failure_cases(llm_prompt_method):
     ideal_response = "\n".join(ideal_plan)
 
     # Test general approach failure.
-    llm.response = "garbage"
+    llm.responses = ["garbage"]
     plan, _ = approach.solve(task)
     assert plan is None
 
@@ -240,7 +267,7 @@ def test_llm_standard_approach_dynamic_small_example():
     """Test for LLM standard approach using dynamic examples."""
     cache_dir = "_fake_llm_cache_dir"
     llm = _MockLLM()
-    llm.response = 'doesnt matter'
+    llm.responses = ["doesnt matter"]
     dataset = [
         Datum(
             utils.get_task_from_dir(utils.CUSTOM_BENCHMARK_DIR / 'dressed', 1),
@@ -298,7 +325,7 @@ def test_llm_standard_approach_dynamic_big_example():
     """Test for LLM standard approach using dynamic examples."""
     cache_dir = "_fake_llm_cache_dir"
     llm = _MockLLM()
-    llm.response = 'doesnt matter'
+    llm.responses = ["doesnt matter"]
     dataset = [
         Datum(
             utils.get_task_from_dir(utils.PYPERPLAN_BENCHMARK_DIR / 'blocks',

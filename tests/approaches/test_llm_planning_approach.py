@@ -59,7 +59,7 @@ def test_llm_planning_planning_approach():
     ideal_response = "\n".join(plan)
     # Add an empty line to the ideal response, should be no problem.
     ideal_response = "\n" + ideal_response
-    llm.response = ideal_response
+    llm.responses = [ideal_response]
     # Run the approach.
     plan, ideal_metrics = approach.solve(task)
     assert utils.validate_plan(task, plan)
@@ -67,7 +67,7 @@ def test_llm_planning_planning_approach():
 
     # If the LLM response is garbage, we should still find a plan that achieves
     # the goal, because we will just fall back to regular planning.
-    llm.response = "garbage"
+    llm.responses = ["garbage"]
     plan, worst_case_metrics = approach.solve(task)
     assert utils.validate_plan(task, plan)
     assert worst_case_metrics["nodes_expanded"] > 1
@@ -82,7 +82,7 @@ def test_llm_planning_planning_approach():
 
     # If the LLM response is almost perfect, it should be very helpful for
     # planning guidance.
-    llm.response = "\n".join(ideal_response.split("\n")[:-1])
+    llm.responses = ["\n".join(ideal_response.split("\n")[:-1])]
     plan, almost_ideal_metrics = approach.solve(task)
     assert utils.validate_plan(task, plan)
     worst_case_nodes = worst_case_metrics["nodes_expanded"]

@@ -1,5 +1,6 @@
 """An approach that use a large language model to solve tasks."""
 
+import functools
 import logging
 from typing import Dict, List, Optional, Tuple
 
@@ -165,7 +166,9 @@ class LLMOpenLoopApproach(BaseApproach):
         return None, metrics
 
     @staticmethod
-    def _llm_response_to_plan(response_text: str, task: Task) -> Plan:
+    def _llm_response_to_plan(response_text: str,
+                              task: Task,
+                              disable_name_checks: bool = False) -> Plan:
         # We assume the LLM's output is such that each line contains
         # (operator-name object1-name object2-name ...) with optional
         # whitespace allowed everywhere. Furthermore, the signature of the
@@ -201,20 +204,21 @@ class LLMOpenLoopApproach(BaseApproach):
             # If there's nothing in between, the response is malformed.
             if not words:
                 continue
-            # The first word should be an operator.
             op, objects = words[0], words[1:]
-            if op not in operator_names:
-                continue
-            # The remaining words should be objects.
-            if any(o not in object_names for o in objects):
-                continue
-            # The signature of the objects should match that of the operator.
-            op_sig = [t for _, (t, ) in domain.actions[op].signature]
-            objs_sig = [obj_to_type[o] for o in objects]
-            if len(op_sig) != len(objs_sig) or not all(
-                    utils.is_subtype(t1, t2)
-                    for (t1, t2) in zip(objs_sig, op_sig)):
-                continue
+            if not disable_name_checks:
+                # The first word should be an operator.
+                if op not in operator_names:
+                    continue
+                # The remaining words should be objects.
+                if any(o not in object_names for o in objects):
+                    continue
+                # The signature of the objects should match the operator.
+                op_sig = [t for _, (t, ) in domain.actions[op].signature]
+                objs_sig = [obj_to_type[o] for o in objects]
+                if len(op_sig) != len(objs_sig) or not all(
+                        utils.is_subtype(t1, t2)
+                        for (t1, t2) in zip(objs_sig, op_sig)):
+                    continue
             # Otherwise, we found a good plan step.
             objects_str = " ".join(objects)
             action = f"({op} {objects_str})"
@@ -226,12 +230,15 @@ class LLMOpenLoopApproach(BaseApproach):
                                task: Task,
                                disable_cache: bool = False) -> Optional[Plan]:
         """Prompt the LLM for one action at a time."""
+        pyperplan_task = utils.get_pyperplan_task(task)
+        ground_ops = {o.name: o for o in pyperplan_task.operators}
         # Loop until the next question token is reached, or an invalid response
         # is returned. Note that this will terminate at most when the maximum
         # token length is reached, in which case an empty (invalid) response
         # will be returned by the LLM.
-        last_plan: Plan = []
-        cumulative_response = ""
+        plan: Plan = []
+        current_facts = pyperplan_task.initial_state
+        sep = "" if FLAGS.llm_prompt_flatten_pddl else "\n"
         for _ in range(FLAGS.llm_autoregress_max_loops):
             # Note: since the prompts are potentially different, we have to
             # query the LLM once per num_completion.
@@ -242,19 +249,63 @@ class LLMOpenLoopApproach(BaseApproach):
                 stop_token=")",  # end of the action
                 num_completions=1,  # num_completions handled in outer loop
                 disable_cache=disable_cache)
+            if not responses:
+                break
             assert len(responses) == 1
             response = responses[0].response_text + ")"
-            cumulative_response += response
-            prompt += response
-            plan = self._llm_response_to_plan(cumulative_response, task)
+            # Handle syntax.
+            response_plan = self._llm_response_to_plan(
+                response, task, disable_name_checks=True)
+            # No valid response from LLM, give up.
+            if not response_plan:
+                break
+            # Should be guaranteed 1 because the LLM will stop at ")".
+            assert len(response_plan) == 1
+            action_str = response_plan[0]
+            logging.debug(f"Autoregressive parsed output: {action_str}")
+            # If the action is invalid, replace it with the nearest valid one.
+            if (action_str not in ground_ops) or (
+                    not ground_ops[action_str].applicable(current_facts)):
+                # Find the nearest applicable action.
+                applicable_actions = {
+                    op
+                    for op in ground_ops
+                    if ground_ops[op].applicable(current_facts)
+                }
+                # If there's a dead end, give up. Rare.
+                if not applicable_actions:  # pragma: no cover
+                    break
+                # Find the closest next action.
+                out_emb = self._embed_str_with_cache(action_str)
+                action_to_emb = {
+                    a: self._embed_str_with_cache(a)
+                    for a in applicable_actions
+                }
+                action_to_sim = {
+                    a: self._get_cosine_sim(out_emb, act_emb)
+                    for a, act_emb in action_to_emb.items()
+                }
+                # Replace the output with the most similar applicable act.
+                new_action_str = max(applicable_actions,
+                                     key=action_to_sim.get)  # type: ignore
+                score = action_to_sim[new_action_str]
+                logging.debug(f"Replacing inapplicable {action_str} with "
+                              f"{new_action_str} (score={score})")
+                action_str = new_action_str
+            # Update the prompt with action_str. This is the autoregress.
+            prompt += sep + action_str
+            # Update the plan.
+            plan.append(action_str)
+            # Update the current facts for the next applicability checks.
+            ground_op = ground_ops[action_str]
+            current_facts = ground_op.apply(current_facts)
             # Check for success.
             if utils.validate_plan(task, plan, verbose=False):
                 return plan
-            # Check if the last plan is no different from this one.
-            if len(last_plan) == len(plan):
-                break
-            last_plan = plan
         # Failed.
+        failed_plan_str = "\n".join(plan)
+        logging.debug("Autoregressive prompting failed. Final failed plan: "
+                      f"{failed_plan_str}")
         return None
 
     def _embed_task(self, task: Task) -> Dict[str, Embedding]:
@@ -274,6 +325,10 @@ class LLMOpenLoopApproach(BaseApproach):
         """
         embeddings = [self._embed_task(task) for task in tasks]
         return embeddings
+
+    @functools.lru_cache(maxsize=None)
+    def _embed_str_with_cache(self, s: str) -> Embedding:
+        return self._embedding_model.encode(s)
 
     def _make_embeddings_mapping(self, embeddings: List[Dict[str, Embedding]],
                                  dataset: Dataset) -> List[Dict[str, Any]]:
