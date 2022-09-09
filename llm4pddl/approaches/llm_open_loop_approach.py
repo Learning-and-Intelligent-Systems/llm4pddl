@@ -12,8 +12,8 @@ from llm4pddl import utils
 from llm4pddl.approaches.base_approach import BaseApproach
 from llm4pddl.flags import FLAGS
 from llm4pddl.llm_interface import OpenAILLM
-from llm4pddl.structs import Any, Dataset, Datum, Embedding, LLMResponse, \
-    Plan, PyperplanObject, PyperplanType, Task, TaskMetrics
+from llm4pddl.structs import Any, Dataset, Datum, Embedding, Plan, \
+    PyperplanObject, PyperplanType, Task, TaskMetrics
 
 
 class LLMOpenLoopApproach(BaseApproach):
@@ -53,26 +53,29 @@ class LLMOpenLoopApproach(BaseApproach):
             self._create_prompt_prefix(closest_datums)
         prompt = self._prompt_prefix + new_prompt
         logging.debug(f"Querying with prompt suffix:\n{new_prompt}")
+        partial_plans = []
         if FLAGS.llm_autoregressive_prompting:
-            metrics: TaskMetrics = {}
             # Since auto-regressive prompting will lead to divergent queries,
             # we need to just prompt separately once per num_completions.
             # Furthermore, to get variance, we need to disable the cache.
             disable_cache = (self._num_completions > 1)
             for _ in range(self._num_completions):
                 plan = self._prompt_autoregressive(prompt, task, disable_cache)
-                # Return immediately if we succeeded.
-                if plan is not None:
-                    return plan, metrics
-            # We failed, give up.
-            return None, metrics
-        responses = self._llm.sample_completions(
-            prompt=prompt,
-            temperature=self._temperature,
-            seed=FLAGS.seed,
-            stop_token=utils.LLM_QUESTION_TOKEN,  # start of next question
-            num_completions=self._num_completions)
-        return self._llm_responses_to_plan(responses, task)
+                partial_plans.append(plan)
+        else:
+            responses = self._llm.sample_completions(
+                prompt=prompt,
+                temperature=self._temperature,
+                seed=FLAGS.seed,
+                stop_token=utils.LLM_QUESTION_TOKEN,  # start of next question
+                num_completions=self._num_completions)
+            # Turn each response into a sequence of actions.
+            for response in responses:
+                response_text = response.response_text
+                logging.debug(f"Processing response:\n{response_text}")
+                partial_plan = self._llm_response_to_plan(response_text, task)
+                partial_plans.append(partial_plan)
+        return self._solve_from_partial_plans(partial_plans, task)
 
     def train(self, dataset: Dataset) -> None:
         self._create_prompt_prefix(dataset)
@@ -152,15 +155,13 @@ class LLMOpenLoopApproach(BaseApproach):
         prompt = utils.minify_pddl_problem(prompt)
         return prompt
 
-    def _llm_responses_to_plan(
-            self, responses: List[LLMResponse],
+    def _solve_from_partial_plans(
+            self, partial_plans: List[Plan],
             task: Task) -> Tuple[Optional[Plan], TaskMetrics]:
         # Return the first plan that succeeds. Subclasses may override.
         # By default, this class doesn't plan, so there are no metrics.
         metrics: TaskMetrics = {}
-        for response in responses:
-            logging.debug(f"Processing response:\n{response.response_text}")
-            plan = self._llm_response_to_plan(response.response_text, task)
+        for plan in partial_plans:
             if utils.validate_plan(task, plan):
                 return plan, metrics
         return None, metrics
@@ -228,7 +229,7 @@ class LLMOpenLoopApproach(BaseApproach):
     def _prompt_autoregressive(self,
                                prompt: str,
                                task: Task,
-                               disable_cache: bool = False) -> Optional[Plan]:
+                               disable_cache: bool = False) -> Plan:
         """Prompt the LLM for one action at a time."""
         pyperplan_task = utils.get_pyperplan_task(task)
         ground_ops = {o.name: o for o in pyperplan_task.operators}
@@ -306,7 +307,7 @@ class LLMOpenLoopApproach(BaseApproach):
         failed_plan_str = "\n".join(plan)
         logging.debug("Autoregressive prompting failed. Final failed plan: "
                       f"{failed_plan_str}")
-        return None
+        return plan
 
     def _embed_task(self, task: Task) -> Dict[str, Embedding]:
         """Embeds a task using embedding_model."""
