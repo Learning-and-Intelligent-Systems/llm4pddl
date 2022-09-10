@@ -88,7 +88,8 @@ class LLMOpenLoopApproach(BaseApproach):
 
     def _create_prompt_prefix(self, dataset: Dataset) -> None:
         prompts = []
-        for i in range(FLAGS.num_prompt_tasks): # this should be changed to num_prompt_tasks
+        for i in range(FLAGS.num_prompt_tasks
+                       ):  # this should be changed to num_prompt_tasks
             prompt = self._create_prompt(dataset[i].task, dataset[i].solution)
             prompts.append(prompt)
         self._prompt_prefix = "\n\n".join(prompts) + "\n\n"
