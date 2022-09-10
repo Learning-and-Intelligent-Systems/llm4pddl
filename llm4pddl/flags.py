@@ -49,5 +49,6 @@ def parse_flags() -> None:
     parser.add_argument('--use_dynamic_examples', action='store_true')
     parser.add_argument('--embedding_model_name',
                         default='paraphrase-MiniLM-L6-v2')
+    parser.add_argument("--random_actions_max_steps", default=1000, type=int)
     args = parser.parse_args()
     FLAGS.__dict__.update(args.__dict__)
