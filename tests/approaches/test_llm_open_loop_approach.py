@@ -136,8 +136,8 @@ def test_autoregressive_prompting():
         "data_gen_method": "planning",
         "planning_timeout": 100,
         "llm_prompt_flatten_pddl": False,
-        "llm_autoregressive_prompting": False,
-        "llm_use_random_plans": False,  # note
+        "llm_autoregressive_prompting": True,
+        "llm_use_random_plans": False,
         "llm_autoregress_max_loops": 25,
         "use_dynamic_examples": False,
         "data_dir": data_dir,
