@@ -4,7 +4,6 @@ import tempfile
 
 from llm4pddl import utils
 from llm4pddl.approaches.random_actions_approach import RandomActionsApproach
-from llm4pddl.envs import create_env
 from llm4pddl.structs import Task
 
 
