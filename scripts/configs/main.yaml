@@ -21,6 +21,8 @@ APPROACHES:
     NAME: "pure-planning"
     FLAGS:
       planner: fastdownward
+  random-actions:
+    NAME: "random-actions"
 ENVS:
   blocks:
     NAME: "pyperplan-blocks"
