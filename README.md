@@ -4,7 +4,7 @@ Under development.
 
 ## Requirements
 
-- Python 3.9+
+- Python 3.8+
 - Tested on MacOS Catalina and Ubuntu 18.04
 
 ## Instructions For Contributing
