@@ -55,15 +55,6 @@ def test_random_actions_approach():
     plan, _ = approach.solve(task1)
     assert utils.validate_plan(task1, plan)
 
-    # Test timeout.
-    utils.reset_flags({
-        "random_actions_max_steps": 1000,
-        "planning_timeout": 0.0
-    })
-    plan, _ = approach.solve(task1)
-    assert len(plan) == 0
-    assert not utils.validate_plan(task1, plan)
-
     # Test that no plan is found when there's a dead-end.
     problem_str2 = """(define (problem two-step-problem2)
     (:domain two-step)
@@ -82,3 +73,12 @@ def test_random_actions_approach():
     plan, _ = approach.solve(task2)
     assert len(plan) == 0  # no valid operators because of filtering
     assert not utils.validate_plan(task2, plan)
+
+    # Test timeout.
+    utils.reset_flags({
+        "random_actions_max_steps": 1000,
+        "planning_timeout": 0.0
+    })
+    plan, _ = approach.solve(task1)
+    assert len(plan) == 0
+    assert not utils.validate_plan(task1, plan)
