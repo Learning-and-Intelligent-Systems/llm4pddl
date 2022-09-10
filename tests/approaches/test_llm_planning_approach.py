@@ -17,6 +17,7 @@ def test_llm_planning_planning_approach():
     utils.reset_flags({
         "llm_cache_dir": cache_dir,
         "num_train_tasks": 1,
+        "num_prompt_tasks": 1,
         "num_eval_tasks": 1,
         "train_task_offset": 0,
         "llm_model_name": "code-davinci-002",  # should not matter for test

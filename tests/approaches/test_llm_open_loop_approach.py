@@ -70,6 +70,7 @@ def test_llm_standard_approach(env_name):
     utils.reset_flags({
         "llm_cache_dir": cache_dir,
         "num_train_tasks": 1,
+        "num_prompt_tasks": 1,
         "num_eval_tasks": 1,
         "train_task_offset": 0,
         "llm_model_name": "code-davinci-002",  # should not matter for test
@@ -124,6 +125,7 @@ def test_autoregressive_prompting():
     utils.reset_flags({
         "llm_cache_dir": cache_dir,
         "num_train_tasks": 1,
+        "num_prompt_tasks": 1,
         "num_eval_tasks": 1,
         "train_task_offset": 0,
         "llm_model_name": "code-davinci-002",  # should not matter for test
@@ -190,6 +192,7 @@ def test_llm_standard_approach_failure_cases(llm_prompt_method):
     utils.reset_flags({
         "llm_cache_dir": cache_dir,
         "num_train_tasks": 1,
+        "num_prompt_tasks": 1,
         "num_eval_tasks": 1,
         "train_task_offset": 0,
         "llm_model_name": "code-davinci-002",  # should not matter for test
@@ -276,6 +279,7 @@ def test_llm_standard_approach_dynamic_small_example():
     utils.reset_flags({
         "llm_cache_dir": cache_dir,
         "num_train_tasks": 1,
+        "num_prompt_tasks": 1,
         "num_eval_tasks": 1,
         "llm_model_name": "code-davinci-002",
         "llm_max_total_tokens": 700,
@@ -295,6 +299,7 @@ def test_llm_standard_approach_dynamic_small_example():
     utils.reset_flags({
         "llm_cache_dir": cache_dir,
         "num_train_tasks": 1,
+        "num_prompt_tasks": 1,
         "num_eval_tasks": 1,
         "llm_model_name": "code-davinci-002",
         "llm_max_total_tokens": 700,
@@ -335,6 +340,7 @@ def test_llm_standard_approach_dynamic_big_example():
     utils.reset_flags({
         "llm_cache_dir": cache_dir,
         "num_train_tasks": 30,
+        "num_prompt_tasks": 30,
         "num_eval_tasks": 1,
         "llm_model_name": "code-davinci-002",
         "llm_max_total_tokens": 700,
@@ -354,6 +360,7 @@ def test_llm_standard_approach_dynamic_big_example():
     utils.reset_flags({
         "llm_cache_dir": cache_dir,
         "num_train_tasks": 30,
+        "num_prompt_tasks": 30,
         "num_eval_tasks": 1,
         "llm_model_name": "code-davinci-002",
         "llm_max_total_tokens": 700,
@@ -389,6 +396,7 @@ def test_llm_multi_approach():
     utils.reset_flags({
         "llm_cache_dir": cache_dir,
         "num_train_tasks": 1,
+        "num_prompt_tasks": 1,
         "num_eval_tasks": 1,
         "train_task_offset": 0,
         "llm_model_name": "code-davinci-002",  # should not matter for test
