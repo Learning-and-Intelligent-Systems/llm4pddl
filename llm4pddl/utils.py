@@ -43,7 +43,7 @@ def validate_plan(task: Task, plan: Plan, verbose: bool = True) -> bool:
     val_dir = Path(__file__).parent / "third_party" / "val"
     if sys.platform == "darwin":  # pragma: no cover
         platform_dir = "darwin"
-    else:
+    else:  # pragma: no cover
         assert sys.platform.startswith("linux")
         platform_dir = "linux64"
     val = val_dir / platform_dir / "Validate"
@@ -324,6 +324,43 @@ def get_pyperplan_task(task: Task) -> PyperplanTask:
     pyperplan_task = pyperplan_ground(problem)
     logging.disable(logging.NOTSET)
     return pyperplan_task
+
+
+def get_random_partial_plan(task: Task, rng: np.random.Generator,
+                            max_steps: int) -> Plan:
+    """Get a random sequence of applicable actions for the task.
+
+    Check at each step whether the goal is achieved and terminate if so.
+    Otherwise, continue for at most max_step, or until a dead-end is
+    reached, and then return the full sequence of actions.
+    """
+    pyperplan_task = get_pyperplan_task(task)
+    current_facts = pyperplan_task.initial_state
+    plan = []
+    for t in range(max_steps):
+        # Sort for determinism.
+        applicable_action_set = {
+            o
+            for o in pyperplan_task.operators if o.applicable(current_facts)
+        }
+        applicable_actions = sorted(applicable_action_set,
+                                    key=lambda o: o.name)
+        # Dead end.
+        if not applicable_actions:
+            break
+        # Sample an applicable action.
+        action_idx = rng.choice(len(applicable_actions))
+        action = applicable_actions[action_idx]
+        # Extend the plan.
+        plan.append(action.name)
+        # Advance the state.
+        current_facts = action.apply(current_facts)
+        # Check the plan at each step.
+        if validate_plan(task, plan, verbose=False):
+            # Success!
+            return plan
+    # Failed.
+    return plan
 
 
 def pred_to_str(pred: PyperplanPredicate) -> str:

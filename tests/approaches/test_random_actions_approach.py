@@ -71,4 +71,5 @@ def test_random_actions_approach():
     task2 = Task(domain_file, problem_file2)
 
     plan, _ = approach.solve(task2)
-    assert plan is None
+    assert len(plan) == 0  # no valid operators because of filtering
+    assert not utils.validate_plan(task2, plan)
