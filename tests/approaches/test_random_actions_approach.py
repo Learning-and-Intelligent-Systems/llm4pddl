@@ -11,6 +11,7 @@ def test_random_actions_approach():
     """Tests for RandomActionsApproach()."""
     utils.reset_flags({
         "random_actions_max_steps": 2,
+        "planning_timeout": 1000
     })
     approach = RandomActionsApproach()
     assert not approach.is_learning_based
@@ -52,7 +53,6 @@ def test_random_actions_approach():
     task1 = Task(domain_file, problem_file1)
 
     plan, _ = approach.solve(task1)
-    assert plan is not None
     assert utils.validate_plan(task1, plan)
 
     # Test that no plan is found when there's a dead-end.
@@ -73,3 +73,12 @@ def test_random_actions_approach():
     plan, _ = approach.solve(task2)
     assert len(plan) == 0  # no valid operators because of filtering
     assert not utils.validate_plan(task2, plan)
+
+    # Test timeout.
+    utils.reset_flags({
+        "random_actions_max_steps": 1000,
+        "planning_timeout": 0.0
+    })
+    plan, _ = approach.solve(task1)
+    assert len(plan) == 0
+    assert not utils.validate_plan(task1, plan)

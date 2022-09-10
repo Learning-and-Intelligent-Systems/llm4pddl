@@ -24,6 +24,8 @@ class RandomActionsApproach(BaseApproach):
 
     def solve(self, task: Task) -> Tuple[Optional[Plan], TaskMetrics]:
         metrics: TaskMetrics = {}
-        plan = utils.get_random_partial_plan(task, self._rng,
-                                             FLAGS.random_actions_max_steps)
+        plan = utils.get_random_partial_plan(task,
+                                             self._rng,
+                                             FLAGS.random_actions_max_steps,
+                                             timeout=FLAGS.planning_timeout)
         return plan, metrics
