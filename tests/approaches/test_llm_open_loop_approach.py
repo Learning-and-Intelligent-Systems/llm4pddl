@@ -82,6 +82,7 @@ def test_llm_standard_approach(env_name):
         "planning_timeout": 100,
         "llm_prompt_flatten_pddl": False,
         "llm_autoregressive_prompting": False,
+        "llm_use_random_plans": False,
         "use_dynamic_examples": False,
         "data_dir": data_dir,
         "load_data": False,
@@ -135,7 +136,8 @@ def test_autoregressive_prompting():
         "data_gen_method": "planning",
         "planning_timeout": 100,
         "llm_prompt_flatten_pddl": False,
-        "llm_autoregressive_prompting": True,  # note
+        "llm_autoregressive_prompting": True,
+        "llm_use_random_plans": False,
         "llm_autoregress_max_loops": 25,
         "use_dynamic_examples": False,
         "data_dir": data_dir,
@@ -199,6 +201,7 @@ def test_llm_standard_approach_failure_cases(llm_prompt_method):
         "llm_multi_temperature": 0.5,
         "llm_prompt_method": llm_prompt_method,
         "llm_autoregressive_prompting": False,
+        "llm_use_random_plans": False,
         "planner": "pyperplan",
         "data_gen_planner": "pyperplan",
         "data_gen_method": "planning",
@@ -282,6 +285,7 @@ def test_llm_standard_approach_dynamic_small_example():
         "llm_multi_temperature": 0.3,
         "llm_prompt_method": "standard",
         "llm_autoregressive_prompting": False,
+        "llm_use_random_plans": False,
         "planning_timeout": 100,
         "llm_prompt_flatten_pddl": True,
         "use_dynamic_examples": False,  # this is the only one that differs
@@ -301,6 +305,7 @@ def test_llm_standard_approach_dynamic_small_example():
         "llm_multi_temperature": 0.3,
         "llm_prompt_method": "standard",
         "llm_autoregressive_prompting": False,
+        "llm_use_random_plans": False,
         "planning_timeout": 100,
         "llm_prompt_flatten_pddl": True,
         "use_dynamic_examples": True,  # this is the only one that differs
@@ -341,6 +346,7 @@ def test_llm_standard_approach_dynamic_big_example():
         "llm_multi_temperature": 0.3,
         "llm_prompt_method": "standard",
         "llm_autoregressive_prompting": False,
+        "llm_use_random_plans": False,
         "planning_timeout": 100,
         "llm_prompt_flatten_pddl": True,
         "use_dynamic_examples": False,  # this is the only one that differs
@@ -360,6 +366,7 @@ def test_llm_standard_approach_dynamic_big_example():
         "llm_multi_temperature": 0.3,
         "llm_prompt_method": "standard",
         "llm_autoregressive_prompting": False,
+        "llm_use_random_plans": False,
         "planning_timeout": 100,
         "llm_prompt_flatten_pddl": True,
         "use_dynamic_examples": True,  # this is the only one that differs
@@ -397,6 +404,7 @@ def test_llm_multi_approach():
         "llm_multi_num_completions": 3,
         "llm_prompt_method": "standard",
         "llm_autoregressive_prompting": False,
+        "llm_use_random_plans": False,
         "llm_prompt_flatten_pddl": False,
         "embedding_model_name": "paraphrase-MiniLM-L6-v2"
     })
@@ -416,6 +424,7 @@ def test_embed_tasks():
         "llm_model_name": "davinci-002",
         "llm_prompt_method": "standard",
         "llm_autoregressive_prompting": False,
+        "llm_use_random_plans": False,
     })
     approach: LLMOpenLoopApproach = create_approach('llm-standard')
     tasks = [
@@ -439,6 +448,7 @@ def test_embed_task():
         "llm_model_name": "davinci-002",
         "llm_prompt_method": "standard",
         "llm_autoregressive_prompting": False,
+        "llm_use_random_plans": False,
     })
     approach: LLMOpenLoopApproach = create_approach('llm-standard')
     embedding_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
@@ -491,6 +501,7 @@ def test_get_closest_datums():
         "llm_model_name": "davinci-002",
         "llm_prompt_method": "standard",
         "llm_autoregressive_prompting": False,
+        "llm_use_random_plans": False,
     })
     approach: LLMOpenLoopApproach = create_approach('llm-standard')
     dressed01 = utils.get_task_from_dir(utils.CUSTOM_BENCHMARK_DIR / 'dressed',

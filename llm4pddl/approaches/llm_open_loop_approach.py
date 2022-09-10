@@ -55,12 +55,21 @@ class LLMOpenLoopApproach(BaseApproach):
         logging.debug(f"Querying with prompt suffix:\n{new_prompt}")
         partial_plans = []
         if FLAGS.llm_autoregressive_prompting:
+            assert not FLAGS.llm_use_random_plans
             # Since auto-regressive prompting will lead to divergent queries,
             # we need to just prompt separately once per num_completions.
             # Furthermore, to get variance, we need to disable the cache.
             disable_cache = (self._num_completions > 1)
             for _ in range(self._num_completions):
                 plan = self._prompt_autoregressive(prompt, task, disable_cache)
+                partial_plans.append(plan)
+        elif FLAGS.llm_use_random_plans:
+            # An ablation where we sample random plans instead of querying
+            # the LLM. For this class, this is equivalent to the random
+            # actions approach. The main use is with LLMPlanningApproach.
+            for _ in range(self._num_completions):
+                plan = utils.get_random_partial_plan(
+                    task, self._rng, FLAGS.random_actions_max_steps)
                 partial_plans.append(plan)
         else:
             responses = self._llm.sample_completions(

@@ -87,7 +87,7 @@ def test_openai_llm():
         "llm_use_cache_only": False,
         "llm_max_total_tokens": 700
     })
-    if "OPENAI_API_KEY" not in os.environ:
+    if "OPENAI_API_KEY" not in os.environ:  # pragma: no cover
         os.environ["OPENAI_API_KEY"] = "dummy API key"
     # Create an OpenAILLM with the curie model.
     llm = OpenAILLM("text-curie-001")
