@@ -59,7 +59,7 @@ class LLMOpenLoopApproach(BaseApproach):
         return self._llm_responses_to_plan(responses, task)
 
     def train(self, dataset: Dataset) -> None:
-        self._create_prompt_prefix(dataset, self._rng)
+        self._create_prompt_prefix(dataset, FLAGS.random_object_names)
 
         # Embedding the training tasks:
         if FLAGS.use_dynamic_examples:
@@ -71,11 +71,12 @@ class LLMOpenLoopApproach(BaseApproach):
     def _create_prompt_prefix(
             self,
             dataset: Dataset,
-            rng: Optional[np.random.Generator] = None) -> None:
+            random_object_names: Optional[bool] = False) -> None:
         prompts = []
         for datum in dataset:
-            if rng:
-                prompt = self._create_prompt(datum.task, datum.solution, rng)
+            if random_object_names:
+                prompt = self._create_prompt(datum.task, datum.solution,
+                                             self._rng)
             else:
                 prompt = self._create_prompt(datum.task, datum.solution)
             prompts.append(prompt)
@@ -103,13 +104,18 @@ class LLMOpenLoopApproach(BaseApproach):
             obj_type = domain.constants[obj]
             type_to_objs[obj_type].append(obj)
         objects_strs: List[str] = []
+        # Create dictionary for randomizing object names.
         objs_dict = {}
+        objs_list = []
+        for _, objs in type_to_objs.items():
+            objs_list += objs
+        if rng:
+            objs_dict = utils.randomize_object_names(rng, objs_list)
         for typ, objs in type_to_objs.items():
             if not objs:
                 continue
             if rng:
-                objs_dict = utils.randomize_object_names(rng, objs)
-                objs = list(objs_dict.values())
+                objs = [objs_dict[obj] for obj in objs]
             typ_str = " ".join(objs) + " - " + str(typ)
             objects_strs.append(typ_str)
         # Create the objects string.
@@ -135,12 +141,6 @@ class LLMOpenLoopApproach(BaseApproach):
             # Create the goal string.
             goal_str_groups = utils.group_by_predicate(problem.goal)
             goal_str = "\n".join(sorted(goal_str_groups))
-        # Randomize objects in init, goal, solution strings.
-        if rng:
-            init_str = utils.replace_with_random_objects(init_str, objs_dict)
-            goal_str = utils.replace_with_random_objects(goal_str, objs_dict)
-            solution_str = utils.replace_with_random_objects(
-                solution_str, objs_dict)
         # Create the prompt.
         prompt = f"""{utils.LLM_QUESTION_TOKEN}
     (:objects
@@ -155,6 +155,9 @@ class LLMOpenLoopApproach(BaseApproach):
     {solution_str}"""
         # Minify the prompt to reduce tokens.
         prompt = utils.minify_pddl_problem(prompt)
+        # Randomize objects in init, goal, solution strings.
+        if rng:
+            prompt = utils.replace_with_random_objects(prompt, objs_dict)
         return prompt
 
     def _llm_responses_to_plan(

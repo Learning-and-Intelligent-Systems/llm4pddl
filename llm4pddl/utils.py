@@ -404,7 +404,7 @@ def replace_with_random_objects(orig_str: str, random_dict: dict) -> str:
     names."""
     orig_str_array = orig_str.split("\n")
     for i, line in enumerate(orig_str_array):
-        if " " in line:
+        if "(" in line and ")" in line and " " in line:
             line = line[line.index("("):]
             objects_substring_start = line.index(" ") + 1
             objects_substring_end = line.index(")")

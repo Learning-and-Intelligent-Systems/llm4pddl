@@ -3,6 +3,7 @@
 import os
 import tempfile
 
+import numpy as np
 import pytest
 
 from llm4pddl import utils
@@ -450,3 +451,75 @@ def test_pyperplan_problem_to_str(domain_file, problem_file):
     assert metrics["nodes_created"] > metrics["nodes_expanded"]
     assert plan is not None
     assert utils.validate_plan(task, plan)
+
+
+def test_randomize_object_names():
+    """Tests for randomize_object_names()"""
+    rng = np.random.default_rng()
+    example_one = ['a', 'b', 'c']
+    example_two = ["blockA", "blockB", "blockC", "blockD"]
+    example_three = ["adfdf313", "qddfa3", "12423423"]
+    examples = [example_one, example_two, example_three]
+    for example in examples:
+        random_dict = utils.randomize_object_names(rng, example)
+        assert random_dict is not None
+        assert list(random_dict.keys()) == example
+        for entry in random_dict.values():
+            assert entry not in example
+
+
+def test_replace_with_random_objects():
+    """Tests for replace_with_random_objects()"""
+    example_prefix = """Q:
+(:objects
+vgchk vlcip vszew bohfr hogd tlrry kfqyz wrjkb - object)
+(:init
+(room rooma)
+(room roomb)
+(ball ball4)
+(ball ball3)
+(ball ball2)
+(ball ball1)
+(at-robby rooma)
+(free left)
+(free right)
+(at ball4 rooma)
+(at ball3 rooma)
+(at ball2 rooma)
+(at ball1 rooma)
+(gripper left)
+(gripper right))
+(:goal
+(at ball4 roomb)
+(at ball3 roomb)
+(at ball2 roomb)
+(at ball1 roomb))
+A:
+(pick ball1 rooma left)
+(move rooma roomb)
+(drop ball1 roomb left)
+(move roomb rooma)
+(pick ball3 rooma left)
+(move rooma roomb)
+(drop ball3 roomb left)
+(move roomb rooma)
+(pick ball2 rooma left)
+(pick ball4 rooma right)
+(move rooma roomb)
+(drop ball2 roomb left)
+(drop ball4 roomb right)"""
+    random_dict = {
+        'ball1': 'vgchk',
+        'ball2': 'vlcip',
+        'ball3': 'vszew',
+        'ball4': 'bohfr',
+        'left': 'hogd',
+        'right': 'tlrry',
+        'rooma': 'kfqyz',
+        'roomb': 'wrjkb'
+    }
+    randomized_prefix = utils.replace_with_random_objects(
+        example_prefix, random_dict)
+    for orig, rand in random_dict.items():
+        assert orig not in randomized_prefix
+        assert rand in randomized_prefix
