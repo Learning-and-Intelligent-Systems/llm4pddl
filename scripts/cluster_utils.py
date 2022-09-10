@@ -88,19 +88,25 @@ def generate_run_configs(config_filename: str,
                 env = env_config["NAME"]
                 # Create the experiment ID and flags.
                 experiment_id = f"{env_exp_id}-{approach_exp_id}"
+                run_args = list(args)
+                if "ARGS" in approach_config:
+                    run_args.extend(approach_config["ARGS"])
+                if "ARGS" in env_config:
+                    run_args.extend(env_config["ARGS"])
                 run_flags = flags.copy()
-                run_flags.update(approach_config["FLAGS"])
-                run_flags.update(env_config["FLAGS"])
+                if "FLAGS" in approach_config:
+                    run_flags.update(approach_config["FLAGS"])
+                if "FLAGS" in env_config:
+                    run_flags.update(env_config["FLAGS"])
                 # Loop or batch over seeds.
                 if batch_seeds:
-                    yield BatchSeedRunConfig(experiment_id,
-                                             approach, env, args,
-                                             run_flags.copy(), start_seed,
+                    yield BatchSeedRunConfig(experiment_id, approach, env,
+                                             run_args, run_flags, start_seed,
                                              num_seeds)
                 else:
                     for seed in range(start_seed, start_seed + num_seeds):
                         yield SingleSeedRunConfig(experiment_id, approach, env,
-                                                  args, run_flags.copy(), seed)
+                                                  run_args, run_flags, seed)
 
 
 def get_cmds_to_prep_repo(branch: str) -> List[str]:

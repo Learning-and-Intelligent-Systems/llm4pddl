@@ -1,6 +1,18 @@
 # Our main experiments configuration file.
 ---
 APPROACHES:
+  llm-standard:
+    NAME: "llm-standard"
+  llm-standard-plan:
+    NAME: "llm-standard-plan"
+  llm-standard-no-autoregress:
+    NAME: "llm-standard"
+    ARGS:
+      - "no-llm_autoregressive_prompting"
+  llm-standard-no-autoregress-plan:
+    NAME: "llm-standard-plan"
+    ARGS:
+      - "no-llm_autoregressive_prompting"
   pyperplan-only:
     NAME: "pure-planning"
     FLAGS:
@@ -9,73 +21,45 @@ APPROACHES:
     NAME: "pure-planning"
     FLAGS:
       planner: fastdownward
-  llm-standard:
-    NAME: "llm-standard"
-    FLAGS: {}
-  llm-multi:
-    NAME: "llm-multi"
-    FLAGS: {}
-  llm-standard-plan:
-    NAME: "llm-standard-plan"
-    FLAGS: {}
-  llm-multi-plan:
-    NAME: "llm-multi-plan"
-    FLAGS: {}
+  random-actions:
+    NAME: "random-actions"
 ENVS:
   blocks:
     NAME: "pyperplan-blocks"
-    FLAGS: {}
   depot:
     NAME: "pyperplan-depot"
-    FLAGS: {}
   elevators:
     NAME: "pyperplan-elevators"
-    FLAGS: {}
   freecell:
     NAME: "pyperplan-freecell"
-    FLAGS: {}
   gripper:
     NAME: "pyperplan-gripper"
-    FLAGS: {}
   logistics:
     NAME: "pyperplan-logistics"
-    FLAGS: {}
   miconic:
     NAME: "pyperplan-miconic"
-    FLAGS: {}
   movie:
     NAME: "pyperplan-movie"
-    FLAGS: {}
   pegsol:
     NAME: "pyperplan-pegsol"
-    FLAGS: {}
   rovers:
     NAME: "pyperplan-rovers"
-    FLAGS: {}
   satellite:
     NAME: "pyperplan-satellite"
-    FLAGS: {}
   scanalyzer:
     NAME: "pyperplan-scanalyzer"
-    FLAGS: {}
   sokoban:
     NAME: "pyperplan-sokoban"
-    FLAGS: {}
   tpp:
     NAME: "pyperplan-tpp"
-    FLAGS: {}
   transport:
     NAME: "pyperplan-transport"
-    FLAGS: {}
   woodworking:
     NAME: "pyperplan-woodworking"
-    FLAGS: {}
   zenotravel:
     NAME: "pyperplan-zenotravel"
-    FLAGS: {}
   dressed:
     NAME: "custom-dressed"
-    FLAGS: {}
 ARGS:
   - "debug"
 FLAGS:
