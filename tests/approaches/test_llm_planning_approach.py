@@ -26,6 +26,7 @@ def test_llm_planning_planning_approach():
         "llm_multi_temperature": 0.5,
         "llm_prompt_method": "standard",
         "llm_autoregressive_prompting": False,
+        "llm_use_random_plans": False,
         "llm_plan_guidance_method": "init-queue-continue",
         "planner": "pyperplan",
         "data_gen_planner": "pyperplan",
@@ -90,6 +91,32 @@ def test_llm_planning_planning_approach():
     ideal_nodes = ideal_metrics["nodes_expanded"]
     assert worst_case_nodes > almost_ideal_nodes
     assert almost_ideal_nodes > ideal_nodes
+
+    # If the "LLM response" is actually a length-zero random partial plan,
+    # it should be equivalent to the worst case garbage response.
+    utils.reset_flags({
+        "llm_cache_dir": cache_dir,
+        "num_train_tasks": 1,
+        "num_eval_tasks": 1,
+        "train_task_offset": 0,
+        "llm_use_random_plans": True,  # note!
+        "random_actions_max_steps": 0,  # note!
+        "llm_prompt_method": "standard",
+        "llm_autoregressive_prompting": False,
+        "llm_plan_guidance_method": "init-queue-continue",
+        "planner": "pyperplan",
+        "data_gen_planner": "pyperplan",
+        "data_gen_method": "planning",
+        "planning_timeout": 100,
+        "llm_prompt_flatten_pddl": False,
+        "use_dynamic_examples": False,
+        "data_dir": data_dir,
+        "load_data": False,
+        "embedding_model_name": "paraphrase-MiniLM-L6-v2"
+    })
+    plan, random_case_metrics = approach.solve(task)
+    assert utils.validate_plan(task, plan)
+    assert random_case_metrics["nodes_expanded"] > 1
 
     shutil.rmtree(cache_dir)
     shutil.rmtree(data_dir)
