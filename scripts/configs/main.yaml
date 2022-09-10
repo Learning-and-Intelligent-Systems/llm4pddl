@@ -4,19 +4,19 @@ APPROACHES:
   # Open-loop approaches
   llm-standard:
     NAME: "llm-standard"
+    ARGS:
+      - "llm_autoregressive_prompting"
   llm-standard-no-autoregress:
     NAME: "llm-standard"
-    ARGS:
-      - "no-llm_autoregressive_prompting"
   random-actions:
     NAME: "random-actions"
   # Planning-based approaches
   llm-standard-plan:
     NAME: "llm-standard-plan"
+    ARGS:
+      - "llm_autoregressive_prompting"
   llm-standard-no-autoregress-plan:
     NAME: "llm-standard-plan"
-    ARGS:
-      - "no-llm_autoregressive_prompting"
   llm-standard-random-plan:
     NAME: "llm-standard-plan"
     ARGS:
