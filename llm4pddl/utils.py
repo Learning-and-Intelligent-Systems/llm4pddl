@@ -337,7 +337,7 @@ def get_random_partial_plan(task: Task, rng: np.random.Generator,
     pyperplan_task = get_pyperplan_task(task)
     current_facts = pyperplan_task.initial_state
     plan = []
-    for t in range(max_steps):
+    for _ in range(max_steps):
         # Sort for determinism.
         applicable_action_set = {
             o
