@@ -1,18 +1,26 @@
 # Our main experiments configuration file.
 ---
 APPROACHES:
+  # Open-loop approaches
   llm-standard:
     NAME: "llm-standard"
-  llm-standard-plan:
-    NAME: "llm-standard-plan"
   llm-standard-no-autoregress:
     NAME: "llm-standard"
     ARGS:
       - "no-llm_autoregressive_prompting"
+  random-actions:
+    NAME: "random-actions"
+  # Planning-based approaches
+  llm-standard-plan:
+    NAME: "llm-standard-plan"
   llm-standard-no-autoregress-plan:
     NAME: "llm-standard-plan"
     ARGS:
       - "no-llm_autoregressive_prompting"
+  llm-standard-random-plan:
+    NAME: "llm-standard-plan"
+    ARGS:
+      - "llm_use_random_plans"
   pyperplan-only:
     NAME: "pure-planning"
     FLAGS:
@@ -21,8 +29,6 @@ APPROACHES:
     NAME: "pure-planning"
     FLAGS:
       planner: fastdownward
-  random-actions:
-    NAME: "random-actions"
 ENVS:
   blocks:
     NAME: "pyperplan-blocks"
