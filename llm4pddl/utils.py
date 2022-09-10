@@ -8,6 +8,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Collection, Dict, List, Optional, Sequence, Set, Tuple
@@ -326,18 +327,24 @@ def get_pyperplan_task(task: Task) -> PyperplanTask:
     return pyperplan_task
 
 
-def get_random_partial_plan(task: Task, rng: np.random.Generator,
-                            max_steps: int) -> Plan:
+def get_random_partial_plan(task: Task,
+                            rng: np.random.Generator,
+                            max_steps: int,
+                            timeout: Optional[float] = None) -> Plan:
     """Get a random sequence of applicable actions for the task.
 
     Check at each step whether the goal is achieved and terminate if so.
     Otherwise, continue for at most max_step, or until a dead-end is
     reached, and then return the full sequence of actions.
     """
+    init_time = time.perf_counter()
     pyperplan_task = get_pyperplan_task(task)
     current_facts = pyperplan_task.initial_state
     plan = []
     for _ in range(max_steps):
+        # Check for timeout.
+        if timeout is not None and (time.perf_counter() - init_time > timeout):
+            break
         # Sort for determinism.
         applicable_action_set = {
             o
