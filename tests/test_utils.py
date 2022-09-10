@@ -456,7 +456,7 @@ def test_pyperplan_problem_to_str(domain_file, problem_file):
 def test_randomize_object_names():
     """Tests for randomize_object_names()"""
     rng = np.random.default_rng()
-    example_one = ['a', 'b', 'c']
+    example_one = ['abcd', 'bcda', 'cefg']
     example_two = ["blockA", "blockB", "blockC", "blockD"]
     example_three = ["adfdf313", "qddfa3", "12423423"]
     examples = [example_one, example_two, example_three]
