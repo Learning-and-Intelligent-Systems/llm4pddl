@@ -36,7 +36,8 @@ def parse_flags() -> None:
     parser.add_argument("--llm_max_total_tokens", default=4096, type=int)
     parser.add_argument("--llm_prompt_method", default="standard", type=str)
     parser.add_argument("--llm_autoregressive_prompting",
-                        action=argparse.BooleanOptionalAction)
+                        action=argparse.BooleanOptionalAction,
+                        default=True)
     parser.add_argument("--llm_plan_guidance_method",
                         default="init-queue-continue",
                         type=str)
