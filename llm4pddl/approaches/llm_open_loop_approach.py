@@ -51,7 +51,6 @@ class LLMOpenLoopApproach(BaseApproach):
             closest_datums = self._get_closest_datums(
                 task, self._list_embeddings_mapping, FLAGS.num_train_tasks)
             self._create_prompt_prefix(closest_datums)
-        # print(f'prompt prefix at solve time:\n\n{self._prompt_prefix}')
         prompt = self._prompt_prefix + new_prompt
         logging.debug(f"Querying with prompt suffix:\n{new_prompt}")
         partial_plans = []
@@ -86,13 +85,27 @@ class LLMOpenLoopApproach(BaseApproach):
             embeddings = self._embed_tasks(train_tasks)
             self._list_embeddings_mapping = self._make_embeddings_mapping(
                 embeddings, dataset)
+        else:
+            # this else is not necesary, it just reduces extra work being done
+            # because if we are using dynamic examples, this will be recalled.
+            self._create_prompt_prefix(dataset)
 
     def _create_prompt_prefix(self, dataset: Dataset) -> None:
+        """Creates prompt prefix for the approach. 
+        
+        If dynamic example is on, dataset is ordered least to most similar."""
+        # I have noticed that dataset is out of order initially(w/o dynamic).
         prompts = []
-        # for i in range(FLAGS.num_prompt_tasks): # this is num_prompt_tasks
-        prompt_dataset = dataset[len(dataset) - FLAGS.num_prompt_tasks:]
-        assert len(prompt_dataset) == FLAGS.num_prompt_tasks
-        assert prompt_dataset[-1] == dataset[-1]
+        if FLAGS.use_dynamic_examples:
+            # if dynamic, we pick the most similar examples,
+            # which are at the back.
+            prompt_dataset = dataset[-FLAGS.num_prompt_tasks:]
+            assert len(prompt_dataset) == FLAGS.num_prompt_tasks
+            assert prompt_dataset[-1] == dataset[-1]
+            assert prompt_dataset[0] == dataset[-FLAGS.num_prompt_tasks]
+        else:
+            # if not dynamic, we simply pick the first examples.
+            prompt_dataset = dataset[:FLAGS.num_prompt_tasks]
         for datum in prompt_dataset:
             prompt = self._create_prompt(datum.task, datum.solution)
             prompts.append(prompt)
