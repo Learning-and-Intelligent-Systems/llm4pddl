@@ -499,8 +499,7 @@ def test_get_cosine_sim():
     """Tests get_cosine_sim()."""
     utils.reset_flags({
         "llm_model_name": "davinci-002",
-        "embedding_model_name": "paraphrase-MiniLM-L6-v2",
-        "random_object_names": False
+        "embedding_model_name": "paraphrase-MiniLM-L6-v2"
     })
     approach: LLMOpenLoopApproach = create_approach('llm-standard')
     embedding_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
