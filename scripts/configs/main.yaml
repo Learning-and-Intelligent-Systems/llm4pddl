@@ -9,7 +9,9 @@ APPROACHES:
   llm-standard-no-autoregress:
     NAME: "llm-standard"
   random-actions:
-    NAME: "random-actions"
+    NAME: "llm-standard"
+    ARGS:
+      - "llm_use_random_plans"
   # Planning-based approaches
   llm-standard-plan:
     NAME: "llm-standard-plan"
