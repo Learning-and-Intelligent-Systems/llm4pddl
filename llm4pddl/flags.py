@@ -13,7 +13,7 @@ def parse_flags() -> None:
     parser.add_argument("--approach", required=True, type=str)
     parser.add_argument("--seed", required=True, type=int)
     parser.add_argument("--experiment_id", default="", type=str)
-    parser.add_argument("--num_train_tasks", default=2, type=int)
+    parser.add_argument("--num_train_tasks", default=10, type=int)
     parser.add_argument("--num_prompt_tasks", default=2, type=int)
     parser.add_argument("--num_eval_tasks", default=10, type=int)
     parser.add_argument("--train_task_offset", default=0, type=int)

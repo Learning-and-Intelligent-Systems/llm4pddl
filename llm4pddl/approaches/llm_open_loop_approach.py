@@ -51,6 +51,7 @@ class LLMOpenLoopApproach(BaseApproach):
             closest_datums = self._get_closest_datums(
                 task, self._list_embeddings_mapping, FLAGS.num_train_tasks)
             self._create_prompt_prefix(closest_datums)
+        # print(f'prompt prefix at solve time:\n\n{self._prompt_prefix}')
         prompt = self._prompt_prefix + new_prompt
         logging.debug(f"Querying with prompt suffix:\n{new_prompt}")
         partial_plans = []
@@ -88,9 +89,12 @@ class LLMOpenLoopApproach(BaseApproach):
 
     def _create_prompt_prefix(self, dataset: Dataset) -> None:
         prompts = []
-        for i in range(FLAGS.num_prompt_tasks
-                       ):  # this should be changed to num_prompt_tasks
-            prompt = self._create_prompt(dataset[i].task, dataset[i].solution)
+        # for i in range(FLAGS.num_prompt_tasks): # this is num_prompt_tasks
+        prompt_dataset = dataset[len(dataset) - FLAGS.num_prompt_tasks:]
+        assert len(prompt_dataset) == FLAGS.num_prompt_tasks
+        assert prompt_dataset[-1] == dataset[-1]
+        for datum in prompt_dataset:
+            prompt = self._create_prompt(datum.task, datum.solution)
             prompts.append(prompt)
         self._prompt_prefix = "\n\n".join(prompts) + "\n\n"
         logging.debug(f"Created prompt prefix:\n{self._prompt_prefix}")
