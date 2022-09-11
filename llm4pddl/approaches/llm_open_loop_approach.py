@@ -78,16 +78,13 @@ class LLMOpenLoopApproach(BaseApproach):
         return self._solve_from_partial_plans(partial_plans, task)
 
     def train(self, dataset: Dataset) -> None:
+        self._create_prompt_prefix(dataset)
         # Embedding the training tasks:
         if FLAGS.use_dynamic_examples:
             train_tasks = [datum.task for datum in dataset]
             embeddings = self._embed_tasks(train_tasks)
             self._list_embeddings_mapping = self._make_embeddings_mapping(
                 embeddings, dataset)
-        else:
-            # this else is not necesary, it just reduces extra work being done
-            # because if we are using dynamic examples, this will be recalled.
-            self._create_prompt_prefix(dataset)
 
     def _create_prompt_prefix(self, dataset: Dataset) -> None:
         """Creates prompt prefix for the approach.
