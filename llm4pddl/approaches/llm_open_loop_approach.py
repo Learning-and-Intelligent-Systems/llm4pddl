@@ -78,7 +78,6 @@ class LLMOpenLoopApproach(BaseApproach):
         return self._solve_from_partial_plans(partial_plans, task)
 
     def train(self, dataset: Dataset) -> None:
-        self._create_prompt_prefix(dataset)
         # Embedding the training tasks:
         if FLAGS.use_dynamic_examples:
             train_tasks = [datum.task for datum in dataset]
@@ -91,8 +90,8 @@ class LLMOpenLoopApproach(BaseApproach):
             self._create_prompt_prefix(dataset)
 
     def _create_prompt_prefix(self, dataset: Dataset) -> None:
-        """Creates prompt prefix for the approach. 
-        
+        """Creates prompt prefix for the approach.
+
         If dynamic example is on, dataset is ordered least to most similar."""
         # I have noticed that dataset is out of order initially(w/o dynamic).
         prompts = []
