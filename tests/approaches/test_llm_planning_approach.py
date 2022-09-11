@@ -100,9 +100,10 @@ def test_llm_planning_planning_approach():
         "num_eval_tasks": 1,
         "train_task_offset": 0,
         "llm_use_random_plans": True,  # note!
-        "random_actions_max_steps": 0,  # note!
         "llm_prompt_method": "standard",
         "llm_autoregressive_prompting": False,
+        "llm_autoregress_max_loops": 100,
+        "llm_use_cache_only": False,
         "llm_plan_guidance_method": "init-queue-continue",
         "planner": "pyperplan",
         "data_gen_planner": "pyperplan",
@@ -114,6 +115,11 @@ def test_llm_planning_planning_approach():
         "load_data": False,
         "embedding_model_name": "paraphrase-MiniLM-L6-v2"
     })
+    # Set up a mock LLM because we use the length of the LLM response to
+    # determine the number of random actions to use.
+    llm = _MockLLM()
+    approach._llm = llm  # pylint: disable=protected-access
+    llm.responses = []
     plan, random_case_metrics = approach.solve(task)
     assert utils.validate_plan(task, plan)
     assert random_case_metrics["nodes_expanded"] > 1

@@ -65,11 +65,15 @@ class LLMOpenLoopApproach(BaseApproach):
                 partial_plans.append(plan)
         elif FLAGS.llm_use_random_plans:
             # An ablation where we sample random plans instead of querying
-            # the LLM. For this class, this is equivalent to the random
-            # actions approach. The main use is with LLMPlanningApproach.
+            # the LLM. For apples-to-apples comparing, we get the length of
+            # the plan output by the main llm-standard method and then get
+            # a random plan of the same length.
+            autoregressive_plan = self._prompt_autoregressive(
+                prompt, task, disable_cache=False)
+            max_steps = len(autoregressive_plan)
             for _ in range(self._num_completions):
-                plan = utils.get_random_partial_plan(
-                    task, self._rng, FLAGS.random_actions_max_steps)
+                plan = utils.get_random_partial_plan(task, self._rng,
+                                                     max_steps)
                 partial_plans.append(plan)
         else:
             responses = self._llm.sample_completions(
