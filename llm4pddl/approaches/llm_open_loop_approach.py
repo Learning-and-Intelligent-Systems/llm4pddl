@@ -90,17 +90,14 @@ class LLMOpenLoopApproach(BaseApproach):
         """Creates prompt prefix for the approach.
 
         If dynamic example is on, dataset is ordered least to most similar."""
-        # I have noticed that dataset is out of order initially(w/o dynamic).
         prompts = []
         if FLAGS.use_dynamic_examples:
-            # if dynamic, we pick the most similar examples,
+            # If dynamic, we pick the most similar examples,
             # which are at the back.
             prompt_dataset = dataset[-FLAGS.num_prompt_tasks:]
             assert len(prompt_dataset) == FLAGS.num_prompt_tasks
-            assert prompt_dataset[-1] == dataset[-1]
-            assert prompt_dataset[0] == dataset[-FLAGS.num_prompt_tasks]
         else:
-            # if not dynamic, we simply pick the first examples.
+            # If not dynamic, we simply pick the first examples.
             prompt_dataset = dataset[:FLAGS.num_prompt_tasks]
         for datum in prompt_dataset:
             prompt = self._create_prompt(datum.task, datum.solution)
