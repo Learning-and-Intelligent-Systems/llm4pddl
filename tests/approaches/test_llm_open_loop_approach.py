@@ -70,6 +70,7 @@ def test_llm_standard_approach(env_name):
     utils.reset_flags({
         "llm_cache_dir": cache_dir,
         "num_train_tasks": 1,
+        "num_prompt_tasks": 1,
         "num_eval_tasks": 1,
         "train_task_offset": 0,
         "llm_model_name": "code-davinci-002",  # should not matter for test
@@ -125,6 +126,7 @@ def test_autoregressive_prompting():
     utils.reset_flags({
         "llm_cache_dir": cache_dir,
         "num_train_tasks": 1,
+        "num_prompt_tasks": 1,
         "num_eval_tasks": 1,
         "train_task_offset": 0,
         "llm_model_name": "code-davinci-002",  # should not matter for test
@@ -192,6 +194,7 @@ def test_llm_standard_approach_failure_cases(llm_prompt_method):
     utils.reset_flags({
         "llm_cache_dir": cache_dir,
         "num_train_tasks": 1,
+        "num_prompt_tasks": 1,
         "num_eval_tasks": 1,
         "train_task_offset": 0,
         "llm_model_name": "code-davinci-002",  # should not matter for test
@@ -279,6 +282,7 @@ def test_llm_standard_approach_dynamic_small_example():
     utils.reset_flags({
         "llm_cache_dir": cache_dir,
         "num_train_tasks": 1,
+        "num_prompt_tasks": 1,
         "num_eval_tasks": 1,
         "llm_model_name": "code-davinci-002",
         "llm_max_total_tokens": 700,
@@ -299,6 +303,7 @@ def test_llm_standard_approach_dynamic_small_example():
     utils.reset_flags({
         "llm_cache_dir": cache_dir,
         "num_train_tasks": 1,
+        "num_prompt_tasks": 1,
         "num_eval_tasks": 1,
         "llm_model_name": "code-davinci-002",
         "llm_max_total_tokens": 700,
@@ -340,6 +345,7 @@ def test_llm_standard_approach_dynamic_big_example():
     utils.reset_flags({
         "llm_cache_dir": cache_dir,
         "num_train_tasks": 30,
+        "num_prompt_tasks": 30,
         "num_eval_tasks": 1,
         "llm_model_name": "code-davinci-002",
         "llm_max_total_tokens": 700,
@@ -360,6 +366,7 @@ def test_llm_standard_approach_dynamic_big_example():
     utils.reset_flags({
         "llm_cache_dir": cache_dir,
         "num_train_tasks": 30,
+        "num_prompt_tasks": 30,
         "num_eval_tasks": 1,
         "llm_model_name": "code-davinci-002",
         "llm_max_total_tokens": 700,
@@ -396,6 +403,7 @@ def test_llm_multi_approach():
     utils.reset_flags({
         "llm_cache_dir": cache_dir,
         "num_train_tasks": 1,
+        "num_prompt_tasks": 1,
         "num_eval_tasks": 1,
         "train_task_offset": 0,
         "llm_model_name": "code-davinci-002",  # should not matter for test
@@ -533,7 +541,7 @@ def test_get_closest_datums():
         dressed01, embeddings_mapping, 4)
     assert len(most_similar3) == 4
     # checking that blocks is the least likely:
-    assert most_similar3[0].task == utils.get_task_from_dir(
+    assert most_similar3[-1].task == utils.get_task_from_dir(
         utils.PYPERPLAN_BENCHMARK_DIR / 'blocks', 1)
     dif_tasks = [dressed01, blocks01, depot01]
     dif_embeddings = [
@@ -570,22 +578,22 @@ def test_get_closest_datums():
     most_similar_dressed = approach._get_closest_datums(  # pylint: disable=protected-access
         dressed01, big_emb_map, 9)
     assert len(most_similar_dressed) == len(big_tasks)
-    for datum in most_similar_dressed[-3:]:
+    for datum in most_similar_dressed[:3]:
         assert datum.task in dressed
 
     # comparing to blocks:
     most_similar_blocks = approach._get_closest_datums(  # pylint: disable=protected-access
         blocks01, big_emb_map, 9)
-    for datum in most_similar_blocks[-3:]:
+    for datum in most_similar_blocks[:3]:
         assert datum.task in blocks
 
     # comparing to depot:
     most_similar_depot = approach._get_closest_datums(depot01, big_emb_map, 9)  # pylint: disable=protected-access
-    for datum in most_similar_depot[-3:]:
+    for datum in most_similar_depot[:3]:
         assert datum.task in depot
 
     # proving identical is considered best:
-    most_sim = approach._get_closest_datums(blocks02, big_emb_map, 9)[-1]  # pylint: disable=protected-access
+    most_sim = approach._get_closest_datums(blocks02, big_emb_map, 9)[0]  # pylint: disable=protected-access
     assert most_sim.task == utils.get_task_from_dir(
         utils.PYPERPLAN_BENCHMARK_DIR / 'blocks', 2)
     # example to compare within a specific domain.
