@@ -4,7 +4,7 @@ import argparse
 from typing import Dict
 
 import matplotlib.pyplot as plt
-from analyze_results import _load_results
+from analyze_results import _create_derived_cols, _load_results
 
 APPROACHES = [
     "llm-standard-plan", "llm-multi", "llm-multi-plan", "fd-only",
@@ -26,7 +26,8 @@ def _construct_dictionaries(input_dir: str) -> Dict[str, Dict[str, str]]:
     for name in APPROACHES:
         approaches[name] = {}
 
-    df = _load_results(input_dir)
+    derived_cols = _create_derived_cols(input_dir)
+    df = _load_results(input_dir, derived_cols)
     column_labels = list(df.columns)
     env_column_index = column_labels.index('env')
     approach_column_index = column_labels.index('approach_id')
