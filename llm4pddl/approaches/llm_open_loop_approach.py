@@ -89,16 +89,9 @@ class LLMOpenLoopApproach(BaseApproach):
     def _create_prompt_prefix(self, dataset: Dataset) -> None:
         """Creates prompt prefix for the approach.
 
-        If dynamic example is on, dataset is ordered least to most similar."""
+        If dynamic example is on, dataset is ordered most to least similar."""
         prompts = []
-        if FLAGS.use_dynamic_examples:
-            # If dynamic, we pick the most similar examples,
-            # which are at the back.
-            prompt_dataset = dataset[-FLAGS.num_prompt_tasks:]
-            assert len(prompt_dataset) == FLAGS.num_prompt_tasks
-        else:
-            # If not dynamic, we simply pick the first examples.
-            prompt_dataset = dataset[:FLAGS.num_prompt_tasks]
+        prompt_dataset = dataset[:FLAGS.num_prompt_tasks]
         for datum in prompt_dataset:
             prompt = self._create_prompt(datum.task, datum.solution)
             prompts.append(prompt)
@@ -356,7 +349,7 @@ class LLMOpenLoopApproach(BaseApproach):
                             embeddings_mapping: List[Dict[str, Any]],
                             num_closest: int) -> List[Datum]:
         """Returns the num_closest most similar training tasks to the task, in
-        order of from least to most similar."""
+        order of from most to least similar."""
         assert num_closest <= len(embeddings_mapping)
         embeddings = self._embed_task(task)
 
@@ -387,6 +380,9 @@ class LLMOpenLoopApproach(BaseApproach):
 
         indices = np.argsort(total_cos_sims)[-num_closest:]
         closest_datums = [embeddings_mapping[ind]['datum'] for ind in indices]
+        # closest_datums is currently ordered least to most similar
+        # we flip it here:
+        closest_datums.reverse()
         return closest_datums
 
     def _get_cosine_sim(self, embedding1: Embedding,
