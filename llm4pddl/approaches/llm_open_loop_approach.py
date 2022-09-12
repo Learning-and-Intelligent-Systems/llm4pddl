@@ -89,7 +89,9 @@ class LLMOpenLoopApproach(BaseApproach):
     def _create_prompt_prefix(self, dataset: Dataset) -> None:
         """Creates prompt prefix for the approach.
 
-        If dynamic example is on, dataset is ordered most to least similar."""
+        As of now, the 'best' example in  dynamic is used first in the
+        prompt, not last.
+        """
         prompts = []
         prompt_dataset = dataset[:FLAGS.num_prompt_tasks]
         for datum in prompt_dataset:
