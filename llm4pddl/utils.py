@@ -12,7 +12,6 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any, Collection, Dict, List, Optional, Sequence, Set, Tuple
 
-import matplotlib.pyplot as plt
 import numpy as np
 from pyperplan.pddl.parser import Parser
 from pyperplan.planner import HEURISTICS, SEARCHES, search_plan
@@ -385,5 +384,3 @@ def str_to_identifier(x: str) -> str:
         https://stackoverflow.com/questions/5297448
     """
     return hashlib.md5(x.encode('utf-8')).hexdigest()
-
-
