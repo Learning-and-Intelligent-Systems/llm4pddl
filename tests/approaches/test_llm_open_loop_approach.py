@@ -175,6 +175,35 @@ def test_llm_standard_approach_failure_cases(llm_prompt_method):
     shutil.rmtree(data_dir)
 
 
+def test_llm_standard_approach_random_objects():
+    """Test for LLM standard approach with random object names in prompt
+    prefix."""
+    utils.reset_flags({
+        "num_train_tasks": 1,
+        "num_eval_tasks": 1,
+        "llm_model_name": "code-davinci-002",
+        "llm_max_total_tokens": 700,
+        "llm_multi_temperature": 0.3,
+        "llm_prompt_method": "standard",
+        "planning_timeout": 100,
+        "llm_prompt_flatten_pddl": False,
+        "use_dynamic_examples": False,  # this is the only one that differs
+        "embedding_model_name": "paraphrase-MiniLM-L6-v2",
+        "llm_use_cache_only": False,
+        "random_object_names": True
+    })
+    approach: LLMOpenLoopApproach = create_approach('llm-standard')
+    rng = np.random.default_rng()
+    dataset = [
+        Datum(
+            utils.get_task_from_dir(utils.PYPERPLAN_BENCHMARK_DIR / 'gripper',
+                                    1), ['insert plan here'])
+    ]
+    for datum in dataset:
+        task_string = approach._create_prompt(datum.task, datum.solution, rng)  # pylint: disable=protected-access
+        assert task_string is not None
+
+
 def test_llm_standard_approach_dynamic_small_example():
     """Test for LLM standard approach using dynamic examples."""
     cache_dir = "_fake_llm_cache_dir"
@@ -326,8 +355,7 @@ def test_embed_tasks():
         "embedding_model_name": "paraphrase-MiniLM-L6-v2",
         "llm_prompt_flatten_pddl": True,
         "llm_model_name": "davinci-002",
-        "llm_prompt_method": "standard",
-        "random_object_names": False
+        "llm_prompt_method": "standard"
     })
     approach: LLMOpenLoopApproach = create_approach('llm-standard')
     tasks = [
@@ -347,7 +375,6 @@ def test_embed_task():
         "llm_prompt_flatten_pddl": True,
         "llm_model_name": "davinci-002",
         "llm_prompt_method": "standard",
-        "random_object_names": False
     })
     approach: LLMOpenLoopApproach = create_approach('llm-standard')
     embedding_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
@@ -362,8 +389,7 @@ def test_make_embeddings_mapping():
     """Tests make_embeddings_mapping()."""
     utils.reset_flags({
         "llm_model_name": "davinci-002",
-        "embedding_model_name": "paraphrase-MiniLM-L6-v2",
-        "random_object_names": False
+        "embedding_model_name": "paraphrase-MiniLM-L6-v2"
     })
     approach: LLMOpenLoopApproach = create_approach('llm-standard')
     embeddings = [[0.5], [0.1], [0.2]]
@@ -385,8 +411,7 @@ def test_get_closest_datums():
         "llm_prompt_flatten_pddl": True,
         "embedding_model_name": "paraphrase-MiniLM-L6-v2",
         "llm_model_name": "davinci-002",
-        "llm_prompt_method": "standard",
-        "random_object_names": False
+        "llm_prompt_method": "standard"
     })
     approach: LLMOpenLoopApproach = create_approach('llm-standard')
     dressed01 = utils.get_task_from_dir(utils.CUSTOM_BENCHMARK_DIR / 'dressed',
