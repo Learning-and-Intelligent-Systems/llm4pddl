@@ -199,7 +199,7 @@ def test_llm_standard_approach_random_objects():
             utils.get_task_from_dir(utils.PYPERPLAN_BENCHMARK_DIR / 'gripper',
                                     1), ['insert plan here'])
     ]
-    approach._create_prompt_prefix(dataset, True)
+    approach._create_prompt_prefix(dataset, True)  # pylint: disable=protected-access
     for datum in dataset:
         task_string = approach._create_prompt(datum.task, datum.solution, rng)  # pylint: disable=protected-access
         assert task_string is not None
