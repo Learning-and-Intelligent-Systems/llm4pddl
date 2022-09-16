@@ -59,7 +59,7 @@ class LLMOpenLoopApproach(BaseApproach):
         return self._llm_responses_to_plan(responses, task)
 
     def train(self, dataset: Dataset) -> None:
-        self._create_prompt_prefix(dataset, FLAGS.random_object_names)
+        self._create_prompt_prefix(dataset, FLAGS.use_random_object_names)
 
         # Embedding the training tasks:
         if FLAGS.use_dynamic_examples:
@@ -71,10 +71,10 @@ class LLMOpenLoopApproach(BaseApproach):
     def _create_prompt_prefix(
             self,
             dataset: Dataset,
-            random_object_names: Optional[bool] = False) -> None:
+            use_random_object_names: Optional[bool] = False) -> None:
         prompts = []
         for datum in dataset:
-            if random_object_names:
+            if use_random_object_names:
                 prompt = self._create_prompt(datum.task, datum.solution,
                                              self._rng)
             else:
@@ -110,7 +110,8 @@ class LLMOpenLoopApproach(BaseApproach):
         for _, objs in type_to_objs.items():
             objs_list += objs
         if rng:
-            objs_dict = utils.randomize_object_names(rng, objs_list)
+            #import pdb;pdb.set_trace()
+            objs_dict = utils.randomize_object_names(rng, set(objs_list))
         for typ, objs in type_to_objs.items():
             if not objs:
                 continue

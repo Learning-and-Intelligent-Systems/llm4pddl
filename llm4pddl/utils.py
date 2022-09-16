@@ -388,14 +388,13 @@ def str_to_identifier(x: str) -> str:
 
 
 def randomize_object_names(rng: np.random.Generator,
-                           objs: List[str]) -> Dict[str, str]:
+                           objs: set[str]) -> Dict[str, str]:
     """To prevent overfitting, creates dictionary mapping object names to
     random strings."""
     random_dict = {}
-    for obj in objs:
-        if obj not in random_dict:
-            random_dict[obj] = ''.join(
-                rng.choice(list(string.ascii_lowercase), len(obj)))
+    for obj in sorted(objs):
+        random_dict[obj] = ''.join(
+            rng.choice(list(string.ascii_lowercase), len(obj)))
     return random_dict
 
 

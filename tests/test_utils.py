@@ -461,7 +461,7 @@ def test_randomize_object_names():
     example_three = ["adfdf313", "qddfa3", "12423423"]
     examples = [example_one, example_two, example_three]
     for example in examples:
-        random_dict = utils.randomize_object_names(rng, example)
+        random_dict = utils.randomize_object_names(rng, set(example))
         assert random_dict is not None
         assert list(random_dict.keys()) == example
         for entry in random_dict.values():

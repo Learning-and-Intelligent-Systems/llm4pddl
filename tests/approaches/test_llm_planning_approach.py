@@ -35,7 +35,7 @@ def test_llm_planning_planning_approach():
         "data_dir": data_dir,
         "load_data": False,
         "embedding_model_name": "paraphrase-MiniLM-L6-v2",
-        "random_object_names": False
+        "use_random_object_names": False
     })
     env = create_env("pyperplan-gripper")
     train_tasks = env.get_train_tasks()
