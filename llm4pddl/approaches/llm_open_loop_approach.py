@@ -110,13 +110,10 @@ class LLMOpenLoopApproach(BaseApproach):
         for _, objs in type_to_objs.items():
             objs_list += objs
         if rng:
-            #import pdb;pdb.set_trace()
             objs_dict = utils.randomize_object_names(rng, set(objs_list))
         for typ, objs in type_to_objs.items():
             if not objs:
                 continue
-            if rng:
-                objs = [objs_dict[obj] for obj in objs]
             typ_str = " ".join(objs) + " - " + str(typ)
             objects_strs.append(typ_str)
         # Create the objects string.

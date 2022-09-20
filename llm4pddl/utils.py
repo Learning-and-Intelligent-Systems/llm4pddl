@@ -401,16 +401,10 @@ def randomize_object_names(rng: np.random.Generator,
 def replace_with_random_objects(orig_str: str, random_dict: dict) -> str:
     """Replaces objects in init, goal, solution string with random object
     names."""
-    orig_str_array = orig_str.split("\n")
-    for i, line in enumerate(orig_str_array):
-        if "(" in line and ")" in line and " " in line:
-            line = line[line.index("("):]
-            objects_substring_start = line.index(" ") + 1
-            objects_substring_end = line.index(")")
-            objects_substring = line[
-                objects_substring_start:objects_substring_end]
-            objs = objects_substring.split(" ")
-            for obj in objs:
-                line = line.replace(obj, random_dict[obj])
-            orig_str_array[i] = line
-    return "\n".join(orig_str_array)
+    for obj in random_dict.keys():
+        orig_str = orig_str.replace(obj + ")", random_dict[obj] + ")")
+        orig_str = orig_str.replace(" " + obj + " ",
+                                    " " + random_dict[obj] + " ")
+        orig_str = orig_str.replace("\n" + obj + " ",
+                                    "\n" + random_dict[obj] + " ")
+    return orig_str

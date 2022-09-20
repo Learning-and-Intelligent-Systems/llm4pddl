@@ -463,7 +463,7 @@ def test_randomize_object_names():
     for example in examples:
         random_dict = utils.randomize_object_names(rng, set(example))
         assert random_dict is not None
-        assert list(random_dict.keys()) == example
+        assert sorted(list(random_dict.keys())) == sorted(example)
         for entry in random_dict.values():
             assert entry not in example
 
@@ -472,7 +472,7 @@ def test_replace_with_random_objects():
     """Tests for replace_with_random_objects()"""
     example_prefix = """Q:
 (:objects
-vgchk vlcip vszew bohfr hogd tlrry kfqyz wrjkb - object)
+ball1 ball2 ball3 ball4 left right rooma roomb - object)
 (:init
 (room rooma)
 (room roomb)
@@ -523,3 +523,41 @@ A:
     for orig, rand in random_dict.items():
         assert orig not in randomized_prefix
         assert rand in randomized_prefix
+    assert randomized_prefix == """Q:
+(:objects
+vgchk vlcip vszew bohfr hogd tlrry kfqyz wrjkb - object)
+(:init
+(room kfqyz)
+(room wrjkb)
+(ball bohfr)
+(ball vszew)
+(ball vlcip)
+(ball vgchk)
+(at-robby kfqyz)
+(free hogd)
+(free tlrry)
+(at bohfr kfqyz)
+(at vszew kfqyz)
+(at vlcip kfqyz)
+(at vgchk kfqyz)
+(gripper hogd)
+(gripper tlrry))
+(:goal
+(at bohfr wrjkb)
+(at vszew wrjkb)
+(at vlcip wrjkb)
+(at vgchk wrjkb))
+A:
+(pick vgchk kfqyz hogd)
+(move kfqyz wrjkb)
+(drop vgchk wrjkb hogd)
+(move wrjkb kfqyz)
+(pick vszew kfqyz hogd)
+(move kfqyz wrjkb)
+(drop vszew wrjkb hogd)
+(move wrjkb kfqyz)
+(pick vlcip kfqyz hogd)
+(pick bohfr kfqyz tlrry)
+(move kfqyz wrjkb)
+(drop vlcip wrjkb hogd)
+(drop bohfr wrjkb tlrry)"""
