@@ -26,6 +26,10 @@ def test_create_approach():
     assert approach.get_name() == "llm-plan"
     approach = create_approach("llm-multi-plan")
     assert approach.get_name() == "llm-plan"
+    approach = create_approach("manual-planning")
+    assert approach.get_name() == "manual-planning"
+    approach = create_approach("random-actions")
+    assert approach.get_name() == "random-actions"
     # Test unrecognized approach.
     with pytest.raises(NotImplementedError) as e:
         create_approach("not a real approach")

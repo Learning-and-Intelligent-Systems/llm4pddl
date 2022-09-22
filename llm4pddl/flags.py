@@ -14,6 +14,7 @@ def parse_flags() -> None:
     parser.add_argument("--seed", required=True, type=int)
     parser.add_argument("--experiment_id", default="", type=str)
     parser.add_argument("--num_train_tasks", default=2, type=int)
+    parser.add_argument("--num_prompt_tasks", default=2, type=int)
     parser.add_argument("--num_eval_tasks", default=10, type=int)
     parser.add_argument("--train_task_offset", default=0, type=int)
     parser.add_argument("--planner", default="pyperplan", type=str)
@@ -35,6 +36,7 @@ def parse_flags() -> None:
     parser.add_argument("--llm_multi_num_completions", default=5, type=int)
     parser.add_argument("--llm_max_total_tokens", default=4096, type=int)
     parser.add_argument("--llm_prompt_method", default="standard", type=str)
+    parser.add_argument("--llm_autoregressive_prompting", action="store_true")
     parser.add_argument("--llm_plan_guidance_method",
                         default="init-queue-continue",
                         type=str)
@@ -44,9 +46,12 @@ def parse_flags() -> None:
                         const=logging.DEBUG,
                         default=logging.INFO)
     parser.add_argument('--llm_prompt_flatten_pddl', action='store_true')
+    parser.add_argument("--llm_autoregress_max_loops", default=4096, type=int)
     parser.add_argument('--use_dynamic_examples', action='store_true')
     parser.add_argument('--embedding_model_name',
                         default='paraphrase-MiniLM-L6-v2')
     parser.add_argument('--use_random_object_names', action='store_true')
+    parser.add_argument("--llm_use_random_plans", action="store_true")
+    parser.add_argument("--random_actions_max_steps", default=1000, type=int)
     args = parser.parse_args()
     FLAGS.__dict__.update(args.__dict__)

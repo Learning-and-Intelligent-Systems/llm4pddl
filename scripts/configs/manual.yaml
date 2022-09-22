@@ -1,0 +1,40 @@
+# Experiments for comparing manual data generation to plan data generation.
+---
+APPROACHES:
+  llm-standard-manual:
+    NAME: "llm-standard"
+    FLAGS:
+      data_gen_method: "manual"
+  llm-standard-plan-manual:
+    NAME: "llm-standard-plan"
+    FLAGS:
+      data_gen_method: "manual"
+  llm-standard:
+    NAME: "llm-standard"
+    FLAGS: {}
+  llm-standard-plan:
+    NAME: "llm-standard-plan"
+    FLAGS: {}
+ENVS:
+  blocks:
+    NAME: "pyperplan-blocks"
+    FLAGS: {}
+  gripper:
+    NAME: "pyperplan-gripper"
+    FLAGS: {}
+  logistics:
+    NAME: "pyperplan-logistics"
+    FLAGS: {}
+  miconic:
+    NAME: "pyperplan-miconic"
+    FLAGS: {}
+  satellite:
+    NAME: "pyperplan-satellite"
+    FLAGS: {}
+ARGS:
+  - "debug"
+FLAGS:
+  num_train_tasks: 2
+  num_eval_tasks: 10
+START_SEED: 456
+NUM_SEEDS: 5

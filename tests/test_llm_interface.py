@@ -19,12 +19,14 @@ class _DummyLLM(LargeLanguageModel):
                             prompt,
                             temperature,
                             seed,
+                            stop_token,
                             num_completions=1):
         responses = []
         prompt_info = {
             "temperature": temperature,
             "seed": seed,
-            "num_completions": num_completions
+            "num_completions": num_completions,
+            "stop_token": stop_token,
         }
         for _ in range(num_completions):
             text = (f"Prompt was: {prompt}. Seed: {seed}. "
@@ -51,16 +53,16 @@ def test_large_language_model():
     # Query a dummy LLM.
     llm = _DummyLLM()
     assert llm.get_id() == "dummy"
-    responses = llm.sample_completions("Hello world!", 0.5, 123, 3)
+    responses = llm.sample_completions("Hello world!", 0.5, 123, "", 3)
     completions = [r.response_text for r in responses]
     expected_completion = "Prompt was: Hello world!. Seed: 123. Temp: 0.5."
     assert completions == [expected_completion] * 3
     # Query it again, covering the case where we load from disk.
-    responses = llm.sample_completions("Hello world!", 0.5, 123, 3)
+    responses = llm.sample_completions("Hello world!", 0.5, 123, "", 3)
     completions = [r.response_text for r in responses]
     assert completions == [expected_completion] * 3
     # Query with temperature 0.
-    responses = llm.sample_completions("Hello world!", 0.0, 123, 3)
+    responses = llm.sample_completions("Hello world!", 0.0, 123, "", 3)
     completions = [r.response_text for r in responses]
     expected_completion = "Prompt was: Hello world!. Seed: 123. Temp: 0.0."
     assert completions == [expected_completion] * 3
@@ -73,7 +75,7 @@ def test_large_language_model():
         "llm_max_total_tokens": 700
     })
     with pytest.raises(ValueError) as e:
-        completions = llm.sample_completions("Hello world!", 0.5, 123, 3)
+        completions = llm.sample_completions("Hello world!", 0.5, 123, "", 3)
     assert "No cached response found for LLM prompt." in str(e)
 
 
@@ -85,16 +87,16 @@ def test_openai_llm():
         "llm_use_cache_only": False,
         "llm_max_total_tokens": 700
     })
-    if "OPENAI_API_KEY" not in os.environ:
+    if "OPENAI_API_KEY" not in os.environ:  # pragma: no cover
         os.environ["OPENAI_API_KEY"] = "dummy API key"
     # Create an OpenAILLM with the curie model.
     llm = OpenAILLM("text-curie-001")
     assert llm.get_id() == "openai-text-curie-001"
     # Uncomment this to test manually, but do NOT uncomment in master, because
     # each query costs money.
-    # completions = llm.sample_completions("Hello", 0.5, 123, 2)
+    # completions = llm.sample_completions("Hello", 0.5, 123, "", 2)
     # assert len(completions) == 2
-    # completions2 = llm.sample_completions("Hello", 0.5, 123, 2)
+    # completions2 = llm.sample_completions("Hello", 0.5, 123, "", 2)
     # assert completions == completions2
     # shutil.rmtree(cache_dir)
 
@@ -110,8 +112,9 @@ def test_openai_llm():
     temperature = 0.5
     seed = 123
     num_completions = 1
+    stop_token = "Q:"
     llm_response = llm._raw_to_llm_response(  # pylint: disable=protected-access
-        raw_response, prompt, temperature, seed, num_completions)
+        raw_response, prompt, temperature, seed, stop_token, num_completions)
     assert llm_response.prompt_text == "Dummy prompt"
     assert llm_response.response_text == "Hello world"
     assert llm_response.tokens == ["Hello", "world"]
@@ -119,3 +122,4 @@ def test_openai_llm():
     assert llm_response.prompt_info["temperature"] == temperature
     assert llm_response.prompt_info["seed"] == seed
     assert llm_response.prompt_info["num_completions"] == num_completions
+    assert llm_response.prompt_info["stop_token"] == stop_token

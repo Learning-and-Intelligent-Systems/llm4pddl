@@ -2,14 +2,18 @@
 
 import shutil
 
+import pytest
+
 from llm4pddl import utils
 from llm4pddl.dataset import create_dataset
 from llm4pddl.envs import create_env
 
+MANUAL_ENVS = ["pyperplan-blocks", "pyperplan-gripper"]
 
-def test_manual_data_generation():
+
+@pytest.mark.parametrize("env_name", MANUAL_ENVS)
+def test_manual_data_generation(env_name):
     """Tests for manual data generation."""
-    env_name = "pyperplan-blocks"
     data_dir = "_fake_data_dir"
     num_train_tasks = 2
     utils.reset_flags({

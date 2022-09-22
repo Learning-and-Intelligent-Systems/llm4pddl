@@ -561,3 +561,44 @@ A:
 (move kfqyz wrjkb)
 (drop vlcip wrjkb hogd)
 (drop bohfr wrjkb tlrry)"""
+
+
+def test_get_init_str():
+    """Tests for get_init_str()."""
+    task01 = utils.get_task_from_dir(utils.PYPERPLAN_BENCHMARK_DIR / 'blocks',
+                                     1)
+    init_str = utils.get_init_str(task01)
+    assert init_str == """(clear c)
+(clear a)
+(clear b)
+(clear d)
+(ontable c)
+(ontable a)
+(ontable b)
+(ontable d)
+(handempty)"""
+    task02 = utils.get_task_from_dir(utils.PYPERPLAN_BENCHMARK_DIR / 'blocks',
+                                     2)
+    init_str2 = utils.get_init_str(task02)
+    assert init_str2 == """(clear b)
+(ontable d)
+(on b c)
+(on c a)
+(on a d)
+(handempty)"""
+
+
+def test_get_goal_str():
+    """Tests for get_goal_str()"""
+    task01 = utils.get_task_from_dir(utils.PYPERPLAN_BENCHMARK_DIR / 'blocks',
+                                     1)
+    goal_str = utils.get_goal_str(task01)
+    assert goal_str == """(on d c)
+(on c b)
+(on b a)"""
+    task02 = utils.get_task_from_dir(utils.PYPERPLAN_BENCHMARK_DIR / 'blocks',
+                                     2)
+    goal_str2 = utils.get_goal_str(task02)
+    assert goal_str2 == """(on d c)
+(on c a)
+(on a b)"""

@@ -38,6 +38,7 @@ class LargeLanguageModel(abc.ABC):
                             prompt: str,
                             temperature: float,
                             seed: int,
+                            stop_token: str,
                             num_completions: int = 1) -> List[LLMResponse]:
         """This is the main method that subclasses must implement.
 
@@ -50,7 +51,9 @@ class LargeLanguageModel(abc.ABC):
                            prompt: str,
                            temperature: float,
                            seed: int,
-                           num_completions: int = 1) -> List[LLMResponse]:
+                           stop_token: str,
+                           num_completions: int = 1,
+                           disable_cache: bool = False) -> List[LLMResponse]:
         """Sample one or more completions from a prompt.
 
         Higher temperatures will increase the variance in the responses.
@@ -65,18 +68,18 @@ class LargeLanguageModel(abc.ABC):
         prompt_id = utils.str_to_identifier(prompt)
         # If the temperature is 0, the seed does not matter.
         if temperature == 0.0:
-            config_id = f"most_likely_{num_completions}"
+            config_id = f"most_likely_{num_completions}_{stop_token}"
         else:
-            config_id = f"{temperature}_{seed}_{num_completions}"
+            config_id = f"{temperature}_{seed}_{num_completions}_{stop_token}"
         cache_filename = f"{llm_id}_{config_id}_{prompt_id}.pkl"
         cache_filepath = Path(FLAGS.llm_cache_dir) / cache_filename
-        if not os.path.exists(cache_filepath):
+        if disable_cache or not os.path.exists(cache_filepath):
             if FLAGS.llm_use_cache_only:
                 raise ValueError("No cached response found for LLM prompt.")
             logging.debug(f"Querying LLM {llm_id} with new prompt.")
             # Query the LLM.
             completions = self._sample_completions(prompt, temperature, seed,
-                                                   num_completions)
+                                                   stop_token, num_completions)
             # Cache the completions.
             with open(cache_filepath, 'wb') as f:
                 pickle.dump(completions, f)
@@ -112,6 +115,7 @@ class OpenAILLM(LargeLanguageModel):
             prompt: str,
             temperature: float,
             seed: int,
+            stop_token: str,
             num_completions: int = 1) -> List[LLMResponse]:  # pragma: no cover
         # Always max out the max tokens to get the longest possible responses.
         num_prompt_tokens = len(self._tokenizer(prompt)["input_ids"])
@@ -130,7 +134,7 @@ class OpenAILLM(LargeLanguageModel):
                     temperature=temperature,
                     max_tokens=max_response_tokens,
                     logprobs=1,
-                    stop=utils.LLM_QUESTION_TOKEN,  # start of next question
+                    stop=stop_token,
                     n=num_completions)
                 # Successfully queried, so break.
                 break
@@ -144,14 +148,14 @@ class OpenAILLM(LargeLanguageModel):
             return []
         assert len(response["choices"]) == num_completions
         return [
-            self._raw_to_llm_response(r, prompt, temperature, seed,
+            self._raw_to_llm_response(r, prompt, temperature, seed, stop_token,
                                       num_completions)
             for r in response["choices"]
         ]
 
     @staticmethod
     def _raw_to_llm_response(raw_response: Dict[str, Any], prompt: str,
-                             temperature: float, seed: int,
+                             temperature: float, seed: int, stop_token: str,
                              num_completions: int) -> LLMResponse:
         text = raw_response["text"]
         tokens = raw_response["logprobs"]["tokens"]
@@ -160,7 +164,8 @@ class OpenAILLM(LargeLanguageModel):
         prompt_info = {
             "temperature": temperature,
             "seed": seed,
-            "num_completions": num_completions
+            "num_completions": num_completions,
+            "stop_token": stop_token,
         }
         return LLMResponse(prompt,
                            text,

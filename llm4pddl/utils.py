@@ -9,17 +9,20 @@ import string
 import subprocess
 import sys
 import tempfile
+import time
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Collection, Dict, List, Optional, Sequence, Set, Tuple
 
 import numpy as np
+from pyperplan.grounding import ground as pyperplan_ground
 from pyperplan.pddl.parser import Parser
 from pyperplan.planner import HEURISTICS, SEARCHES, search_plan
 
 from llm4pddl.flags import FLAGS
 from llm4pddl.structs import Plan, PyperplanAction, PyperplanDomain, \
-    PyperplanPredicate, PyperplanProblem, PyperplanType, Task, TaskMetrics
+    PyperplanPredicate, PyperplanProblem, PyperplanTask, PyperplanType, Task, \
+    TaskMetrics
 
 # Global constants.
 LLM_QUESTION_TOKEN = "Q:"
@@ -31,7 +34,7 @@ AUGMENTED_BENCHMARK_DIR = CUSTOM_BENCHMARK_DIR / "augmented"
 MANUAL_TRAIN_BENCHMARK_DIR = CUSTOM_BENCHMARK_DIR / "manual"
 
 
-def validate_plan(task: Task, plan: Plan) -> bool:
+def validate_plan(task: Task, plan: Plan, verbose: bool = True) -> bool:
     """Use VAL to check if a plan solves a PDDL problem."""
     plan_str = ""
     for t, action in enumerate(plan):
@@ -42,7 +45,7 @@ def validate_plan(task: Task, plan: Plan) -> bool:
     val_dir = Path(__file__).parent / "third_party" / "val"
     if sys.platform == "darwin":  # pragma: no cover
         platform_dir = "darwin"
-    else:
+    else:  # pragma: no cover
         assert sys.platform.startswith("linux")
         platform_dir = "linux64"
     val = val_dir / platform_dir / "Validate"
@@ -52,7 +55,8 @@ def validate_plan(task: Task, plan: Plan) -> bool:
     os.remove(plan_file)
     if "Plan valid" in output:
         return True
-    logging.debug(output)
+    if verbose:
+        logging.debug(output)
     return False
 
 
@@ -308,6 +312,65 @@ def get_task_size(task: Task) -> int:
     return len(prob.objects) + len(prob.initial_state) + len(prob.goal)
 
 
+@functools.lru_cache(maxsize=None)
+def get_pyperplan_task(task: Task) -> PyperplanTask:
+    """Ground all operators in a task.
+
+    Returns a dict mapping the string name of the operator to the
+    operator.
+    """
+    parser = Parser(task.domain_file, task.problem_file)
+    domain = parser.parse_domain()
+    problem = parser.parse_problem(domain)
+    logging.disable(logging.ERROR)
+    pyperplan_task = pyperplan_ground(problem)
+    logging.disable(logging.NOTSET)
+    return pyperplan_task
+
+
+def get_random_partial_plan(task: Task,
+                            rng: np.random.Generator,
+                            max_steps: int,
+                            timeout: Optional[float] = None) -> Plan:
+    """Get a random sequence of applicable actions for the task.
+
+    Check at each step whether the goal is achieved and terminate if so.
+    Otherwise, continue for at most max_step, or until a dead-end is
+    reached, and then return the full sequence of actions.
+    """
+    init_time = time.perf_counter()
+    pyperplan_task = get_pyperplan_task(task)
+    current_facts = pyperplan_task.initial_state
+    plan = []
+    for _ in range(max_steps):
+        # Check for timeout.
+        if timeout is not None and (time.perf_counter() - init_time > timeout):
+            break
+        # Sort for determinism.
+        applicable_action_set = {
+            o
+            for o in pyperplan_task.operators if o.applicable(current_facts)
+        }
+        applicable_actions = sorted(applicable_action_set,
+                                    key=lambda o: o.name)
+        # Dead end.
+        if not applicable_actions:
+            break
+        # Sample an applicable action.
+        action_idx = rng.choice(len(applicable_actions))
+        action = applicable_actions[action_idx]
+        # Extend the plan.
+        plan.append(action.name)
+        # Advance the state.
+        current_facts = action.apply(current_facts)
+        # Check the plan at each step.
+        if validate_plan(task, plan, verbose=False):
+            # Success!
+            return plan
+    # Failed.
+    return plan
+
+
 def pred_to_str(pred: PyperplanPredicate) -> str:
     """Create a string representation of a Pyperplan predicate (atom)."""
     if not pred.signature:
@@ -408,3 +471,21 @@ def replace_with_random_objects(orig_str: str, random_dict: dict) -> str:
         orig_str = orig_str.replace("\n" + obj + " ",
                                     "\n" + random_dict[obj] + " ")
     return orig_str
+
+
+def get_init_str(task: Task) -> str:
+    """Returns the init string of a PDDL task."""
+    _, problem = parse_task(task)
+    # Create the init string.
+    init_strs = [pred_to_str(p) for p in problem.initial_state]
+    init_str = "\n".join(init_strs)
+    return init_str
+
+
+def get_goal_str(task: Task) -> str:
+    """Returns the goal string of a PDDL task."""
+    _, problem = parse_task(task)
+    # Create the goal string.
+    goal_strs = [pred_to_str(p) for p in problem.goal]
+    goal_str = "\n".join(goal_strs)
+    return goal_str

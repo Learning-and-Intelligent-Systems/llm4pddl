@@ -1,10 +1,11 @@
 """Create a table summarizing results saved to a directory."""
 
 import argparse
+import functools
 import glob
 import pickle
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Set, Tuple
+from typing import Any, Callable, Dict, Set, Tuple
 
 import numpy as np
 import pandas as pd
@@ -18,10 +19,45 @@ def _get_approach_id(metrics: TaskMetrics) -> str:
     return "no-id-" + metrics["approach"]
 
 
-_DERIVED_COLS: Dict[str, Callable[[TaskMetrics], Any]] = {
-    "success": lambda d: float(d["result"] == "success"),
-    "approach_id": _get_approach_id
-}
+@functools.lru_cache(maxsize=None)
+def _get_success_task_ids(results_dir: str) -> Set[str]:
+    initial_derived_cols = _create_derived_cols(results_dir,
+                                                include_success_metrics=False)
+    raw_results = _load_results(results_dir, derived_cols=initial_derived_cols)
+    all_task_ids = set(raw_results.task_id)
+    # Tasks where at least one approach failed.
+    some_failed_task_ids = set(raw_results[raw_results.success < 1].task_id)
+    # Tasks where all approaches succeeded.
+    all_succeeded_task_ids = all_task_ids - some_failed_task_ids
+    return all_succeeded_task_ids
+
+
+def _create_success_metric(results_dir: str,
+                           metric_name: str) -> Callable[[TaskMetrics], Any]:
+    success_task_ids = _get_success_task_ids(results_dir)
+
+    def _get_success_metric(metrics: TaskMetrics) -> float:
+        if metrics["task_id"] not in success_task_ids:
+            return 0.0  # default to 0
+        return metrics[metric_name]
+
+    return _get_success_metric
+
+
+def _create_derived_cols(
+    results_dir: str,
+    include_success_metrics: bool = True
+) -> Dict[str, Callable[[TaskMetrics], Any]]:
+    derived_cols = {
+        "success": lambda d: float(d["result"] == "success"),
+        "approach_id": _get_approach_id,
+    }
+    if include_success_metrics:
+        derived_cols["success_nodes_created"] = _create_success_metric(
+            results_dir, "nodes_created")
+        derived_cols["success_nodes_expanded"] = _create_success_metric(
+            results_dir, "nodes_expanded")
+    return derived_cols
 
 
 def _main() -> None:
@@ -32,23 +68,27 @@ def _main() -> None:
     args = parser.parse_args()
     if args.a_dir:
         assert args.b_dir
-        a_summary = _create_summary_table(_load_results(args.a_dir),
+        a_derived_cols = _create_derived_cols(args.a_dir)
+        a_results = _load_results(args.a_dir, derived_cols=a_derived_cols)
+        a_summary = _create_summary_table(a_results,
                                           verbose=False,
                                           save_summary=False)
-        b_summary = _create_summary_table(_load_results(args.b_dir),
+        b_derived_cols = _create_derived_cols(args.b_dir)
+        b_results = _load_results(args.b_dir, derived_cols=b_derived_cols)
+        b_summary = _create_summary_table(b_results,
                                           verbose=False,
                                           save_summary=False)
         _summarize_diff(a_summary, b_summary)
     else:
-        _create_summary_table(_load_results(args.results_dir))
+        derived_cols = _create_derived_cols(args.results_dir)
+        results = _load_results(args.results_dir, derived_cols)
+        _create_summary_table(results)
 
 
 def _load_results(
     results_dir: str,
-    derived_cols: Optional[Dict[str, Callable[[TaskMetrics], Any]]] = None
+    derived_cols: Dict[str, Callable[[TaskMetrics], Any]],
 ) -> pd.DataFrame:
-    if derived_cols is None:
-        derived_cols = _DERIVED_COLS
     all_data = []
     git_commit_hashes = set()
     for filepath in sorted(glob.glob(f"{results_dir}/*")):
@@ -110,7 +150,10 @@ def _create_summary_table(raw_results: pd.DataFrame,
         print("\n\nAGGREGATED DATA OVER EVAL TASKS AND SEEDS:")
         summary = summary.reset_index()
         envs = summary.env.unique()
-        metrics = ["nodes_created", "nodes_expanded", "success", "num_seeds"]
+        metrics = [
+            "success_nodes_created", "success_nodes_expanded", "success",
+            "num_seeds"
+        ]
         # env -> approach X metric -> value
         reshaped_data: Dict[str, Dict[Tuple[str, str],
                                       float]] = {env: {}

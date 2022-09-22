@@ -3,7 +3,9 @@
 from llm4pddl.approaches.base_approach import BaseApproach
 from llm4pddl.approaches.llm_open_loop_approach import LLMOpenLoopApproach
 from llm4pddl.approaches.llm_planning_approach import LLMPlanningApproach
+from llm4pddl.approaches.manual_planning_approach import ManualPlanningApproach
 from llm4pddl.approaches.pure_planning_approach import PurePlanningApproach
+from llm4pddl.approaches.random_actions_approach import RandomActionsApproach
 from llm4pddl.flags import FLAGS
 
 
@@ -23,4 +25,8 @@ def create_approach(approach_name: str) -> BaseApproach:
         return LLMPlanningApproach(
             num_completions=FLAGS.llm_multi_num_completions,
             temperature=FLAGS.llm_multi_temperature)
+    if approach_name == "manual-planning":
+        return ManualPlanningApproach()
+    if approach_name == "random-actions":
+        return RandomActionsApproach()
     raise NotImplementedError(f"Unrecognized approach name: {approach_name}")

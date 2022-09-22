@@ -17,6 +17,7 @@ def test_llm_planning_planning_approach():
     utils.reset_flags({
         "llm_cache_dir": cache_dir,
         "num_train_tasks": 1,
+        "num_prompt_tasks": 1,
         "num_eval_tasks": 1,
         "train_task_offset": 0,
         "llm_model_name": "code-davinci-002",  # should not matter for test
@@ -25,6 +26,8 @@ def test_llm_planning_planning_approach():
         "llm_multi_num_completions": 5,
         "llm_multi_temperature": 0.5,
         "llm_prompt_method": "standard",
+        "llm_autoregressive_prompting": False,
+        "llm_use_random_plans": False,
         "llm_plan_guidance_method": "init-queue-continue",
         "planner": "pyperplan",
         "data_gen_planner": "pyperplan",
@@ -59,7 +62,7 @@ def test_llm_planning_planning_approach():
     ideal_response = "\n".join(plan)
     # Add an empty line to the ideal response, should be no problem.
     ideal_response = "\n" + ideal_response
-    llm.response = ideal_response
+    llm.responses = [ideal_response]
     # Run the approach.
     plan, ideal_metrics = approach.solve(task)
     assert utils.validate_plan(task, plan)
@@ -67,7 +70,7 @@ def test_llm_planning_planning_approach():
 
     # If the LLM response is garbage, we should still find a plan that achieves
     # the goal, because we will just fall back to regular planning.
-    llm.response = "garbage"
+    llm.responses = ["garbage"]
     plan, worst_case_metrics = approach.solve(task)
     assert utils.validate_plan(task, plan)
     assert worst_case_metrics["nodes_expanded"] > 1
@@ -82,7 +85,7 @@ def test_llm_planning_planning_approach():
 
     # If the LLM response is almost perfect, it should be very helpful for
     # planning guidance.
-    llm.response = "\n".join(ideal_response.split("\n")[:-1])
+    llm.responses = ["\n".join(ideal_response.split("\n")[:-1])]
     plan, almost_ideal_metrics = approach.solve(task)
     assert utils.validate_plan(task, plan)
     worst_case_nodes = worst_case_metrics["nodes_expanded"]
@@ -90,6 +93,38 @@ def test_llm_planning_planning_approach():
     ideal_nodes = ideal_metrics["nodes_expanded"]
     assert worst_case_nodes > almost_ideal_nodes
     assert almost_ideal_nodes > ideal_nodes
+
+    # If the "LLM response" is actually a length-zero random partial plan,
+    # it should be equivalent to the worst case garbage response.
+    utils.reset_flags({
+        "llm_cache_dir": cache_dir,
+        "num_train_tasks": 1,
+        "num_eval_tasks": 1,
+        "train_task_offset": 0,
+        "llm_use_random_plans": True,  # note!
+        "llm_prompt_method": "standard",
+        "llm_autoregressive_prompting": False,
+        "llm_autoregress_max_loops": 100,
+        "llm_use_cache_only": False,
+        "llm_plan_guidance_method": "init-queue-continue",
+        "planner": "pyperplan",
+        "data_gen_planner": "pyperplan",
+        "data_gen_method": "planning",
+        "planning_timeout": 100,
+        "llm_prompt_flatten_pddl": False,
+        "use_dynamic_examples": False,
+        "data_dir": data_dir,
+        "load_data": False,
+        "embedding_model_name": "paraphrase-MiniLM-L6-v2"
+    })
+    # Set up a mock LLM because we use the length of the LLM response to
+    # determine the number of random actions to use.
+    llm = _MockLLM()
+    approach._llm = llm  # pylint: disable=protected-access
+    llm.responses = []
+    plan, random_case_metrics = approach.solve(task)
+    assert utils.validate_plan(task, plan)
+    assert random_case_metrics["nodes_expanded"] > 1
 
     shutil.rmtree(cache_dir)
     shutil.rmtree(data_dir)

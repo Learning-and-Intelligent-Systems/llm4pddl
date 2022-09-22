@@ -1,6 +1,7 @@
 """Test cases for LLM approaches."""
 
 import shutil
+from typing import List
 
 import numpy as np
 import pytest
@@ -11,12 +12,9 @@ from llm4pddl import utils
 from llm4pddl.approaches import create_approach
 from llm4pddl.approaches.llm_open_loop_approach import LLMOpenLoopApproach
 from llm4pddl.dataset import create_dataset
-from llm4pddl.envs import ALL_ENVS, create_env
+from llm4pddl.envs import create_env
 from llm4pddl.llm_interface import LargeLanguageModel
 from llm4pddl.structs import Datum, LLMResponse
-
-# Wrap text responses into LLMResponses with dummy entries.
-wrap_response = lambda text: LLMResponse("", text, [], [], {}, {})
 
 # Create a mock LLM so that we can control the outputs.
 
@@ -24,22 +22,47 @@ wrap_response = lambda text: LLMResponse("", text, [], [], {}, {})
 class _MockLLM(LargeLanguageModel):
 
     def __init__(self):
-        self.response = None
+        self.responses = []
 
     def get_id(self):
-        return f"dummy-{hash(self.response)}"
+        responses = "-".join(self.responses)
+        return f"dummy-{hash(responses)}"
 
     def _sample_completions(self,
                             prompt,
                             temperature,
                             seed,
+                            stop_token,
                             num_completions=1):
         del prompt, temperature, seed, num_completions  # unused
-        response = wrap_response(self.response)
+        if not self.responses:
+            return []
+        next_response = self.responses.pop(0)
+        if stop_token in next_response:
+            next_response, _ = next_response.split(stop_token, 1)
+        response = LLMResponse("", next_response, [], [], {}, {})
         return [response]
 
+    def sample_completions(self,
+                           prompt: str,
+                           temperature: float,
+                           seed: int,
+                           stop_token: str,
+                           num_completions: int = 1,
+                           disable_cache: bool = False) -> List[LLMResponse]:
+        # Always disable the cache for tests.
+        del disable_cache
+        return super().sample_completions(prompt,
+                                          temperature,
+                                          seed,
+                                          stop_token,
+                                          num_completions,
+                                          disable_cache=True)
 
-@pytest.mark.parametrize('env_name', ALL_ENVS)
+
+@pytest.mark.parametrize(
+    'env_name',
+    ["pyperplan-blocks", "custom-easy_spanner", "pyperplan-woodworking"])
 def test_llm_standard_approach(env_name):
     """Tests for the LLM standard approach."""
     cache_dir = "_fake_llm_cache_dir"
@@ -47,6 +70,7 @@ def test_llm_standard_approach(env_name):
     utils.reset_flags({
         "llm_cache_dir": cache_dir,
         "num_train_tasks": 1,
+        "num_prompt_tasks": 1,
         "num_eval_tasks": 1,
         "train_task_offset": 0,
         "llm_model_name": "code-davinci-002",  # should not matter for test
@@ -58,6 +82,8 @@ def test_llm_standard_approach(env_name):
         "data_gen_method": "planning",
         "planning_timeout": 100,
         "llm_prompt_flatten_pddl": False,
+        "llm_autoregressive_prompting": False,
+        "llm_use_random_plans": False,
         "use_dynamic_examples": False,
         "data_dir": data_dir,
         "load_data": False,
@@ -84,11 +110,78 @@ def test_llm_standard_approach(env_name):
     ideal_response = "\n".join(plan)
     # Add an empty line to the ideal response, should be no problem.
     ideal_response = "\n" + ideal_response
-    llm.response = ideal_response
+    llm.responses = [ideal_response]
     # Run the approach.
     plan, _ = approach.solve(task)
     assert utils.validate_plan(task, plan)
 
+    shutil.rmtree(cache_dir)
+    shutil.rmtree(data_dir)
+
+
+def test_autoregressive_prompting():
+    """Tests for the LLM standard approach with autoregressive prompting."""
+    cache_dir = "_fake_llm_cache_dir"
+    data_dir = "_fake_data_dir"
+    env_name = "pyperplan-blocks"
+    utils.reset_flags({
+        "llm_cache_dir": cache_dir,
+        "num_train_tasks": 1,
+        "num_prompt_tasks": 1,
+        "num_eval_tasks": 1,
+        "train_task_offset": 0,
+        "llm_model_name": "code-davinci-002",  # should not matter for test
+        "llm_use_cache_only": False,
+        "llm_max_total_tokens": 700,
+        "llm_prompt_method": "standard",
+        "planner": "pyperplan",
+        "data_gen_planner": "pyperplan",
+        "data_gen_method": "planning",
+        "planning_timeout": 100,
+        "llm_prompt_flatten_pddl": False,
+        "llm_autoregressive_prompting": True,
+        "llm_use_random_plans": False,
+        "llm_autoregress_max_loops": 25,
+        "use_dynamic_examples": False,
+        "data_dir": data_dir,
+        "load_data": False,
+        "embedding_model_name": "paraphrase-MiniLM-L6-v2"
+    })
+    env = create_env(env_name)
+    train_tasks = env.get_train_tasks()
+    approach = create_approach("llm-standard")
+    assert approach.get_name() == "llm-open-loop"
+    assert approach.is_learning_based
+    assert not approach.is_planning_based
+    # Test "learning", i.e., constructing the prompt prefix.
+    dataset = create_dataset(train_tasks)
+    assert not approach._prompt_prefix  # pylint: disable=protected-access
+    approach.train(dataset)
+    assert approach._prompt_prefix  # pylint: disable=protected-access
+    llm = _MockLLM()
+    approach._llm = llm  # pylint: disable=protected-access
+    # Test successful usage, where the LLM output corresponds to a plan.
+    task_idx = 0
+    task = train_tasks[task_idx]
+    ideal_plan, _ = utils.run_planning(task)
+    llm.responses = list(ideal_plan)
+    plan, _ = approach.solve(task)
+    assert utils.validate_plan(task, plan)
+    # Test successful usage, where the LLM output is very close to a plan.
+    llm.responses = list(ideal_plan)
+    assert llm.responses[0] == "(unstack b c)"
+    llm.responses[0] = "(unstck b c)"
+    plan, _ = approach.solve(task)
+    assert plan[0] == "(unstack b c)"
+    assert utils.validate_plan(task, plan)
+    # Test failure, where the LLM output is trivial.
+    llm.responses = [f"\n{utils.LLM_QUESTION_TOKEN} garbage"]
+    plan, _ = approach.solve(task)
+    assert plan is None
+    # Test failure, where the LLM output is insufficient.
+    llm.responses = [ideal_plan[0][:-1]]
+    plan, _ = approach.solve(task)
+    assert plan is None
     shutil.rmtree(cache_dir)
     shutil.rmtree(data_dir)
 
@@ -102,6 +195,7 @@ def test_llm_standard_approach_failure_cases(llm_prompt_method):
     utils.reset_flags({
         "llm_cache_dir": cache_dir,
         "num_train_tasks": 1,
+        "num_prompt_tasks": 1,
         "num_eval_tasks": 1,
         "train_task_offset": 0,
         "llm_model_name": "code-davinci-002",  # should not matter for test
@@ -110,6 +204,8 @@ def test_llm_standard_approach_failure_cases(llm_prompt_method):
         "llm_multi_num_completions": 5,
         "llm_multi_temperature": 0.5,
         "llm_prompt_method": llm_prompt_method,
+        "llm_autoregressive_prompting": False,
+        "llm_use_random_plans": False,
         "planner": "pyperplan",
         "data_gen_planner": "pyperplan",
         "data_gen_method": "planning",
@@ -134,41 +230,41 @@ def test_llm_standard_approach_failure_cases(llm_prompt_method):
     ideal_response = "\n".join(ideal_plan)
 
     # Test general approach failure.
-    llm.response = "garbage"
+    llm.responses = ["garbage"]
     plan, _ = approach.solve(task)
     assert plan is None
 
     # Test failure cases of _llm_response_to_plan().
-    assert approach._llm_response_to_plan(wrap_response(ideal_response), task)  # pylint: disable=protected-access
+    assert approach._llm_response_to_plan(ideal_response, task)  # pylint: disable=protected-access
     # Cases where a line contains malformed parentheses.
     response = "()\n" + ideal_response  # should be skipped
-    plan = approach._llm_response_to_plan(wrap_response(response), task)  # pylint: disable=protected-access
+    plan = approach._llm_response_to_plan(response, task)  # pylint: disable=protected-access
     assert len(plan) == len(ideal_plan)
     response = ")(\n" + ideal_response  # should not parse any plan
-    plan = approach._llm_response_to_plan(wrap_response(response), task)  # pylint: disable=protected-access
+    plan = approach._llm_response_to_plan(response, task)  # pylint: disable=protected-access
     assert not plan
     # Case where there is an unmatched left parenthesis.
     response = ideal_response + "\n("  # should be skipped
-    plan = approach._llm_response_to_plan(wrap_response(response), task)  # pylint: disable=protected-access
+    plan = approach._llm_response_to_plan(response, task)  # pylint: disable=protected-access
     assert len(plan) == len(ideal_plan)
     # Case where object names are incorrect.
     assert "(up f0 f1)" in ideal_response
     response = ideal_response.replace("(up f0 f1)", "(up dummy f1)")
-    plan = approach._llm_response_to_plan(wrap_response(response), task)  # pylint: disable=protected-access
+    plan = approach._llm_response_to_plan(response, task)  # pylint: disable=protected-access
     assert len(plan) == len(ideal_plan) - 1
     # Case where operator names are incorrect.
     response = ideal_response.replace("(up f0 f1)", "(up-dummy f0 f1)")
-    plan = approach._llm_response_to_plan(wrap_response(response), task)  # pylint: disable=protected-access
+    plan = approach._llm_response_to_plan(response, task)  # pylint: disable=protected-access
     assert len(plan) == len(ideal_plan) - 1
     # Cases where the type signature of the operator is wrong.
     response = ideal_response.replace("(up f0 f1)", "(up f0)")
-    plan = approach._llm_response_to_plan(wrap_response(response), task)  # pylint: disable=protected-access
+    plan = approach._llm_response_to_plan(response, task)  # pylint: disable=protected-access
     assert len(plan) == len(ideal_plan) - 1
     response = ideal_response.replace("(up f0 f1)", "(up p0 f1)")
-    plan = approach._llm_response_to_plan(wrap_response(response), task)  # pylint: disable=protected-access
+    plan = approach._llm_response_to_plan(response, task)  # pylint: disable=protected-access
     assert len(plan) == len(ideal_plan) - 1
     response = ideal_response.replace("(up f0 f1)", "(up f0 f1 f1)")
-    plan = approach._llm_response_to_plan(wrap_response(response), task)  # pylint: disable=protected-access
+    plan = approach._llm_response_to_plan(response, task)  # pylint: disable=protected-access
     assert len(plan) == len(ideal_plan) - 1
 
     shutil.rmtree(cache_dir)
@@ -209,7 +305,7 @@ def test_llm_standard_approach_dynamic_small_example():
     """Test for LLM standard approach using dynamic examples."""
     cache_dir = "_fake_llm_cache_dir"
     llm = _MockLLM()
-    llm.response = 'doesnt matter'
+    llm.responses = ["doesnt matter"]
     dataset = [
         Datum(
             utils.get_task_from_dir(utils.CUSTOM_BENCHMARK_DIR / 'dressed', 1),
@@ -218,11 +314,14 @@ def test_llm_standard_approach_dynamic_small_example():
     utils.reset_flags({
         "llm_cache_dir": cache_dir,
         "num_train_tasks": 1,
+        "num_prompt_tasks": 1,
         "num_eval_tasks": 1,
         "llm_model_name": "code-davinci-002",
         "llm_max_total_tokens": 700,
         "llm_multi_temperature": 0.3,
         "llm_prompt_method": "standard",
+        "llm_autoregressive_prompting": False,
+        "llm_use_random_plans": False,
         "planning_timeout": 100,
         "llm_prompt_flatten_pddl": True,
         "use_dynamic_examples": False,  # this is the only one that differs
@@ -237,11 +336,14 @@ def test_llm_standard_approach_dynamic_small_example():
     utils.reset_flags({
         "llm_cache_dir": cache_dir,
         "num_train_tasks": 1,
+        "num_prompt_tasks": 1,
         "num_eval_tasks": 1,
         "llm_model_name": "code-davinci-002",
         "llm_max_total_tokens": 700,
         "llm_multi_temperature": 0.3,
         "llm_prompt_method": "standard",
+        "llm_autoregressive_prompting": False,
+        "llm_use_random_plans": False,
         "planning_timeout": 100,
         "llm_prompt_flatten_pddl": True,
         "use_dynamic_examples": True,  # this is the only one that differs
@@ -267,7 +369,7 @@ def test_llm_standard_approach_dynamic_big_example():
     """Test for LLM standard approach using dynamic examples."""
     cache_dir = "_fake_llm_cache_dir"
     llm = _MockLLM()
-    llm.response = 'doesnt matter'
+    llm.responses = ["doesnt matter"]
     dataset = [
         Datum(
             utils.get_task_from_dir(utils.PYPERPLAN_BENCHMARK_DIR / 'blocks',
@@ -277,11 +379,14 @@ def test_llm_standard_approach_dynamic_big_example():
     utils.reset_flags({
         "llm_cache_dir": cache_dir,
         "num_train_tasks": 30,
+        "num_prompt_tasks": 30,
         "num_eval_tasks": 1,
         "llm_model_name": "code-davinci-002",
         "llm_max_total_tokens": 700,
         "llm_multi_temperature": 0.3,
         "llm_prompt_method": "standard",
+        "llm_autoregressive_prompting": False,
+        "llm_use_random_plans": False,
         "planning_timeout": 100,
         "llm_prompt_flatten_pddl": True,
         "use_dynamic_examples": False,  # this is the only one that differs
@@ -296,11 +401,14 @@ def test_llm_standard_approach_dynamic_big_example():
     utils.reset_flags({
         "llm_cache_dir": cache_dir,
         "num_train_tasks": 30,
+        "num_prompt_tasks": 30,
         "num_eval_tasks": 1,
         "llm_model_name": "code-davinci-002",
         "llm_max_total_tokens": 700,
         "llm_multi_temperature": 0.3,
         "llm_prompt_method": "standard",
+        "llm_autoregressive_prompting": False,
+        "llm_use_random_plans": False,
         "planning_timeout": 100,
         "llm_prompt_flatten_pddl": True,
         "use_dynamic_examples": True,  # this is the only one that differs
@@ -331,6 +439,7 @@ def test_llm_multi_approach():
     utils.reset_flags({
         "llm_cache_dir": cache_dir,
         "num_train_tasks": 1,
+        "num_prompt_tasks": 1,
         "num_eval_tasks": 1,
         "train_task_offset": 0,
         "llm_model_name": "code-davinci-002",  # should not matter for test
@@ -338,6 +447,8 @@ def test_llm_multi_approach():
         "llm_multi_temperature": 0.3,
         "llm_multi_num_completions": 3,
         "llm_prompt_method": "standard",
+        "llm_autoregressive_prompting": False,
+        "llm_use_random_plans": False,
         "llm_prompt_flatten_pddl": False,
         "embedding_model_name": "paraphrase-MiniLM-L6-v2",
         "use_random_object_names": False
@@ -356,7 +467,9 @@ def test_embed_tasks():
         "embedding_model_name": "paraphrase-MiniLM-L6-v2",
         "llm_prompt_flatten_pddl": True,
         "llm_model_name": "davinci-002",
-        "llm_prompt_method": "standard"
+        "llm_prompt_method": "standard",
+        "llm_autoregressive_prompting": False,
+        "llm_use_random_plans": False,
     })
     approach: LLMOpenLoopApproach = create_approach('llm-standard')
     tasks = [
@@ -364,9 +477,12 @@ def test_embed_tasks():
         for i in range(1, 2)
     ]
     for j, emb in enumerate(approach._embed_tasks(tasks)):  # pylint: disable=protected-access
-        assert np.all(emb == approach._embed_task(  # pylint: disable=protected-access
+        assert np.all(emb['init'] == approach._embed_task(  # pylint: disable=protected-access
             utils.get_task_from_dir(utils.CUSTOM_BENCHMARK_DIR / 'dressed', j +
-                                    1)))
+                                    1))['init'])
+        assert np.all(emb['goal'] == approach._embed_task(  # pylint: disable=protected-access
+            utils.get_task_from_dir(utils.CUSTOM_BENCHMARK_DIR / 'dressed', j +
+                                    1))['goal'])
 
 
 def test_embed_task():
@@ -376,14 +492,19 @@ def test_embed_task():
         "llm_prompt_flatten_pddl": True,
         "llm_model_name": "davinci-002",
         "llm_prompt_method": "standard",
+        "llm_autoregressive_prompting": False,
+        "llm_use_random_plans": False,
     })
     approach: LLMOpenLoopApproach = create_approach('llm-standard')
     embedding_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
     task01 = utils.get_task_from_dir(utils.CUSTOM_BENCHMARK_DIR / 'dressed', 1)
     embedding1 = approach._embed_task(task01)  # pylint: disable=protected-access
-    task_string = approach._create_prompt(task01)  # pylint: disable=protected-access
-    embedding2 = embedding_model.encode(task_string)
-    assert np.all(embedding1 == embedding2)
+    goal_string = utils.get_goal_str(task01)
+    init_string = utils.get_init_str(task01)
+    goal_embedding2 = embedding_model.encode(goal_string)
+    init_embedding2 = embedding_model.encode(init_string)
+    assert np.all(embedding1['goal'] == goal_embedding2)
+    assert np.all(embedding1['init'] == init_embedding2)
 
 
 def test_make_embeddings_mapping():
@@ -394,6 +515,16 @@ def test_make_embeddings_mapping():
     })
     approach: LLMOpenLoopApproach = create_approach('llm-standard')
     embeddings = [[0.5], [0.1], [0.2]]
+    embeddings = [{
+        'init': [0.5],
+        'goal': [0]
+    }, {
+        'init': [0.1],
+        'goal': [0]
+    }, {
+        'init': [0.2],
+        'goal': [0.3]
+    }]
     tasks = [
         utils.get_task_from_dir(utils.CUSTOM_BENCHMARK_DIR / 'dressed', i)
         for i in range(1, 4)
@@ -401,8 +532,9 @@ def test_make_embeddings_mapping():
     dataset = [Datum(task, ['insert plan here']) for task in tasks]
     mapping = approach._make_embeddings_mapping(embeddings, dataset)  # pylint: disable=protected-access
     assert len(mapping) == 3
-    assert mapping[0]['embedding'] == [0.5]
-    assert mapping[1]['embedding'] == [0.1]
+    assert mapping[0]['init_emb'] == [0.5]
+    assert mapping[1]['init_emb'] == [0.1]
+    assert mapping[2]['goal_emb'] == [0.3]
     assert mapping[0]['datum'].solution == ['insert plan here']
 
 
@@ -412,7 +544,9 @@ def test_get_closest_datums():
         "llm_prompt_flatten_pddl": True,
         "embedding_model_name": "paraphrase-MiniLM-L6-v2",
         "llm_model_name": "davinci-002",
-        "llm_prompt_method": "standard"
+        "llm_prompt_method": "standard",
+        "llm_autoregressive_prompting": False,
+        "llm_use_random_plans": False,
     })
     approach: LLMOpenLoopApproach = create_approach('llm-standard')
     dressed01 = utils.get_task_from_dir(utils.CUSTOM_BENCHMARK_DIR / 'dressed',
@@ -444,7 +578,7 @@ def test_get_closest_datums():
         dressed01, embeddings_mapping, 4)
     assert len(most_similar3) == 4
     # checking that blocks is the least likely:
-    assert most_similar3[0].task == utils.get_task_from_dir(
+    assert most_similar3[-1].task == utils.get_task_from_dir(
         utils.PYPERPLAN_BENCHMARK_DIR / 'blocks', 1)
     dif_tasks = [dressed01, blocks01, depot01]
     dif_embeddings = [
@@ -481,22 +615,22 @@ def test_get_closest_datums():
     most_similar_dressed = approach._get_closest_datums(  # pylint: disable=protected-access
         dressed01, big_emb_map, 9)
     assert len(most_similar_dressed) == len(big_tasks)
-    for datum in most_similar_dressed[-3:]:
+    for datum in most_similar_dressed[:3]:
         assert datum.task in dressed
 
     # comparing to blocks:
     most_similar_blocks = approach._get_closest_datums(  # pylint: disable=protected-access
         blocks01, big_emb_map, 9)
-    for datum in most_similar_blocks[-3:]:
+    for datum in most_similar_blocks[:3]:
         assert datum.task in blocks
 
     # comparing to depot:
     most_similar_depot = approach._get_closest_datums(depot01, big_emb_map, 9)  # pylint: disable=protected-access
-    for datum in most_similar_depot[-3:]:
+    for datum in most_similar_depot[:3]:
         assert datum.task in depot
 
     # proving identical is considered best:
-    most_sim = approach._get_closest_datums(blocks02, big_emb_map, 9)[-1]  # pylint: disable=protected-access
+    most_sim = approach._get_closest_datums(blocks02, big_emb_map, 9)[0]  # pylint: disable=protected-access
     assert most_sim.task == utils.get_task_from_dir(
         utils.PYPERPLAN_BENCHMARK_DIR / 'blocks', 2)
     # example to compare within a specific domain.

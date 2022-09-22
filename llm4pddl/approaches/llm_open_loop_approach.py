@@ -1,5 +1,6 @@
 """An approach that use a large language model to solve tasks."""
 
+import functools
 import logging
 from typing import Dict, List, Optional, Tuple
 
@@ -11,8 +12,8 @@ from llm4pddl import utils
 from llm4pddl.approaches.base_approach import BaseApproach
 from llm4pddl.flags import FLAGS
 from llm4pddl.llm_interface import OpenAILLM
-from llm4pddl.structs import Any, Dataset, Datum, Embedding, LLMResponse, \
-    Plan, PyperplanObject, PyperplanType, Task, TaskMetrics
+from llm4pddl.structs import Any, Dataset, Datum, Embedding, Plan, \
+    PyperplanObject, PyperplanType, Task, TaskMetrics
 
 
 class LLMOpenLoopApproach(BaseApproach):
@@ -27,8 +28,9 @@ class LLMOpenLoopApproach(BaseApproach):
         # Set after learning.
         self._prompt_prefix = ""
         # _list_embeddings_mapping is a list of dictionaries of the form
-        # {'embedding': Embedding, 'datum': Datum}, representing a Datum
-        # in the training set and that datum's task string's embedding.
+        # {'init_emb': Embedding, 'datum': Datum, 'goal_emb: Embedding},
+        # representing a Datum in the training set and that datum's
+        # init string embedding and goal string embedding.
         self._list_embeddings_mapping: List[Dict[str, Any]] = []
         self._embedding_model = SentenceTransformer(FLAGS.embedding_model_name)
 
@@ -51,12 +53,42 @@ class LLMOpenLoopApproach(BaseApproach):
             self._create_prompt_prefix(closest_datums)
         prompt = self._prompt_prefix + new_prompt
         logging.debug(f"Querying with prompt suffix:\n{new_prompt}")
-        responses = self._llm.sample_completions(
-            prompt=prompt,
-            temperature=self._temperature,
-            seed=FLAGS.seed,
-            num_completions=self._num_completions)
-        return self._llm_responses_to_plan(responses, task)
+        partial_plans = []
+        if FLAGS.llm_autoregressive_prompting:
+            assert not FLAGS.llm_use_random_plans
+            # Since auto-regressive prompting will lead to divergent queries,
+            # we need to just prompt separately once per num_completions.
+            # Furthermore, to get variance, we need to disable the cache.
+            disable_cache = (self._num_completions > 1)
+            for _ in range(self._num_completions):
+                plan = self._prompt_autoregressive(prompt, task, disable_cache)
+                partial_plans.append(plan)
+        elif FLAGS.llm_use_random_plans:
+            # An ablation where we sample random plans instead of querying
+            # the LLM. For apples-to-apples comparing, we get the length of
+            # the plan output by the main llm-standard method and then get
+            # a random plan of the same length.
+            autoregressive_plan = self._prompt_autoregressive(
+                prompt, task, disable_cache=False)
+            max_steps = len(autoregressive_plan)
+            for _ in range(self._num_completions):
+                plan = utils.get_random_partial_plan(task, self._rng,
+                                                     max_steps)
+                partial_plans.append(plan)
+        else:
+            responses = self._llm.sample_completions(
+                prompt=prompt,
+                temperature=self._temperature,
+                seed=FLAGS.seed,
+                stop_token=utils.LLM_QUESTION_TOKEN,  # start of next question
+                num_completions=self._num_completions)
+            # Turn each response into a sequence of actions.
+            for response in responses:
+                response_text = response.response_text
+                logging.debug(f"Processing response:\n{response_text}")
+                partial_plan = self._llm_response_to_plan(response_text, task)
+                partial_plans.append(partial_plan)
+        return self._solve_from_partial_plans(partial_plans, task)
 
     def train(self, dataset: Dataset) -> None:
         self._create_prompt_prefix(dataset, FLAGS.use_random_object_names)
@@ -72,8 +104,14 @@ class LLMOpenLoopApproach(BaseApproach):
             self,
             dataset: Dataset,
             use_random_object_names: Optional[bool] = False) -> None:
+        """Creates prompt prefix for the approach.
+
+        As of now, the 'best' example in  dynamic is used first in the
+        prompt, not last.
+        """
         prompts = []
-        for datum in dataset:
+        prompt_dataset = dataset[:FLAGS.num_prompt_tasks]
+        for datum in prompt_dataset:
             if use_random_object_names:
                 prompt = self._create_prompt(datum.task, datum.solution,
                                              self._rng)
@@ -126,11 +164,9 @@ class LLMOpenLoopApproach(BaseApproach):
             solution_str = utils.LLM_ANSWER_TOKEN + "\n" + plan_str
         if FLAGS.llm_prompt_method == "standard":
             # Create the init string.
-            init_strs = [utils.pred_to_str(p) for p in problem.initial_state]
-            init_str = "\n".join(init_strs)
+            init_str = utils.get_init_str(task)
             # Create the goal string.
-            goal_strs = [utils.pred_to_str(p) for p in problem.goal]
-            goal_str = "\n".join(goal_strs)
+            goal_str = utils.get_goal_str(task)
         else:
             assert FLAGS.llm_prompt_method == "group-by-predicate"
             # Create the init string.
@@ -158,21 +194,21 @@ class LLMOpenLoopApproach(BaseApproach):
             prompt = utils.replace_with_random_objects(prompt, objs_dict)
         return prompt
 
-    def _llm_responses_to_plan(
-            self, responses: List[LLMResponse],
+    def _solve_from_partial_plans(
+            self, partial_plans: List[Plan],
             task: Task) -> Tuple[Optional[Plan], TaskMetrics]:
         # Return the first plan that succeeds. Subclasses may override.
         # By default, this class doesn't plan, so there are no metrics.
         metrics: TaskMetrics = {}
-        for response in responses:
-            logging.debug(f"Processing response:\n{response.response_text}")
-            plan = self._llm_response_to_plan(response, task)
+        for plan in partial_plans:
             if utils.validate_plan(task, plan):
                 return plan, metrics
         return None, metrics
 
     @staticmethod
-    def _llm_response_to_plan(response: LLMResponse, task: Task) -> Plan:
+    def _llm_response_to_plan(response_text: str,
+                              task: Task,
+                              disable_name_checks: bool = False) -> Plan:
         # We assume the LLM's output is such that each line contains
         # (operator-name object1-name object2-name ...) with optional
         # whitespace allowed everywhere. Furthermore, the signature of the
@@ -184,7 +220,10 @@ class LLMOpenLoopApproach(BaseApproach):
         object_names = set(problem.objects) | set(domain.constants)
         obj_to_type = {**problem.objects, **domain.constants}
         plan: Plan = []
-        unparsed = response.response_text
+        unparsed = response_text
+        # Make sure we don't go past the next question.
+        if utils.LLM_QUESTION_TOKEN in unparsed:
+            unparsed, _ = unparsed.split(utils.LLM_QUESTION_TOKEN, 1)
         while "(" in unparsed:
             left_parens_idx = unparsed.index("(")
             # If there is no matching ), the response is malformed.
@@ -205,34 +244,120 @@ class LLMOpenLoopApproach(BaseApproach):
             # If there's nothing in between, the response is malformed.
             if not words:
                 continue
-            # The first word should be an operator.
             op, objects = words[0], words[1:]
-            if op not in operator_names:
-                continue
-            # The remaining words should be objects.
-            if any(o not in object_names for o in objects):
-                continue
-            # The signature of the objects should match that of the operator.
-            op_sig = [t for _, (t, ) in domain.actions[op].signature]
-            objs_sig = [obj_to_type[o] for o in objects]
-            if len(op_sig) != len(objs_sig) or not all(
-                    utils.is_subtype(t1, t2)
-                    for (t1, t2) in zip(objs_sig, op_sig)):
-                continue
+            if not disable_name_checks:
+                # The first word should be an operator.
+                if op not in operator_names:
+                    continue
+                # The remaining words should be objects.
+                if any(o not in object_names for o in objects):
+                    continue
+                # The signature of the objects should match the operator.
+                op_sig = [t for _, (t, ) in domain.actions[op].signature]
+                objs_sig = [obj_to_type[o] for o in objects]
+                if len(op_sig) != len(objs_sig) or not all(
+                        utils.is_subtype(t1, t2)
+                        for (t1, t2) in zip(objs_sig, op_sig)):
+                    continue
             # Otherwise, we found a good plan step.
             objects_str = " ".join(objects)
             action = f"({op} {objects_str})"
             plan.append(action)
         return plan
 
-    def _embed_task(self, task: Task) -> Embedding:
+    def _prompt_autoregressive(self,
+                               prompt: str,
+                               task: Task,
+                               disable_cache: bool = False) -> Plan:
+        """Prompt the LLM for one action at a time."""
+        pyperplan_task = utils.get_pyperplan_task(task)
+        ground_ops = {o.name: o for o in pyperplan_task.operators}
+        # Loop until the next question token is reached, or an invalid response
+        # is returned. Note that this will terminate at most when the maximum
+        # token length is reached, in which case an empty (invalid) response
+        # will be returned by the LLM.
+        plan: Plan = []
+        current_facts = pyperplan_task.initial_state
+        sep = "" if FLAGS.llm_prompt_flatten_pddl else "\n"
+        for _ in range(FLAGS.llm_autoregress_max_loops):
+            # Note: since the prompts are potentially different, we have to
+            # query the LLM once per num_completion.
+            responses = self._llm.sample_completions(
+                prompt=prompt,
+                temperature=self._temperature,
+                seed=FLAGS.seed,
+                stop_token=")",  # end of the action
+                num_completions=1,  # num_completions handled in outer loop
+                disable_cache=disable_cache)
+            if not responses:
+                break
+            assert len(responses) == 1
+            response = responses[0].response_text + ")"
+            # Handle syntax.
+            response_plan = self._llm_response_to_plan(
+                response, task, disable_name_checks=True)
+            # No valid response from LLM, give up.
+            if not response_plan:
+                break
+            # Should be guaranteed 1 because the LLM will stop at ")".
+            assert len(response_plan) == 1
+            action_str = response_plan[0]
+            logging.debug(f"Autoregressive parsed output: {action_str}")
+            # If the action is invalid, replace it with the nearest valid one.
+            if (action_str not in ground_ops) or (
+                    not ground_ops[action_str].applicable(current_facts)):
+                # Find the nearest applicable action.
+                applicable_actions = {
+                    op
+                    for op in ground_ops
+                    if ground_ops[op].applicable(current_facts)
+                }
+                # If there's a dead end, give up. Rare.
+                if not applicable_actions:  # pragma: no cover
+                    break
+                # Find the closest next action.
+                out_emb = self._embed_str_with_cache(action_str)
+                action_to_emb = {
+                    a: self._embed_str_with_cache(a)
+                    for a in applicable_actions
+                }
+                action_to_sim = {
+                    a: self._get_cosine_sim(out_emb, act_emb)
+                    for a, act_emb in action_to_emb.items()
+                }
+                # Replace the output with the most similar applicable act.
+                new_action_str = max(applicable_actions,
+                                     key=action_to_sim.get)  # type: ignore
+                score = action_to_sim[new_action_str]
+                logging.debug(f"Replacing inapplicable {action_str} with "
+                              f"{new_action_str} (score={score})")
+                action_str = new_action_str
+            # Update the prompt with action_str. This is the autoregress.
+            prompt += sep + action_str
+            # Update the plan.
+            plan.append(action_str)
+            # Update the current facts for the next applicability checks.
+            ground_op = ground_ops[action_str]
+            current_facts = ground_op.apply(current_facts)
+            # Check for success.
+            if utils.validate_plan(task, plan, verbose=False):
+                return plan
+        # Failed.
+        failed_plan_str = "\n".join(plan)
+        logging.debug("Autoregressive prompting failed. Final failed plan: "
+                      f"{failed_plan_str}")
+        return plan
+
+    def _embed_task(self, task: Task) -> Dict[str, Embedding]:
         """Embeds a task using embedding_model."""
         # note: task_string includes the Q: and A: parts, not just task string
-        task_string = self._create_prompt(task)
-        embedding = self._embedding_model.encode(task_string)
-        return embedding
+        init_str = utils.get_init_str(task)
+        goal_str = utils.get_goal_str(task)
+        init_embedding = self._embedding_model.encode(init_str)
+        goal_embedding = self._embedding_model.encode(goal_str)
+        return {'init': init_embedding, 'goal': goal_embedding}
 
-    def _embed_tasks(self, tasks: List[Task]) -> List[Embedding]:
+    def _embed_tasks(self, tasks: List[Task]) -> List[Dict[str, Embedding]]:
         """"Embeds a list of tasks.
 
         Returns a list of embeddings with indices corresponding to its
@@ -241,12 +366,17 @@ class LLMOpenLoopApproach(BaseApproach):
         embeddings = [self._embed_task(task) for task in tasks]
         return embeddings
 
-    def _make_embeddings_mapping(self, embeddings: List[Embedding],
+    @functools.lru_cache(maxsize=None)
+    def _embed_str_with_cache(self, s: str) -> Embedding:
+        return self._embedding_model.encode(s)
+
+    def _make_embeddings_mapping(self, embeddings: List[Dict[str, Embedding]],
                                  dataset: Dataset) -> List[Dict[str, Any]]:
         """Makes embeddings mapping for training data."""
         assert len(embeddings) == len(dataset)
         return [{
-            'embedding': emb,
+            'init_emb': emb['init'],
+            'goal_emb': emb['goal'],
             'datum': datum
         } for emb, datum in zip(embeddings, dataset)]
 
@@ -254,20 +384,40 @@ class LLMOpenLoopApproach(BaseApproach):
                             embeddings_mapping: List[Dict[str, Any]],
                             num_closest: int) -> List[Datum]:
         """Returns the num_closest most similar training tasks to the task, in
-        order of from least to most similar."""
+        order of from most to least similar."""
         assert num_closest <= len(embeddings_mapping)
-        task_embedding = self._embed_task(task)
-        # now compare this embedding to all the other embeddings
-        other_embeddings = [
-            mapping['embedding'] for mapping in embeddings_mapping
+        embeddings = self._embed_task(task)
+
+        total_cos_sims = np.array(
+            [0.0 for _ in range(len(embeddings_mapping))])
+
+        # finding cos sims for init str:
+        task_init_embedding = embeddings['init']
+        other_init_embeddings = [
+            mapping['init_emb'] for mapping in embeddings_mapping
         ]
-        cos_sims = [
-            self._get_cosine_sim(task_embedding, other_emb)
-            for other_emb in other_embeddings
+        init_cos_sims = np.array([
+            self._get_cosine_sim(task_init_embedding, other_emb)
+            for other_emb in other_init_embeddings
+        ])
+        total_cos_sims += init_cos_sims
+
+        # finding cos sims for goal str:
+        task_goal_embedding = embeddings['goal']
+        other_goal_embeddings = [
+            mapping['goal_emb'] for mapping in embeddings_mapping
         ]
-        # we will need a get_init_string() and get_goal_string() helper funcs.
-        indices = np.argsort(cos_sims)[-num_closest:]
+        goal_cos_sims = np.array([
+            self._get_cosine_sim(task_goal_embedding, other_emb)
+            for other_emb in other_goal_embeddings
+        ])
+        total_cos_sims += goal_cos_sims
+
+        indices = np.argsort(total_cos_sims)[-num_closest:]
         closest_datums = [embeddings_mapping[ind]['datum'] for ind in indices]
+        # closest_datums is currently ordered least to most similar
+        # we flip it here:
+        closest_datums.reverse()
         return closest_datums
 
     def _get_cosine_sim(self, embedding1: Embedding,

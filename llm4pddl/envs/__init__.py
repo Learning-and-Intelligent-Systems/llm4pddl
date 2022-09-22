@@ -6,46 +6,6 @@ from llm4pddl.envs.custom_env import CustomEnv
 from llm4pddl.envs.manual_train_env import ManualTrainEnv
 from llm4pddl.envs.pyperplan_env import PyperplanEnv
 
-PYPERPLAN_BENCHMARKS = [
-    "airport",
-    "blocks",
-    "depot",
-    "elevators",
-    "freecell",
-    "gripper",
-    "logistics",
-    "miconic",
-    "movie",
-    "openstacks",
-    "parcprinter",
-    "pegsol",
-    "psr-small",
-    "rovers",
-    "satellite",
-    "scanalyzer",
-    "sokoban",
-    "tpp",
-    "transport",
-    "woodworking",
-    "zenotravel",
-]
-
-CUSTOM_BENCHMARKS = [
-    "dressed", "easy_blocks", "medium_blocks", "easy_delivery",
-    "medium_delivery", "easy_spanner", "medium_spanner"
-]
-
-AUGMENTED_BENCHMARKS = [f"pyperplan-{b}" for b in PYPERPLAN_BENCHMARKS]
-
-MANUAL_TRAIN_BENCHMARKS = [
-    "pyperplan-gripper", "pyperplan-tpp", "pyperplan-miconic"
-]
-
-ALL_ENVS = [f"pyperplan-{b}" for b in PYPERPLAN_BENCHMARKS] + [
-    f"custom-{b}" for b in CUSTOM_BENCHMARKS
-] + [f"augmented-{b}" for b in AUGMENTED_BENCHMARKS
-     ] + [f"manual-{b}" for b in MANUAL_TRAIN_BENCHMARKS]
-
 
 def create_env(env_name: str) -> BaseEnv:
     """Create an environment."""
