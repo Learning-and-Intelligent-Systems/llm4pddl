@@ -468,8 +468,8 @@ def test_create_random_string_substitution():
             assert entry not in example
 
 
-def test_replace_with_random_objects():
-    """Tests for replace_with_random_objects()"""
+def test_substitute_objects_in_prompt():
+    """Tests for substitute_objects_in_prompt()"""
     example_prefix = """Q:
 (:objects
 ball1 ball2 ball3 ball4 left right rooma roomb - object)
@@ -518,7 +518,7 @@ A:
         'rooma': 'kfqyz',
         'roomb': 'wrjkb'
     }
-    randomized_prefix = utils.replace_with_random_objects(
+    randomized_prefix = utils.substitute_objects_in_prompt(
         example_prefix, random_dict)
     for orig, rand in random_dict.items():
         assert orig not in randomized_prefix

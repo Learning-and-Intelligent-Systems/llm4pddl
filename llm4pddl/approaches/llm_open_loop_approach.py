@@ -185,7 +185,7 @@ class LLMOpenLoopApproach(BaseApproach):
         # Minify the prompt to reduce tokens.
         prompt = utils.minify_pddl_problem(prompt)
         # Randomize objects in init, goal, solution strings.
-        prompt = utils.replace_with_random_objects(prompt, obj_subs)
+        prompt = utils.substitute_objects_in_prompt(prompt, obj_subs)
         return prompt
 
     def _solve_from_partial_plans(

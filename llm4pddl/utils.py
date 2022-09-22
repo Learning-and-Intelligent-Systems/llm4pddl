@@ -460,16 +460,18 @@ def create_random_string_substitution(
     return subs
 
 
-def replace_with_random_objects(orig_str: str, random_dict: dict) -> str:
+def substitute_objects_in_prompt(prompt_str: str, subs: dict) -> str:
     """Replaces objects in init, goal, solution string with random object
     names."""
-    for obj in random_dict.keys():
-        orig_str = orig_str.replace(obj + ")", random_dict[obj] + ")")
-        orig_str = orig_str.replace(" " + obj + " ",
-                                    " " + random_dict[obj] + " ")
-        orig_str = orig_str.replace("\n" + obj + " ",
-                                    "\n" + random_dict[obj] + " ")
-    return orig_str
+    patterns = [
+        lambda s: s + ")",  # object at the end of an atom or operator
+        lambda s: " " + s + " ",  # object in the middle or in problem list
+        lambda s: "\n" + s + " ",  # object in problem list with new lines
+    ]
+    for orig, repl in subs.items():
+        for pattern in patterns:
+            prompt_str = prompt_str.replace(pattern(orig), pattern(repl))
+    return prompt_str
 
 
 def get_init_str(task: Task) -> str:
