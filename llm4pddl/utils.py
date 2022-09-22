@@ -21,9 +21,9 @@ from pyperplan.pddl.parser import Parser
 from pyperplan.planner import HEURISTICS, SEARCHES, search_plan
 
 from llm4pddl.flags import FLAGS
-from llm4pddl.structs import Plan, PyperplanAction, PyperplanDomain, \
-    PyperplanPredicate, PyperplanProblem, PyperplanTask, PyperplanType, Task, \
-    TaskMetrics
+from llm4pddl.structs import Plan, PromptSubstitution, PyperplanAction, \
+    PyperplanDomain, PyperplanPredicate, PyperplanProblem, PyperplanTask, \
+    PyperplanType, Task, TaskMetrics
 
 # Global constants.
 LLM_QUESTION_TOKEN = "Q:"
@@ -483,17 +483,38 @@ def create_random_string_substitution(
     return subs
 
 
-def substitute_objects_in_prompt(prompt_str: str, subs: dict) -> str:
-    """Replaces objects in init, goal, solution string with random object
-    names."""
+def _substitute_patterns(prompt_str: str, subs: Dict[str, str],
+                         patterns: List[Callable[[str], str]]) -> str:
+    """Helper for the below substitution utilities."""
+    for orig, repl in subs.items():
+        for pattern in patterns:
+            prompt_str = prompt_str.replace(pattern(orig), pattern(repl))
+    return prompt_str
+
+
+def substitute_objects_in_prompt(prompt_str: str, subs: Dict[str, str]) -> str:
+    """Replaces objects in init, goal, solution string with the given subs."""
     patterns: List[Callable[[str], str]] = [
         lambda s: s + ")",  # object at the end of an atom or operator
         lambda s: " " + s + " ",  # object in the middle or in problem list
         lambda s: "\n" + s + " ",  # object in problem list with new lines
     ]
-    for orig, repl in subs.items():
-        for pattern in patterns:
-            prompt_str = prompt_str.replace(pattern(orig), pattern(repl))
+    return _substitute_patterns(prompt_str, subs, patterns)
+
+
+def substitute_operators_in_prompt(prompt_str: str, subs: Dict[str,
+                                                               str]) -> str:
+    """Replaces operator names in the solution string with the given subs."""
+    patterns: List[Callable[[str], str]] = [
+        lambda s: "(" + s + " ",  # operator names always come first
+    ]
+    return _substitute_patterns(prompt_str, subs, patterns)
+
+
+def substitute_in_prompt(prompt_str: str, sub: PromptSubstitution) -> str:
+    """Applies the prompt substitution to the prompt string."""
+    prompt_str = substitute_objects_in_prompt(prompt_str, sub.objects)
+    prompt_str = substitute_operators_in_prompt(prompt_str, sub.operators)
     return prompt_str
 
 
