@@ -29,6 +29,7 @@ def test_llm_planning_approach():
         "llm_autoregressive_prompting": False,
         "llm_use_random_plans": False,
         "llm_randomize_object_names": False,
+        "llm_randomize_operator_names": False,
         "llm_plan_guidance_method": "init-queue-continue",
         "planner": "pyperplan",
         "data_gen_planner": "pyperplan",
