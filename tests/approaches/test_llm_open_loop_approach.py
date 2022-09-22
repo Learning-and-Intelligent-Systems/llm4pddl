@@ -86,6 +86,7 @@ def test_llm_standard_approach(env_name):
         "llm_use_random_plans": False,
         "llm_randomize_object_names": False,
         "llm_randomize_operator_names": False,
+        "llm_randomize_type_names": False,
         "llm_randomize_predicate_names": False,
         "use_dynamic_examples": False,
         "data_dir": data_dir,
@@ -142,6 +143,7 @@ def test_llm_standard_approach_randomize_names():
         "llm_use_random_plans": False,
         "llm_randomize_object_names": True,
         "llm_randomize_operator_names": True,
+        "llm_randomize_type_names": True,
         "llm_randomize_predicate_names": True,
         "use_dynamic_examples": False,
         "data_dir": data_dir,
@@ -203,6 +205,7 @@ def test_autoregressive_prompting():
         "llm_autoregress_max_loops": 25,
         "llm_randomize_object_names": False,
         "llm_randomize_operator_names": False,
+        "llm_randomize_type_names": False,
         "llm_randomize_predicate_names": False,
         "use_dynamic_examples": False,
         "data_dir": data_dir,
@@ -279,6 +282,7 @@ def test_llm_standard_approach_failure_cases(llm_prompt_method):
         "embedding_model_name": "paraphrase-MiniLM-L6-v2",
         "llm_randomize_object_names": False,
         "llm_randomize_operator_names": False,
+        "llm_randomize_type_names": False,
         "llm_randomize_predicate_names": False,
     })
     env = create_env("pyperplan-miconic")
@@ -363,6 +367,7 @@ def test_llm_standard_approach_dynamic_small_example():
         "llm_use_cache_only": False,
         "llm_randomize_object_names": False,
         "llm_randomize_operator_names": False,
+        "llm_randomize_type_names": False,
         "llm_randomize_predicate_names": False,
     })
     non_dynamic_approach = create_approach("llm-standard")
@@ -387,6 +392,7 @@ def test_llm_standard_approach_dynamic_small_example():
         "llm_use_cache_only": False,
         "llm_randomize_object_names": False,
         "llm_randomize_operator_names": False,
+        "llm_randomize_type_names": False,
         "llm_randomize_predicate_names": False,
     })
     dynamic_approach = create_approach("llm-standard")
@@ -432,6 +438,7 @@ def test_llm_standard_approach_dynamic_big_example():
         "llm_use_cache_only": False,
         "llm_randomize_object_names": False,
         "llm_randomize_operator_names": False,
+        "llm_randomize_type_names": False,
         "llm_randomize_predicate_names": False,
     })
     non_dynamic_approach = create_approach("llm-standard")
@@ -456,6 +463,7 @@ def test_llm_standard_approach_dynamic_big_example():
         "llm_use_cache_only": False,
         "llm_randomize_object_names": False,
         "llm_randomize_operator_names": False,
+        "llm_randomize_type_names": False,
         "llm_randomize_predicate_names": False,
     })
     dynamic_approach = create_approach("llm-standard")
@@ -495,6 +503,7 @@ def test_llm_multi_approach():
         "embedding_model_name": "paraphrase-MiniLM-L6-v2",
         "llm_randomize_object_names": False,
         "llm_randomize_operator_names": False,
+        "llm_randomize_type_names": False,
         "llm_randomize_predicate_names": False,
     })
     approach = create_approach("llm-multi")

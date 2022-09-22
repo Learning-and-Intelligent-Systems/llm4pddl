@@ -102,3 +102,4 @@ class PromptSubstitution:
     objects: Dict[str, str]  # old to new
     operators: Dict[str, str]
     predicates: Dict[str, str]
+    types: Dict[str, str]
