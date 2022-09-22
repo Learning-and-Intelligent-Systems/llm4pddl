@@ -253,10 +253,13 @@ class LLMOpenLoopApproach(BaseApproach):
             op, objects = words[0], words[1:]
             # Invert the object names using the substitutions.
             inverted_objects = []
-            obj_subs = self._eval_task_str_subs.objects
+            rev_obj_subs = {
+                v: k
+                for k, v in self._eval_task_str_subs.objects.items()
+            }
             for obj in objects:
-                if obj in obj_subs:
-                    inverted_objects.append(obj_subs[obj])
+                if obj in rev_obj_subs:
+                    inverted_objects.append(rev_obj_subs[obj])
                 else:
                     inverted_objects.append(obj)
             objects = inverted_objects
