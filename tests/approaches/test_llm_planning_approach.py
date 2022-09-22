@@ -30,6 +30,7 @@ def test_llm_planning_approach():
         "llm_use_random_plans": False,
         "llm_randomize_object_names": False,
         "llm_randomize_operator_names": False,
+        "llm_randomize_predicate_names": False,
         "llm_plan_guidance_method": "init-queue-continue",
         "planner": "pyperplan",
         "data_gen_planner": "pyperplan",
@@ -105,6 +106,7 @@ def test_llm_planning_approach():
         "llm_use_random_plans": True,  # note!
         "llm_randomize_object_names": False,
         "llm_randomize_operator_names": False,
+        "llm_randomize_predicate_names": False,
         "llm_prompt_method": "standard",
         "llm_autoregressive_prompting": False,
         "llm_autoregress_max_loops": 100,

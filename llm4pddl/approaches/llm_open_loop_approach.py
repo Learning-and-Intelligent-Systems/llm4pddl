@@ -34,9 +34,12 @@ class LLMOpenLoopApproach(BaseApproach):
         self._list_embeddings_mapping: List[Dict[str, Any]] = []
         self._embedding_model = SentenceTransformer(FLAGS.embedding_model_name)
         # Reset on every call to solve().
-        self._eval_task_str_subs = PromptSubstitution(objects={}, operators={})
+        self._eval_task_str_subs = PromptSubstitution(objects={},
+                                                      operators={},
+                                                      predicates={})
         # Created on the first call to create_prompt().
         self._op_subs: Optional[Dict[str, str]] = None
+        self._pred_subs: Optional[Dict[str, str]] = None
 
     @property
     def is_learning_based(self) -> bool:
@@ -164,6 +167,16 @@ class LLMOpenLoopApproach(BaseApproach):
             assert op_names == set(self._op_subs)
         else:
             self._op_subs = {}
+        # Randomize predicate names.
+        if FLAGS.llm_randomize_predicate_names:
+            # Note: unlike objects, we want to do this only once per domain!
+            pred_names = set(domain.predicates)
+            if self._pred_subs is None:
+                self._pred_subs = utils.create_random_word_substitution(
+                    pred_names, self._rng)
+            assert pred_names == set(self._pred_subs)
+        else:
+            self._pred_subs = {}
         # Construct the object list for the prompt.
         objects_strs: List[str] = []
         for typ, objs in type_to_objs.items():
@@ -207,7 +220,9 @@ class LLMOpenLoopApproach(BaseApproach):
         # Minify the prompt to reduce tokens.
         prompt = utils.minify_pddl_problem(prompt)
         # Finalize the substitutions.
-        subs = PromptSubstitution(objects=obj_subs, operators=self._op_subs)
+        subs = PromptSubstitution(objects=obj_subs,
+                                  operators=self._op_subs,
+                                  predicates=self._pred_subs)
         prompt = utils.substitute_in_prompt(prompt, subs)
         return prompt, subs
 

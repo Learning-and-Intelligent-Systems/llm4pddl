@@ -101,3 +101,4 @@ class PromptSubstitution:
     """Used to store the substitution of strings in LLM prompting."""
     objects: Dict[str, str]  # old to new
     operators: Dict[str, str]
+    predicates: Dict[str, str]
