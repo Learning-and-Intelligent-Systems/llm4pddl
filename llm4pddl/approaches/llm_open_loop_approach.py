@@ -148,7 +148,7 @@ class LLMOpenLoopApproach(BaseApproach):
         # Randomize object names.
         if FLAGS.llm_randomize_object_names:
             obj_names = {o for objs in type_to_objs.values() for o in objs}
-            obj_subs = utils.create_random_string_substitution(
+            obj_subs = utils.create_random_word_substitution(
                 obj_names, self._rng)
         else:
             obj_subs = {}
