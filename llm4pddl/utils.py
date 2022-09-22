@@ -12,7 +12,8 @@ import tempfile
 import time
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Collection, Dict, List, Optional, Sequence, Set, Tuple
+from typing import Any, Callable, Collection, Dict, List, Optional, Sequence, \
+    Set, Tuple
 
 import numpy as np
 from pyperplan.grounding import ground as pyperplan_ground
@@ -463,7 +464,7 @@ def create_random_string_substitution(
 def substitute_objects_in_prompt(prompt_str: str, subs: dict) -> str:
     """Replaces objects in init, goal, solution string with random object
     names."""
-    patterns = [
+    patterns: List[Callable[[str], str]] = [
         lambda s: s + ")",  # object at the end of an atom or operator
         lambda s: " " + s + " ",  # object in the middle or in problem list
         lambda s: "\n" + s + " ",  # object in problem list with new lines
