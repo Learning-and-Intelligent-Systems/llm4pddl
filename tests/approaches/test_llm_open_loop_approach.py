@@ -121,10 +121,8 @@ def test_llm_standard_approach(env_name):
 
 def test_llm_standard_approach_randomize_object_names():
     """Tests for the LLM standard approach."""
-    cache_dir = "_fake_llm_cache_dir"
     data_dir = "_fake_data_dir"
     utils.reset_flags({
-        "llm_cache_dir": cache_dir,
         "num_train_tasks": 1,
         "num_prompt_tasks": 1,
         "num_eval_tasks": 1,
@@ -171,8 +169,6 @@ def test_llm_standard_approach_randomize_object_names():
     partial_plan = approach._llm_response_to_plan(ideal_response, task)  # pylint: disable=protected-access
     plan, _ = approach._solve_from_partial_plans([partial_plan], task)  # pylint: disable=protected-access
     assert utils.validate_plan(task, plan)
-
-    shutil.rmtree(cache_dir)
     shutil.rmtree(data_dir)
 
 
