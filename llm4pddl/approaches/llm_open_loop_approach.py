@@ -36,10 +36,12 @@ class LLMOpenLoopApproach(BaseApproach):
         # Reset on every call to solve().
         self._eval_task_str_subs = PromptSubstitution(objects={},
                                                       operators={},
-                                                      predicates={})
+                                                      predicates={},
+                                                      types={})
         # Created on the first call to create_prompt().
         self._op_subs: Optional[Dict[str, str]] = None
         self._pred_subs: Optional[Dict[str, str]] = None
+        self._type_subs: Optional[Dict[str, str]] = None
 
     @property
     def is_learning_based(self) -> bool:
@@ -177,6 +179,16 @@ class LLMOpenLoopApproach(BaseApproach):
             assert pred_names == set(self._pred_subs)
         else:
             self._pred_subs = {}
+        # Randomize type names.
+        if FLAGS.llm_randomize_type_names:
+            # Note: unlike objects, we want to do this only once per domain!
+            type_names = set(domain.types)
+            if self._type_subs is None:
+                self._type_subs = utils.create_random_word_substitution(
+                    type_names, self._rng)
+            assert type_names == set(self._type_subs)
+        else:
+            self._type_subs = {}
         # Construct the object list for the prompt.
         objects_strs: List[str] = []
         for typ, objs in type_to_objs.items():
@@ -222,7 +234,8 @@ class LLMOpenLoopApproach(BaseApproach):
         # Finalize the substitutions.
         subs = PromptSubstitution(objects=obj_subs,
                                   operators=self._op_subs,
-                                  predicates=self._pred_subs)
+                                  predicates=self._pred_subs,
+                                  types=self._type_subs)
         prompt = utils.substitute_in_prompt(prompt, subs)
         return prompt, subs
 
