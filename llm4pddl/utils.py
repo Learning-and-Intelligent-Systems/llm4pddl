@@ -478,7 +478,6 @@ def create_random_string_substitution(
     """Creates dictionary mapping strings to random lowercase alphabet strings
     of the same length as the originals."""
     subs = {}
-
     for s in sorted(strs):  # sort for determinism
         subs[s] = ''.join(rng.choice(list(string.ascii_lowercase), len(s)))
     return subs
