@@ -15,6 +15,7 @@ APPROACHES:
   random-names:
     NAME: "llm-standard"
     ARGS:
+      - "llm_autoregressive_prompting"
       - "llm_randomize_predicate_names"
       - "llm_randomize_operator_names"
       - "llm_randomize_type_names"
