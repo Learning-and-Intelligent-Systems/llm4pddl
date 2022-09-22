@@ -12,6 +12,13 @@ APPROACHES:
     NAME: "llm-standard"
     ARGS:
       - "llm_use_random_plans"
+  random-names:
+    NAME: "llm-standard"
+    ARGS:
+      - "llm_randomize_predicate_names"
+      - "llm_randomize_operator_names"
+      - "llm_randomize_type_names"
+      - "llm_randomize_object_names"
   # Planning-based approaches
   llm-standard-plan:
     NAME: "llm-standard-plan"
