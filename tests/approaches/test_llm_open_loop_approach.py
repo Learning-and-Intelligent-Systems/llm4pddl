@@ -298,8 +298,9 @@ def test_llm_standard_approach_random_objects():
     ]
     approach._create_prompt_prefix(dataset)  # pylint: disable=protected-access
     for datum in dataset:
-        task_string = approach._create_prompt(datum.task, datum.solution)  # pylint: disable=protected-access
+        task_string, subs = approach._create_prompt(datum.task, datum.solution)  # pylint: disable=protected-access
         assert task_string is not None
+        assert len(subs.objects) > 0
 
 
 def test_llm_standard_approach_dynamic_small_example():

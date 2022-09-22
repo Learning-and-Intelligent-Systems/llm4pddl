@@ -13,7 +13,7 @@ from llm4pddl.approaches.base_approach import BaseApproach
 from llm4pddl.flags import FLAGS
 from llm4pddl.llm_interface import OpenAILLM
 from llm4pddl.structs import Any, Dataset, Datum, Embedding, Plan, \
-    PyperplanObject, PyperplanType, Task, TaskMetrics
+    PromptSubstitution, PyperplanObject, PyperplanType, Task, TaskMetrics
 
 
 class LLMOpenLoopApproach(BaseApproach):
@@ -33,6 +33,8 @@ class LLMOpenLoopApproach(BaseApproach):
         # init string embedding and goal string embedding.
         self._list_embeddings_mapping: List[Dict[str, Any]] = []
         self._embedding_model = SentenceTransformer(FLAGS.embedding_model_name)
+        # Reset on every call to solve().
+        self._eval_task_str_subs = PromptSubstitution(objects={})
 
     @property
     def is_learning_based(self) -> bool:
@@ -46,7 +48,10 @@ class LLMOpenLoopApproach(BaseApproach):
         return "llm-open-loop"
 
     def solve(self, task: Task) -> Tuple[Optional[Plan], TaskMetrics]:
-        new_prompt = self._create_prompt(task)
+        new_prompt, subs = self._create_prompt(task)
+        # Store the substitutions for this eval task so that we can invert
+        # the LLM response in _llm_response_to_plan().
+        self._eval_task_str_subs = subs
         if FLAGS.use_dynamic_examples:
             closest_datums = self._get_closest_datums(
                 task, self._list_embeddings_mapping, FLAGS.num_train_tasks)
@@ -108,17 +113,22 @@ class LLMOpenLoopApproach(BaseApproach):
         prompts = []
         prompt_dataset = dataset[:FLAGS.num_prompt_tasks]
         for datum in prompt_dataset:
-            prompt = self._create_prompt(datum.task, datum.solution)
+            # We do not need to store the substitutions because we will never
+            # invert the prompt prefix.
+            prompt, _ = self._create_prompt(datum.task, datum.solution)
             prompts.append(prompt)
         self._prompt_prefix = "\n\n".join(prompts) + "\n\n"
         logging.debug(f"Created prompt prefix:\n{self._prompt_prefix}")
 
-    def _create_prompt(self, task: Task, plan: Optional[Plan] = None) -> str:
+    def _create_prompt(
+            self,
+            task: Task,
+            plan: Optional[Plan] = None) -> Tuple[str, PromptSubstitution]:
         """Create a prompt entry for a single task and (maybe partial) plan.
 
         The second return value keeps track of any substitutions that
         were made in creating the prompt, based on FLAGS. These
-        substitutions are then used to invert the LLM response. (TODO)
+        substitutions are then used to invert the LLM response.
         """
         # Extract only the objects, init, and goal from the problem file,
         # stripping out any comments or other extraneous text.
@@ -186,7 +196,9 @@ class LLMOpenLoopApproach(BaseApproach):
         prompt = utils.minify_pddl_problem(prompt)
         # Randomize objects in init, goal, solution strings.
         prompt = utils.substitute_objects_in_prompt(prompt, obj_subs)
-        return prompt
+        # Finalize the substitutions.
+        subs = PromptSubstitution(objects=obj_subs)
+        return prompt, subs
 
     def _solve_from_partial_plans(
             self, partial_plans: List[Plan],
@@ -199,8 +211,8 @@ class LLMOpenLoopApproach(BaseApproach):
                 return plan, metrics
         return None, metrics
 
-    @staticmethod
-    def _llm_response_to_plan(response_text: str,
+    def _llm_response_to_plan(self,
+                              response_text: str,
                               task: Task,
                               disable_name_checks: bool = False) -> Plan:
         # We assume the LLM's output is such that each line contains
@@ -239,6 +251,16 @@ class LLMOpenLoopApproach(BaseApproach):
             if not words:
                 continue
             op, objects = words[0], words[1:]
+            # Invert the object names using the substitutions.
+            inverted_objects = []
+            obj_subs = self._eval_task_str_subs.objects
+            for obj in objects:
+                if obj in obj_subs:
+                    inverted_objects.append(obj_subs[obj])
+                else:
+                    inverted_objects.append(obj)
+            objects = inverted_objects
+            # Check the names of the objects and operators.
             if not disable_name_checks:
                 # The first word should be an operator.
                 if op not in operator_names:
