@@ -157,7 +157,6 @@ def test_llm_standard_approach_randomize_object_names():
     assert not approach._prompt_prefix  # pylint: disable=protected-access
     approach.train(dataset)
     assert approach._prompt_prefix  # pylint: disable=protected-access
-    llm = _MockLLM()
     # Test successful usage, where the LLM output corresponds to a plan.
     task_idx = 0
     task = train_tasks[task_idx]
