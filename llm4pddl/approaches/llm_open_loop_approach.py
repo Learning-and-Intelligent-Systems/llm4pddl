@@ -92,7 +92,6 @@ class LLMOpenLoopApproach(BaseApproach):
 
     def train(self, dataset: Dataset) -> None:
         self._create_prompt_prefix(dataset)
-
         # Embedding the training tasks:
         if FLAGS.use_dynamic_examples:
             train_tasks = [datum.task for datum in dataset]
