@@ -94,3 +94,9 @@ Dataset = List[Datum]
 
 # An embedding.
 Embedding = NDArray[np.float32]
+
+
+@dataclass
+class PromptSubstitution:
+    """Used to store the substitution of strings in LLM prompting."""
+    objects: Dict[str, str]  # old to new object names

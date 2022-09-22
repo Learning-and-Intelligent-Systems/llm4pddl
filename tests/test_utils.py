@@ -3,6 +3,7 @@
 import os
 import tempfile
 
+import numpy as np
 import pytest
 
 from llm4pddl import utils
@@ -450,6 +451,116 @@ def test_pyperplan_problem_to_str(domain_file, problem_file):
     assert metrics["nodes_created"] > metrics["nodes_expanded"]
     assert plan is not None
     assert utils.validate_plan(task, plan)
+
+
+def test_create_random_string_substitution():
+    """Tests for create_random_string_substitution()"""
+    rng = np.random.default_rng(123)
+    example_one = {"abcd", "bcda", "cefg"}
+    example_two = {"blockA", "blockB", "blockC", "blockD"}
+    example_three = {"adfdf313", "qddfa3", "12423423"}
+    examples = [example_one, example_two, example_three]
+    for example in examples:
+        subs = utils.create_random_string_substitution(example, rng)
+        assert subs is not None
+        assert sorted(list(subs.keys())) == sorted(example)
+        for entry in subs.values():
+            assert entry not in example
+
+
+def test_substitute_objects_in_prompt():
+    """Tests for substitute_objects_in_prompt()"""
+    example_prefix = """Q:
+(:objects
+ball1 ball2 ball3 ball4 left right rooma roomb - object)
+(:init
+(room rooma)
+(room roomb)
+(ball ball4)
+(ball ball3)
+(ball ball2)
+(ball ball1)
+(at-robby rooma)
+(free left)
+(free right)
+(at ball4 rooma)
+(at ball3 rooma)
+(at ball2 rooma)
+(at ball1 rooma)
+(gripper left)
+(gripper right))
+(:goal
+(at ball4 roomb)
+(at ball3 roomb)
+(at ball2 roomb)
+(at ball1 roomb))
+A:
+(pick ball1 rooma left)
+(move rooma roomb)
+(drop ball1 roomb left)
+(move roomb rooma)
+(pick ball3 rooma left)
+(move rooma roomb)
+(drop ball3 roomb left)
+(move roomb rooma)
+(pick ball2 rooma left)
+(pick ball4 rooma right)
+(move rooma roomb)
+(drop ball2 roomb left)
+(drop ball4 roomb right)"""
+    random_dict = {
+        'ball1': 'vgchk',
+        'ball2': 'vlcip',
+        'ball3': 'vszew',
+        'ball4': 'bohfr',
+        'left': 'hogd',
+        'right': 'tlrry',
+        'rooma': 'kfqyz',
+        'roomb': 'wrjkb'
+    }
+    randomized_prefix = utils.substitute_objects_in_prompt(
+        example_prefix, random_dict)
+    for orig, rand in random_dict.items():
+        assert orig not in randomized_prefix
+        assert rand in randomized_prefix
+    assert randomized_prefix == """Q:
+(:objects
+vgchk vlcip vszew bohfr hogd tlrry kfqyz wrjkb - object)
+(:init
+(room kfqyz)
+(room wrjkb)
+(ball bohfr)
+(ball vszew)
+(ball vlcip)
+(ball vgchk)
+(at-robby kfqyz)
+(free hogd)
+(free tlrry)
+(at bohfr kfqyz)
+(at vszew kfqyz)
+(at vlcip kfqyz)
+(at vgchk kfqyz)
+(gripper hogd)
+(gripper tlrry))
+(:goal
+(at bohfr wrjkb)
+(at vszew wrjkb)
+(at vlcip wrjkb)
+(at vgchk wrjkb))
+A:
+(pick vgchk kfqyz hogd)
+(move kfqyz wrjkb)
+(drop vgchk wrjkb hogd)
+(move wrjkb kfqyz)
+(pick vszew kfqyz hogd)
+(move kfqyz wrjkb)
+(drop vszew wrjkb hogd)
+(move wrjkb kfqyz)
+(pick vlcip kfqyz hogd)
+(pick bohfr kfqyz tlrry)
+(move kfqyz wrjkb)
+(drop vlcip wrjkb hogd)
+(drop bohfr wrjkb tlrry)"""
 
 
 def test_get_init_str():

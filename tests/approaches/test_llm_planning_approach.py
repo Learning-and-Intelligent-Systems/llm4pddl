@@ -10,7 +10,7 @@ from llm4pddl.dataset import create_dataset
 from llm4pddl.envs import create_env
 
 
-def test_llm_planning_planning_approach():
+def test_llm_planning_approach():
     """Tests for LLMPlanningApproach()."""
     cache_dir = "_fake_llm_cache_dir"
     data_dir = "_fake_data_dir"
@@ -28,6 +28,7 @@ def test_llm_planning_planning_approach():
         "llm_prompt_method": "standard",
         "llm_autoregressive_prompting": False,
         "llm_use_random_plans": False,
+        "llm_randomize_object_names": False,
         "llm_plan_guidance_method": "init-queue-continue",
         "planner": "pyperplan",
         "data_gen_planner": "pyperplan",
@@ -37,7 +38,7 @@ def test_llm_planning_planning_approach():
         "use_dynamic_examples": False,
         "data_dir": data_dir,
         "load_data": False,
-        "embedding_model_name": "paraphrase-MiniLM-L6-v2"
+        "embedding_model_name": "paraphrase-MiniLM-L6-v2",
     })
     env = create_env("pyperplan-gripper")
     train_tasks = env.get_train_tasks()
@@ -101,6 +102,7 @@ def test_llm_planning_planning_approach():
         "num_eval_tasks": 1,
         "train_task_offset": 0,
         "llm_use_random_plans": True,  # note!
+        "llm_randomize_object_names": False,
         "llm_prompt_method": "standard",
         "llm_autoregressive_prompting": False,
         "llm_autoregress_max_loops": 100,

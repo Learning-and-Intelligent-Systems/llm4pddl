@@ -5,13 +5,15 @@ import hashlib
 import logging
 import os
 import re
+import string
 import subprocess
 import sys
 import tempfile
 import time
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Collection, Dict, List, Optional, Sequence, Set, Tuple
+from typing import Any, Callable, Collection, Dict, List, Optional, Sequence, \
+    Set, Tuple
 
 import numpy as np
 from pyperplan.grounding import ground as pyperplan_ground
@@ -447,6 +449,30 @@ def str_to_identifier(x: str) -> str:
         https://stackoverflow.com/questions/5297448
     """
     return hashlib.md5(x.encode('utf-8')).hexdigest()
+
+
+def create_random_string_substitution(
+        strs: Set[str], rng: np.random.Generator) -> Dict[str, str]:
+    """Creates dictionary mapping strings to random lowercase alphabet strings
+    of the same length as the originals."""
+    subs = {}
+    for s in sorted(strs):  # sort for determinism
+        subs[s] = ''.join(rng.choice(list(string.ascii_lowercase), len(s)))
+    return subs
+
+
+def substitute_objects_in_prompt(prompt_str: str, subs: dict) -> str:
+    """Replaces objects in init, goal, solution string with random object
+    names."""
+    patterns: List[Callable[[str], str]] = [
+        lambda s: s + ")",  # object at the end of an atom or operator
+        lambda s: " " + s + " ",  # object in the middle or in problem list
+        lambda s: "\n" + s + " ",  # object in problem list with new lines
+    ]
+    for orig, repl in subs.items():
+        for pattern in patterns:
+            prompt_str = prompt_str.replace(pattern(orig), pattern(repl))
+    return prompt_str
 
 
 def get_init_str(task: Task) -> str:

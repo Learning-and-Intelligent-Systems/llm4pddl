@@ -84,10 +84,11 @@ def test_llm_standard_approach(env_name):
         "llm_prompt_flatten_pddl": False,
         "llm_autoregressive_prompting": False,
         "llm_use_random_plans": False,
+        "llm_randomize_object_names": False,
         "use_dynamic_examples": False,
         "data_dir": data_dir,
         "load_data": False,
-        "embedding_model_name": "paraphrase-MiniLM-L6-v2"
+        "embedding_model_name": "paraphrase-MiniLM-L6-v2",
     })
     env = create_env(env_name)
     train_tasks = env.get_train_tasks()
@@ -118,6 +119,59 @@ def test_llm_standard_approach(env_name):
     shutil.rmtree(data_dir)
 
 
+def test_llm_standard_approach_randomize_object_names():
+    """Tests for the LLM standard approach."""
+    data_dir = "_fake_data_dir"
+    utils.reset_flags({
+        "num_train_tasks": 1,
+        "num_prompt_tasks": 1,
+        "num_eval_tasks": 1,
+        "train_task_offset": 0,
+        "llm_model_name": "code-davinci-002",  # should not matter for test
+        "llm_use_cache_only": False,
+        "llm_max_total_tokens": 700,
+        "llm_prompt_method": "standard",
+        "planner": "pyperplan",
+        "data_gen_planner": "pyperplan",
+        "data_gen_method": "planning",
+        "planning_timeout": 100,
+        "llm_prompt_flatten_pddl": False,
+        "llm_autoregressive_prompting": False,
+        "llm_use_random_plans": False,
+        "llm_randomize_object_names": True,
+        "use_dynamic_examples": False,
+        "data_dir": data_dir,
+        "load_data": False,
+        "embedding_model_name": "paraphrase-MiniLM-L6-v2",
+    })
+    env = create_env("custom-easy_spanner")
+    train_tasks = env.get_train_tasks()
+    approach = create_approach("llm-standard")
+    assert approach.get_name() == "llm-open-loop"
+    assert approach.is_learning_based
+    assert not approach.is_planning_based
+    # Test "learning", i.e., constructing the prompt prefix.
+    dataset = create_dataset(train_tasks)
+    assert not approach._prompt_prefix  # pylint: disable=protected-access
+    approach.train(dataset)
+    assert approach._prompt_prefix  # pylint: disable=protected-access
+    # Test successful usage, where the LLM output corresponds to a plan.
+    task_idx = 0
+    task = train_tasks[task_idx]
+    _, subs = approach._create_prompt(task)  # pylint: disable=protected-access
+    approach._eval_task_str_subs = subs  # pylint: disable=protected-access
+    ideal_plan, _ = utils.run_planning(task)
+    ideal_response = ""
+    for action in ideal_plan:
+        for orig, repl in subs.objects.items():
+            action = action.replace(orig, repl)
+        ideal_response += "\n" + action
+    partial_plan = approach._llm_response_to_plan(ideal_response, task)  # pylint: disable=protected-access
+    plan, _ = approach._solve_from_partial_plans([partial_plan], task)  # pylint: disable=protected-access
+    assert utils.validate_plan(task, plan)
+    shutil.rmtree(data_dir)
+
+
 def test_autoregressive_prompting():
     """Tests for the LLM standard approach with autoregressive prompting."""
     cache_dir = "_fake_llm_cache_dir"
@@ -141,6 +195,7 @@ def test_autoregressive_prompting():
         "llm_autoregressive_prompting": True,
         "llm_use_random_plans": False,
         "llm_autoregress_max_loops": 25,
+        "llm_randomize_object_names": False,
         "use_dynamic_examples": False,
         "data_dir": data_dir,
         "load_data": False,
@@ -213,7 +268,8 @@ def test_llm_standard_approach_failure_cases(llm_prompt_method):
         "use_dynamic_examples": False,
         "data_dir": data_dir,
         "load_data": False,
-        "embedding_model_name": "paraphrase-MiniLM-L6-v2"
+        "embedding_model_name": "paraphrase-MiniLM-L6-v2",
+        "llm_randomize_object_names": False
     })
     env = create_env("pyperplan-miconic")
     train_tasks = env.get_train_tasks()
@@ -269,6 +325,37 @@ def test_llm_standard_approach_failure_cases(llm_prompt_method):
     shutil.rmtree(data_dir)
 
 
+def test_llm_standard_approach_random_objects():
+    """Test for LLM standard approach with random object names in prompt
+    prefix."""
+    utils.reset_flags({
+        "num_train_tasks": 1,
+        "num_eval_tasks": 1,
+        "num_prompt_tasks": 1,
+        "llm_model_name": "code-davinci-002",
+        "llm_max_total_tokens": 700,
+        "llm_multi_temperature": 0.3,
+        "llm_prompt_method": "standard",
+        "planning_timeout": 100,
+        "llm_prompt_flatten_pddl": False,
+        "use_dynamic_examples": False,
+        "embedding_model_name": "paraphrase-MiniLM-L6-v2",
+        "llm_use_cache_only": False,
+        "llm_randomize_object_names": True,
+    })
+    approach: LLMOpenLoopApproach = create_approach('llm-standard')
+    dataset = [
+        Datum(
+            utils.get_task_from_dir(utils.PYPERPLAN_BENCHMARK_DIR / 'gripper',
+                                    1), ['insert plan here'])
+    ]
+    approach._create_prompt_prefix(dataset)  # pylint: disable=protected-access
+    for datum in dataset:
+        task_string, subs = approach._create_prompt(datum.task, datum.solution)  # pylint: disable=protected-access
+        assert task_string is not None
+        assert len(subs.objects) > 0
+
+
 def test_llm_standard_approach_dynamic_small_example():
     """Test for LLM standard approach using dynamic examples."""
     cache_dir = "_fake_llm_cache_dir"
@@ -294,7 +381,8 @@ def test_llm_standard_approach_dynamic_small_example():
         "llm_prompt_flatten_pddl": True,
         "use_dynamic_examples": False,  # this is the only one that differs
         "embedding_model_name": "paraphrase-MiniLM-L6-v2",
-        "llm_use_cache_only": False
+        "llm_use_cache_only": False,
+        "llm_randomize_object_names": False
     })
     non_dynamic_approach = create_approach("llm-standard")
     non_dynamic_approach._llm = llm  # pylint: disable=protected-access
@@ -315,7 +403,8 @@ def test_llm_standard_approach_dynamic_small_example():
         "llm_prompt_flatten_pddl": True,
         "use_dynamic_examples": True,  # this is the only one that differs
         "embedding_model_name": "paraphrase-MiniLM-L6-v2",
-        "llm_use_cache_only": False
+        "llm_use_cache_only": False,
+        "llm_randomize_object_names": False
     })
     dynamic_approach = create_approach("llm-standard")
     dynamic_approach._llm = llm  # pylint: disable=protected-access
@@ -357,7 +446,8 @@ def test_llm_standard_approach_dynamic_big_example():
         "llm_prompt_flatten_pddl": True,
         "use_dynamic_examples": False,  # this is the only one that differs
         "embedding_model_name": "paraphrase-MiniLM-L6-v2",
-        "llm_use_cache_only": False
+        "llm_use_cache_only": False,
+        "llm_randomize_object_names": False
     })
     non_dynamic_approach = create_approach("llm-standard")
     non_dynamic_approach._llm = llm  # pylint: disable=protected-access
@@ -378,7 +468,8 @@ def test_llm_standard_approach_dynamic_big_example():
         "llm_prompt_flatten_pddl": True,
         "use_dynamic_examples": True,  # this is the only one that differs
         "embedding_model_name": "paraphrase-MiniLM-L6-v2",
-        "llm_use_cache_only": False
+        "llm_use_cache_only": False,
+        "llm_randomize_object_names": False
     })
     dynamic_approach = create_approach("llm-standard")
     dynamic_approach._llm = llm  # pylint: disable=protected-access
@@ -414,7 +505,8 @@ def test_llm_multi_approach():
         "llm_autoregressive_prompting": False,
         "llm_use_random_plans": False,
         "llm_prompt_flatten_pddl": False,
-        "embedding_model_name": "paraphrase-MiniLM-L6-v2"
+        "embedding_model_name": "paraphrase-MiniLM-L6-v2",
+        "llm_randomize_object_names": False
     })
     approach = create_approach("llm-multi")
     assert approach.get_name() == "llm-open-loop"
