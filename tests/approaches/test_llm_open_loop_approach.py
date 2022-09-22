@@ -291,7 +291,6 @@ def test_llm_standard_approach_random_objects():
         "llm_randomize_object_names": True,
     })
     approach: LLMOpenLoopApproach = create_approach('llm-standard')
-    rng = np.random.default_rng()
     dataset = [
         Datum(
             utils.get_task_from_dir(utils.PYPERPLAN_BENCHMARK_DIR / 'gripper',

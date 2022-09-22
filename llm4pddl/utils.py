@@ -450,15 +450,14 @@ def str_to_identifier(x: str) -> str:
     return hashlib.md5(x.encode('utf-8')).hexdigest()
 
 
-def randomize_object_names(rng: np.random.Generator,
-                           objs: Set[str]) -> Dict[str, str]:
-    """To prevent overfitting, creates dictionary mapping object names to
-    random strings."""
-    random_dict = {}
-    for obj in sorted(objs):
-        random_dict[obj] = ''.join(
-            rng.choice(list(string.ascii_lowercase), len(obj)))
-    return random_dict
+def create_random_string_substitution(
+        strs: Set[str], rng: np.random.Generator) -> Dict[str, str]:
+    """Creates dictionary mapping strings to random lowercase alphabet strings
+    of the same length as the originals."""
+    subs = {}
+    for s in sorted(strs):  # sort for determinism
+        subs[s] = ''.join(rng.choice(list(string.ascii_lowercase), len(s)))
+    return subs
 
 
 def replace_with_random_objects(orig_str: str, random_dict: dict) -> str:

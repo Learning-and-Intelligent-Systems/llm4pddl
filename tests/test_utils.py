@@ -453,18 +453,18 @@ def test_pyperplan_problem_to_str(domain_file, problem_file):
     assert utils.validate_plan(task, plan)
 
 
-def test_randomize_object_names():
-    """Tests for randomize_object_names()"""
-    rng = np.random.default_rng()
-    example_one = ['abcd', 'bcda', 'cefg']
-    example_two = ["blockA", "blockB", "blockC", "blockD"]
-    example_three = ["adfdf313", "qddfa3", "12423423"]
+def test_create_random_string_substitution():
+    """Tests for create_random_string_substitution()"""
+    rng = np.random.default_rng(123)
+    example_one = {"abcd", "bcda", "cefg"}
+    example_two = {"blockA", "blockB", "blockC", "blockD"}
+    example_three = {"adfdf313", "qddfa3", "12423423"}
     examples = [example_one, example_two, example_three]
     for example in examples:
-        random_dict = utils.randomize_object_names(rng, set(example))
-        assert random_dict is not None
-        assert sorted(list(random_dict.keys())) == sorted(example)
-        for entry in random_dict.values():
+        subs = utils.create_random_string_substitution(example, rng)
+        assert subs is not None
+        assert sorted(list(subs.keys())) == sorted(example)
+        for entry in subs.values():
             assert entry not in example
 
 
