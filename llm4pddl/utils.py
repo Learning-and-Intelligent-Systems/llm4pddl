@@ -495,7 +495,7 @@ def _substitute_patterns(prompt_str: str, subs: Dict[str, str],
 def substitute_objects_in_prompt(prompt_str: str, subs: Dict[str, str]) -> str:
     """Replaces objects in init, goal, solution string with the given subs."""
     patterns: List[Callable[[str], str]] = [
-        lambda s: s + ")",  # object at the end of an atom or operator
+        lambda s: " " + s + ")",  # object at the end of an atom or operator
         lambda s: " " + s + " ",  # object in the middle or in problem list
         lambda s: "\n" + s + " ",  # object in problem list with new lines
     ]
