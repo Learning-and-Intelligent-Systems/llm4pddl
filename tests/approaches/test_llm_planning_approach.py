@@ -103,6 +103,7 @@ def test_llm_planning_approach():
         "train_task_offset": 0,
         "llm_use_random_plans": True,  # note!
         "llm_randomize_object_names": False,
+        "llm_randomize_operator_names": False,
         "llm_prompt_method": "standard",
         "llm_autoregressive_prompting": False,
         "llm_autoregress_max_loops": 100,

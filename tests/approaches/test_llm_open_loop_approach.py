@@ -197,6 +197,7 @@ def test_autoregressive_prompting():
         "llm_use_random_plans": False,
         "llm_autoregress_max_loops": 25,
         "llm_randomize_object_names": False,
+        "llm_randomize_operator_names": False,
         "use_dynamic_examples": False,
         "data_dir": data_dir,
         "load_data": False,
