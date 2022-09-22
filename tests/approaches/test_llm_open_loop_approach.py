@@ -119,8 +119,8 @@ def test_llm_standard_approach(env_name):
     shutil.rmtree(data_dir)
 
 
-def test_llm_standard_approach_randomize_object_names():
-    """Tests for the LLM standard approach."""
+def test_llm_standard_approach_randomize_names():
+    """Tests for the LLM standard approach with randomized names."""
     data_dir = "_fake_data_dir"
     utils.reset_flags({
         "num_train_tasks": 1,
@@ -139,6 +139,7 @@ def test_llm_standard_approach_randomize_object_names():
         "llm_autoregressive_prompting": False,
         "llm_use_random_plans": False,
         "llm_randomize_object_names": True,
+        "llm_randomize_operator_names": True,
         "use_dynamic_examples": False,
         "data_dir": data_dir,
         "load_data": False,
@@ -323,37 +324,6 @@ def test_llm_standard_approach_failure_cases(llm_prompt_method):
 
     shutil.rmtree(cache_dir)
     shutil.rmtree(data_dir)
-
-
-def test_llm_standard_approach_random_objects():
-    """Test for LLM standard approach with random object names in prompt
-    prefix."""
-    utils.reset_flags({
-        "num_train_tasks": 1,
-        "num_eval_tasks": 1,
-        "num_prompt_tasks": 1,
-        "llm_model_name": "code-davinci-002",
-        "llm_max_total_tokens": 700,
-        "llm_multi_temperature": 0.3,
-        "llm_prompt_method": "standard",
-        "planning_timeout": 100,
-        "llm_prompt_flatten_pddl": False,
-        "use_dynamic_examples": False,
-        "embedding_model_name": "paraphrase-MiniLM-L6-v2",
-        "llm_use_cache_only": False,
-        "llm_randomize_object_names": True,
-    })
-    approach: LLMOpenLoopApproach = create_approach('llm-standard')
-    dataset = [
-        Datum(
-            utils.get_task_from_dir(utils.PYPERPLAN_BENCHMARK_DIR / 'gripper',
-                                    1), ['insert plan here'])
-    ]
-    approach._create_prompt_prefix(dataset)  # pylint: disable=protected-access
-    for datum in dataset:
-        task_string, subs = approach._create_prompt(datum.task, datum.solution)  # pylint: disable=protected-access
-        assert task_string is not None
-        assert len(subs.objects) > 0
 
 
 def test_llm_standard_approach_dynamic_small_example():

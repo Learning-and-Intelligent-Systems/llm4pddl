@@ -34,7 +34,9 @@ class LLMOpenLoopApproach(BaseApproach):
         self._list_embeddings_mapping: List[Dict[str, Any]] = []
         self._embedding_model = SentenceTransformer(FLAGS.embedding_model_name)
         # Reset on every call to solve().
-        self._eval_task_str_subs = PromptSubstitution(objects={})
+        self._eval_task_str_subs = PromptSubstitution(objects={}, operators={})
+        # Created on the first call to create_prompt().
+        self._op_subs: Optional[Dict[str, str]] = None
 
     @property
     def is_learning_based(self) -> bool:
@@ -152,6 +154,16 @@ class LLMOpenLoopApproach(BaseApproach):
                 obj_names, self._rng)
         else:
             obj_subs = {}
+        # Randomize operator names.
+        if FLAGS.llm_randomize_operator_names:
+            # Note: unlike objects, we want to do this only once per domain!
+            op_names = set(domain.actions)
+            if self._op_subs is None:
+                self._op_subs = utils.create_random_word_substitution(
+                    op_names, self._rng)
+            assert op_names == set(self._op_subs)
+        else:
+            self._op_subs = {}
         # Construct the object list for the prompt.
         objects_strs: List[str] = []
         for typ, objs in type_to_objs.items():
@@ -194,10 +206,9 @@ class LLMOpenLoopApproach(BaseApproach):
     {solution_str}"""
         # Minify the prompt to reduce tokens.
         prompt = utils.minify_pddl_problem(prompt)
-        # Randomize objects in init, goal, solution strings.
-        prompt = utils.substitute_objects_in_prompt(prompt, obj_subs)
         # Finalize the substitutions.
-        subs = PromptSubstitution(objects=obj_subs)
+        subs = PromptSubstitution(objects=obj_subs, operators=self._op_subs)
+        prompt = utils.substitute_in_prompt(prompt, subs)
         return prompt, subs
 
     def _solve_from_partial_plans(
@@ -251,6 +262,13 @@ class LLMOpenLoopApproach(BaseApproach):
             if not words:
                 continue
             op, objects = words[0], words[1:]
+            # Invert the operator name using the substitutions.
+            rev_op_subs = {
+                v: k
+                for k, v in self._eval_task_str_subs.operators.items()
+            }
+            if op in rev_op_subs:
+                op = rev_op_subs[op]
             # Invert the object names using the substitutions.
             inverted_objects = []
             rev_obj_subs = {
