@@ -91,7 +91,7 @@ class LLMOpenLoopApproach(BaseApproach):
         return self._solve_from_partial_plans(partial_plans, task)
 
     def train(self, dataset: Dataset) -> None:
-        self._create_prompt_prefix(dataset, FLAGS.use_random_object_names)
+        self._create_prompt_prefix(dataset)
 
         # Embedding the training tasks:
         if FLAGS.use_dynamic_examples:
@@ -100,10 +100,7 @@ class LLMOpenLoopApproach(BaseApproach):
             self._list_embeddings_mapping = self._make_embeddings_mapping(
                 embeddings, dataset)
 
-    def _create_prompt_prefix(
-            self,
-            dataset: Dataset,
-            use_random_object_names: Optional[bool] = False) -> None:
+    def _create_prompt_prefix(self, dataset: Dataset) -> None:
         """Creates prompt prefix for the approach.
 
         As of now, the 'best' example in  dynamic is used first in the
@@ -112,20 +109,18 @@ class LLMOpenLoopApproach(BaseApproach):
         prompts = []
         prompt_dataset = dataset[:FLAGS.num_prompt_tasks]
         for datum in prompt_dataset:
-            if use_random_object_names:
-                prompt = self._create_prompt(datum.task, datum.solution,
-                                             self._rng)
-            else:
-                prompt = self._create_prompt(datum.task, datum.solution)
+            prompt = self._create_prompt(datum.task, datum.solution)
             prompts.append(prompt)
         self._prompt_prefix = "\n\n".join(prompts) + "\n\n"
         logging.debug(f"Created prompt prefix:\n{self._prompt_prefix}")
 
-    @staticmethod
-    def _create_prompt(task: Task,
-                       plan: Optional[Plan] = None,
-                       rng: Optional[np.random.Generator] = None) -> str:
-        """Create a prompt entry for a single task and (maybe partial) plan."""
+    def _create_prompt(self, task: Task, plan: Optional[Plan] = None) -> str:
+        """Create a prompt entry for a single task and (maybe partial) plan.
+
+        The second return value keeps track of any substitutions that
+        were made in creating the prompt, based on FLAGS. These
+        substitutions are then used to invert the LLM response. (TODO)
+        """
         # Extract only the objects, init, and goal from the problem file,
         # stripping out any comments or other extraneous text.
         domain, problem = utils.parse_task(task)
@@ -141,14 +136,14 @@ class LLMOpenLoopApproach(BaseApproach):
         for obj in sorted(domain.constants):
             obj_type = domain.constants[obj]
             type_to_objs[obj_type].append(obj)
+        # Randomize object names.
+        if FLAGS.llm_randomize_object_names:
+            obj_names = {o for objs in type_to_objs.values() for o in objs}
+            obj_subs = utils.randomize_object_names(self._rng, obj_names)
+        else:
+            obj_subs = {}
+        # Construct the object list for the prompt.
         objects_strs: List[str] = []
-        # Create dictionary for randomizing object names.
-        objs_dict = {}
-        objs_list = []
-        for _, objs in type_to_objs.items():
-            objs_list += objs
-        if rng:
-            objs_dict = utils.randomize_object_names(rng, set(objs_list))
         for typ, objs in type_to_objs.items():
             if not objs:
                 continue
@@ -190,8 +185,7 @@ class LLMOpenLoopApproach(BaseApproach):
         # Minify the prompt to reduce tokens.
         prompt = utils.minify_pddl_problem(prompt)
         # Randomize objects in init, goal, solution strings.
-        if rng:
-            prompt = utils.replace_with_random_objects(prompt, objs_dict)
+        prompt = utils.replace_with_random_objects(prompt, obj_subs)
         return prompt
 
     def _solve_from_partial_plans(
