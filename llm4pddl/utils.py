@@ -495,7 +495,7 @@ def _substitute_patterns(prompt_str: str, subs: Dict[str, str],
 def substitute_objects_in_prompt(prompt_str: str, subs: Dict[str, str]) -> str:
     """Replaces objects in init, goal, solution string with the given subs."""
     patterns: List[Callable[[str], str]] = [
-        lambda s: s + ")",  # object at the end of an atom or operator
+        lambda s: " " + s + ")",  # object at the end of an atom or operator
         lambda s: " " + s + " ",  # object in the middle or in problem list
         lambda s: "\n" + s + " ",  # object in problem list with new lines
     ]
@@ -507,6 +507,7 @@ def substitute_operators_in_prompt(prompt_str: str, subs: Dict[str,
     """Replaces operator names in the solution string with the given subs."""
     patterns: List[Callable[[str], str]] = [
         lambda s: "(" + s + " ",  # operator names always come first
+        lambda s: "(" + s + ")",  # handle zero-arity operators
     ]
     return _substitute_patterns(prompt_str, subs, patterns)
 
@@ -516,6 +517,7 @@ def substitute_predicates_in_prompt(prompt_str: str, subs: Dict[str,
     """Replaces predicate names in the init and goal."""
     patterns: List[Callable[[str], str]] = [
         lambda s: "(" + s + " ",  # predicate names always come first
+        lambda s: "(" + s + ")",  # handle zero-arity predicates
     ]
     return _substitute_patterns(prompt_str, subs, patterns)
 
