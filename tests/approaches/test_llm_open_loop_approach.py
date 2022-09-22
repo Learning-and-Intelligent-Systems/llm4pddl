@@ -167,6 +167,8 @@ def test_llm_standard_approach_randomize_names():
     for action in ideal_plan:
         for orig, repl in subs.objects.items():
             action = action.replace(orig, repl)
+        for orig, repl in subs.operators.items():
+            action = action.replace(orig, repl)
         ideal_response += "\n" + action
     partial_plan = approach._llm_response_to_plan(ideal_response, task)  # pylint: disable=protected-access
     plan, _ = approach._solve_from_partial_plans([partial_plan], task)  # pylint: disable=protected-access
