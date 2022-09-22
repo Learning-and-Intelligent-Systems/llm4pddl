@@ -33,6 +33,7 @@ PYPERPLAN_BENCHMARK_DIR = _DIR / "third_party" / "pyperplan" / "benchmarks"
 CUSTOM_BENCHMARK_DIR = _DIR / "envs" / "assets" / "pddl"
 AUGMENTED_BENCHMARK_DIR = CUSTOM_BENCHMARK_DIR / "augmented"
 MANUAL_TRAIN_BENCHMARK_DIR = CUSTOM_BENCHMARK_DIR / "manual"
+ENGLISH_WORDS_FILE = _DIR / "approaches" / "assets" / "wordlist.10000"
 
 
 def validate_plan(task: Task, plan: Plan, verbose: bool = True) -> bool:
@@ -451,11 +452,33 @@ def str_to_identifier(x: str) -> str:
     return hashlib.md5(x.encode('utf-8')).hexdigest()
 
 
+@functools.lru_cache(maxsize=None)
+def get_common_english_words() -> List[str]:
+    """Returns the 10000 most common English words.
+
+    Reference: https://www.mit.edu/~ecprice/wordlist.10000
+    """
+    with open(ENGLISH_WORDS_FILE, "r", encoding="utf-8") as f:
+        words = f.read().splitlines()
+    return words
+
+
+def create_random_word_substitution(
+        strs: Set[str], rng: np.random.Generator) -> Dict[str, str]:
+    """Creates a map from the original strs to random English words."""
+    subs = {}
+    words = get_common_english_words()
+    for s in sorted(strs):  # sort for determinism
+        subs[s] = rng.choice(words)
+    return subs
+
+
 def create_random_string_substitution(
         strs: Set[str], rng: np.random.Generator) -> Dict[str, str]:
     """Creates dictionary mapping strings to random lowercase alphabet strings
     of the same length as the originals."""
     subs = {}
+
     for s in sorted(strs):  # sort for determinism
         subs[s] = ''.join(rng.choice(list(string.ascii_lowercase), len(s)))
     return subs
