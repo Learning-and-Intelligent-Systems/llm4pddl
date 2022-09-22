@@ -84,6 +84,7 @@ def test_llm_standard_approach(env_name):
         "llm_prompt_flatten_pddl": False,
         "llm_autoregressive_prompting": False,
         "llm_use_random_plans": False,
+        "use_random_object_names": False,
         "use_dynamic_examples": False,
         "data_dir": data_dir,
         "load_data": False,
@@ -142,6 +143,7 @@ def test_autoregressive_prompting():
         "llm_autoregressive_prompting": True,
         "llm_use_random_plans": False,
         "llm_autoregress_max_loops": 25,
+        "use_random_object_names": False,
         "use_dynamic_examples": False,
         "data_dir": data_dir,
         "load_data": False,
@@ -277,6 +279,7 @@ def test_llm_standard_approach_random_objects():
     utils.reset_flags({
         "num_train_tasks": 1,
         "num_eval_tasks": 1,
+        "num_prompt_tasks": 1,
         "llm_model_name": "code-davinci-002",
         "llm_max_total_tokens": 700,
         "llm_multi_temperature": 0.3,
@@ -286,7 +289,7 @@ def test_llm_standard_approach_random_objects():
         "use_dynamic_examples": False,
         "embedding_model_name": "paraphrase-MiniLM-L6-v2",
         "llm_use_cache_only": False,
-        "use_random_object_names": True
+        "use_random_object_names": True,
     })
     approach: LLMOpenLoopApproach = create_approach('llm-standard')
     rng = np.random.default_rng()
