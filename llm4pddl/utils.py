@@ -511,10 +511,20 @@ def substitute_operators_in_prompt(prompt_str: str, subs: Dict[str,
     return _substitute_patterns(prompt_str, subs, patterns)
 
 
+def substitute_predicates_in_prompt(prompt_str: str, subs: Dict[str,
+                                                                str]) -> str:
+    """Replaces predicate names in the init and goal."""
+    patterns: List[Callable[[str], str]] = [
+        lambda s: "(" + s + " ",  # predicate names always come first
+    ]
+    return _substitute_patterns(prompt_str, subs, patterns)
+
+
 def substitute_in_prompt(prompt_str: str, sub: PromptSubstitution) -> str:
     """Applies the prompt substitution to the prompt string."""
     prompt_str = substitute_objects_in_prompt(prompt_str, sub.objects)
     prompt_str = substitute_operators_in_prompt(prompt_str, sub.operators)
+    prompt_str = substitute_predicates_in_prompt(prompt_str, sub.predicates)
     return prompt_str
 
 

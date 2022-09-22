@@ -52,6 +52,7 @@ def parse_flags() -> None:
                         default='paraphrase-MiniLM-L6-v2')
     parser.add_argument('--llm_randomize_object_names', action='store_true')
     parser.add_argument('--llm_randomize_operator_names', action='store_true')
+    parser.add_argument('--llm_randomize_predicate_names', action='store_true')
     parser.add_argument("--llm_use_random_plans", action="store_true")
     parser.add_argument("--random_actions_max_steps", default=1000, type=int)
     args = parser.parse_args()
