@@ -126,6 +126,12 @@ def _load_results(
 def _create_summary_table(raw_results: pd.DataFrame,
                           verbose: bool = True,
                           save_summary: bool = True) -> pd.DataFrame:
+    # Change names to be more concise
+    for name in raw_results['env']:
+        if name.startswith('pyperplan-'):
+            raw_results['env'] = raw_results['env'].replace([name], name[10:])
+        elif name.startswith('custom-'):
+            raw_results['env'] = raw_results['env'].replace([name], name[7:])
     # Remove the non-numeric columns that we don't need anymore.
     df = raw_results.drop(columns=["result"])
     # Group by env, approach, seed, and experiment ID.
@@ -172,6 +178,57 @@ def _create_summary_table(raw_results: pd.DataFrame,
     if save_summary:
         summary_nested.to_csv("results_summary.csv")
         print("\n\nWrote out table to results_summary.csv")
+    # Removing num_seeds from chart
+    summary_nested = summary_nested.drop('num_seeds', axis=1, level=1)
+    # Removing standard deviation
+    for col in summary_nested:
+        for key in summary_nested[col].keys():
+            summary_nested[col][key] = summary_nested[col][key].split(
+                '(')[0].strip()
+    # Removing fd-only for planning
+    for col in summary_nested:
+        upper_string = col[0]
+        if upper_string == 'fd-only':
+            summary_nested = summary_nested.drop(columns=['fd-only'])
+            summary_nested = summary_nested.drop(
+                columns=['llm-standard-no-autoregress-plan'])
+            break
+    # Removing created and expanded for open loop
+    for col in summary_nested:
+        upper_string = col[0]
+        if upper_string == 'llm-standard':
+            summary_nested = summary_nested.drop(
+                columns=['success_nodes_created', 'success_nodes_expanded'],
+                level=1)
+    # Changing names
+    print(summary_nested)
+    summary_nested = summary_nested.rename(
+        columns={
+            'success_nodes_created': 'created',
+            'success_nodes_expanded': 'expanded',
+            'llm-standard': 'llm standard',
+            'llm-standard-plan': 'llm standard plan',
+            'llm-standard-no-autoregress': 'llm standard no autoregress',
+            'random-actions': 'random actions',
+            'pyperplan-only': 'Pure Planning'
+        })
+    
+    latex = summary_nested.to_latex()
+    for col in summary_nested:
+        upper_string = col[0]
+        if upper_string == 'llm standard':
+            # Removing line from open loop and adding vertical lines
+            intermediate = latex.split('\n')
+            intermediate[0] = """\\begin{tabular}{|l|l|l|l|}"""
+            latex = '\n'.join(intermediate[0:3] + intermediate[4:])
+            break
+        if upper_string == 'llm standard plan':
+            # Adding vertical lines
+            intermediate = latex.split('\n')
+            intermediate[0] = """\\begin{tabular}{|l|lll|lll|lll|}"""
+            latex = '\n'.join(intermediate)
+            break
+    print(latex)
     return means.reset_index()
 
 
