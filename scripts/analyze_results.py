@@ -212,7 +212,7 @@ def _create_summary_table(raw_results: pd.DataFrame,
             'random-actions': 'random actions',
             'pyperplan-only': 'Pure Planning'
         })
-    
+
     latex = summary_nested.to_latex()
     for col in summary_nested:
         upper_string = col[0]
