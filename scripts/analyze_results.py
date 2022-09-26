@@ -208,7 +208,7 @@ def _create_summary_table(raw_results: pd.DataFrame,
         for num in summary_nested[col]:
             SUM += float(num)
             number += 1.0
-        avg = round(SUM/number,3)
+        avg = round(SUM / number, 3)
         avgs.append(avg)
     summary_nested.loc['Average'] = avgs
 
@@ -230,8 +230,9 @@ def _create_summary_table(raw_results: pd.DataFrame,
     # Adding horizontal line for averages
     intermediate = latex.split('\n')
     n = len(intermediate)
-    latex = '\n'.join(intermediate[:n-4]+['\\hline']+intermediate[n-4:])
-    
+    latex = '\n'.join(intermediate[:n - 4] + ['\\hline'] +
+                      intermediate[n - 4:])
+
     for col in summary_nested:
         upper_string = col[0]
         if upper_string == 'llm standard':
