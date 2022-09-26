@@ -129,8 +129,11 @@ def _create_summary_table(raw_results: pd.DataFrame,
     # Change names to be more concise and capitalizing them
     for name in raw_results['env']:
         if name.startswith('pyperplan-'):
-            raw_results['env'] = raw_results['env'].replace(
-                [name], name[10].upper() + name[11:])
+            if name == 'pyperplan-tpp':
+                raw_results['env'] = raw_results['env'].replace([name], 'TPP')
+            else:
+                raw_results['env'] = raw_results['env'].replace(
+                    [name], name[10].upper() + name[11:])
         elif name.startswith('custom-'):
             raw_results['env'] = raw_results['env'].replace(
                 [name], name[7].upper() + name[8:])
@@ -181,37 +184,30 @@ def _create_summary_table(raw_results: pd.DataFrame,
         print("\n\nWrote out table to results_summary.csv")
     # Removing num_seeds from chart
     summary_nested = summary_nested.drop('num_seeds', axis=1, level=1)
-    # Removing standard deviation
-    for col in summary_nested:
-        for key in summary_nested[col].keys():
-            summary_nested[col][key] = summary_nested[col][key].split(
-                '(')[0].strip()
-    # Removing fd-only for planning
-    for col in summary_nested:
-        upper_string = col[0]
-        if upper_string == 'fd-only':
-            summary_nested = summary_nested.drop(columns=['fd-only'])
-            summary_nested = summary_nested.drop(
-                columns=['llm-standard-no-autoregress-plan'])
-            break
-    # Removing created and expanded for open loop
-    for col in summary_nested:
-        upper_string = col[0]
-        if upper_string == 'llm-standard':
-            summary_nested = summary_nested.drop(
-                columns=['success_nodes_created', 'success_nodes_expanded'],
-                level=1)
     # Adding Averages row
     avgs = []
+    avgs_std = []
     for col in summary_nested:
         SUM = 0.0
+        SUM_std = 0.0
         number = 0.0
-        for num in summary_nested[col]:
+        for num_str in summary_nested[col]:
+            num_str = num_str.replace(')', '')
+            num_str = num_str.replace('(', '')
+            numbers = num_str.split(' ')
+            num, num_std = numbers
             SUM += float(num)
+            SUM_std += float(num_std)
             number += 1.0
         avg = round(SUM / number, 3)
+        avg_std = round(SUM_std / number, 3)
         avgs.append(avg)
-    summary_nested.loc['Average'] = avgs
+        avgs_std.append(avg_std)
+        full_strings = [
+            f'{avg_} ({avg_std_})' for avg_, avg_std_ in zip(avgs, avgs_std)
+        ]
+    summary_nested.loc['Average'] = full_strings
+
     # Changing names
     summary_nested = summary_nested.rename(
         columns={
@@ -221,42 +217,89 @@ def _create_summary_table(raw_results: pd.DataFrame,
             'llm-standard-plan': 'LLM Standard Plan',
             'llm-standard-random-plan': 'LLM Standard Random Plan',
             'llm-standard-no-autoregress': 'No Autoregress',
+            'llm-standard-no-autoregress-plan': 'No Autoregress Plan',
             'random-actions': 'Random',
-            'pyperplan-only': 'Pure Planning'
+            'pyperplan-only': 'Pure Planning',
+            'fd-only': 'Fast Downward'
         })
+    # Printing planning appendix graphs
+    for col in summary_nested:
+        upper_string = col[0]
+        if upper_string == 'Fast Downward':
+            for graph in [
+                    'LLM Standard Plan', 'LLM Standard Random Plan',
+                    'Pure Planning', 'Fast Downward', 'No Autoregress Plan'
+            ]:
+                latex = _latex_formatting(summary_nested[graph].to_latex())
+                intermediate = latex.split('\n')
+                add_string = '{} & \\multicolumn{3}{c}{' + graph + '} \\\\\n\\cmidrule(lr){2-4}'
+                intermediate = intermediate[0:2] + [add_string
+                                                    ] + intermediate[2:]
+                latex = '\n'.join(intermediate)
+                print(f'appendix planning graph for {graph}:\n\n{latex}\n')
+            break
+
+    # Removing created and expanded for open loop
+    for col in summary_nested:
+        upper_string = col[0]
+        if upper_string == 'LLM Standard':
+            summary_nested = summary_nested.drop(
+                columns=['created', 'expanded'], level=1)
+    # Printing open loop appendix graph
+    for col in summary_nested:
+        upper_string = col[0]
+        if upper_string == 'LLM Standard':
+            latex = summary_nested.to_latex()
+            latex = _latex_formatting(latex)
+            print(f'appendix open loop graph:\n\n{latex}\n')
+    # Removing standard deviation
+    for col in summary_nested:
+        for key in summary_nested[col].keys():
+            summary_nested[col][key] = summary_nested[col][key].split(
+                '(')[0].strip()
+    # Removing fd-only and no-autoregress for planning
+    for col in summary_nested:
+        upper_string = col[0]
+        if upper_string == 'Fast Downward':
+            summary_nested = summary_nested.drop(columns=['Fast Downward'])
+            summary_nested = summary_nested.drop(
+                columns=['No Autoregress Plan'])
+            break
+
     latex = summary_nested.to_latex()
+    latex = _latex_formatting(latex)
+    print(f'main graph:\n\n{latex}\n')
+    return means.reset_index()
+
+
+def _latex_formatting(latex: str) -> str:
+    """input latex string, formats it the way we want."""
     # Adding horizontal line for averages
     intermediate = latex.split('\n')
     n = len(intermediate)
     latex = '\n'.join(intermediate[:n - 4] + ['\\hline \\\\ [-1.8ex]'] +
                       intermediate[n - 4:])
     # Centering labels
-    for col in summary_nested:
-        upper_string = col[0]
-        if upper_string == 'LLM Standard Plan':
-            intermediate = latex.split('\n')
-            intermediate[2] = intermediate[2].replace('{l}', '{c}', 3)
-            latex = '\n'.join(intermediate)
-            break
-    for col in summary_nested:
-        upper_string = col[0]
+    if 'LLM Standard Plan' in latex:
         intermediate = latex.split('\n')
-        if upper_string == 'LLM Standard':
-            # Removing success line from open loop and adding c
-            intermediate[0] = """\\begin{tabular}{cccc}"""
-            latex = '\n'.join(intermediate[0:3] + intermediate[4:])
-            break
-        if upper_string == 'LLM Standard Plan':
-            # Adding semi lines
-            intermediate = intermediate[:3] + [
-                '\\cmidrule(lr){2-4} \\cmidrule(lr){5-7} \\cmidrule(lr){8-10}'
-            ] + intermediate[3:]
-            # Adding c
-            intermediate[0] = """\\begin{tabular}{cccccccccc}"""
-            latex = '\n'.join(intermediate)
-            break
+        intermediate[2] = intermediate[2].replace('{l}', '{c}', 3)
+        latex = '\n'.join(intermediate)
+
+    intermediate = latex.split('\n')
+    if 'Pure Planning' in latex:
+        # Adding semi lines
+        intermediate = intermediate[:3] + [
+            '\\cmidrule(lr){2-4} \\cmidrule(lr){5-7} \\cmidrule(lr){8-10}'
+        ] + intermediate[3:]
+        # Adding c
+        intermediate[0] = """\\begin{tabular}{cccccccccc}"""
+        latex = '\n'.join(intermediate)
+    else:
+        # Removing success line from open loop and adding c
+        intermediate[0] = """\\begin{tabular}{cccc}"""
+        latex = '\n'.join(intermediate[0:3] + intermediate[4:])
+
     # Bolding averages
-    upper_string = col[0]
     intermediate = latex.split('\n')
     bold_line = intermediate[-4]
     bold_line = bold_line[:-2]
@@ -266,9 +309,7 @@ def _create_summary_table(raw_results: pd.DataFrame,
     bold_line += '\\\\'
     intermediate[-4] = bold_line
     latex = '\n'.join(intermediate)
-
-    print(latex)
-    return means.reset_index()
+    return latex
 
 
 def _summarize_diff(a_df: pd.DataFrame, b_df: pd.DataFrame) -> None:
