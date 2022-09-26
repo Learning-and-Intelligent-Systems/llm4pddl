@@ -126,12 +126,14 @@ def _load_results(
 def _create_summary_table(raw_results: pd.DataFrame,
                           verbose: bool = True,
                           save_summary: bool = True) -> pd.DataFrame:
-    # Change names to be more concise
+    # Change names to be more concise and capitalizing them
     for name in raw_results['env']:
         if name.startswith('pyperplan-'):
-            raw_results['env'] = raw_results['env'].replace([name], name[10:])
+            raw_results['env'] = raw_results['env'].replace(
+                [name], name[10].upper() + name[11:])
         elif name.startswith('custom-'):
-            raw_results['env'] = raw_results['env'].replace([name], name[7:])
+            raw_results['env'] = raw_results['env'].replace(
+                [name], name[7].upper() + name[8:])
     # Remove the non-numeric columns that we don't need anymore.
     df = raw_results.drop(columns=["result"])
     # Group by env, approach, seed, and experiment ID.
@@ -168,7 +170,6 @@ def _create_summary_table(raw_results: pd.DataFrame,
             for metric in metrics:
                 reshaped_data[row.env][(row.approach_id, metric)] = row[metric]
         summary_nested = pd.DataFrame(reshaped_data).transpose()
-        print(summary_nested)
         # Report the total number of results.
         print(f"\nTOTAL RESULTS: {df.shape[0]}")
         # Create an even higher-level summary, averaging over everything except
@@ -211,42 +212,61 @@ def _create_summary_table(raw_results: pd.DataFrame,
         avg = round(SUM / number, 3)
         avgs.append(avg)
     summary_nested.loc['Average'] = avgs
-
     # Changing names
-    print(summary_nested)
     summary_nested = summary_nested.rename(
         columns={
             'success_nodes_created': 'created',
             'success_nodes_expanded': 'expanded',
-            'llm-standard': 'llm standard',
-            'llm-standard-plan': 'llm standard plan',
-            'llm-standard-no-autoregress': 'llm standard no autoregress',
-            'random-actions': 'random actions',
+            'llm-standard': 'LLM Standard',
+            'llm-standard-plan': 'LLM Standard Plan',
+            'llm-standard-random-plan': 'LLM Standard Random Plan',
+            'llm-standard-no-autoregress': 'No Autoregress',
+            'random-actions': 'Random',
             'pyperplan-only': 'Pure Planning'
         })
-
     latex = summary_nested.to_latex()
-
     # Adding horizontal line for averages
     intermediate = latex.split('\n')
     n = len(intermediate)
-    latex = '\n'.join(intermediate[:n - 4] + ['\\hline'] +
+    latex = '\n'.join(intermediate[:n - 4] + ['\\hline \\\\ [-1.8ex]'] +
                       intermediate[n - 4:])
-
+    # Centering labels
     for col in summary_nested:
         upper_string = col[0]
-        if upper_string == 'llm standard':
-            # Removing line from open loop and adding vertical lines
+        if upper_string == 'LLM Standard Plan':
             intermediate = latex.split('\n')
-            intermediate[0] = """\\begin{tabular}{|l|l|l|l|}"""
-            latex = '\n'.join(intermediate[0:3] + intermediate[4:])
-            break
-        if upper_string == 'llm standard plan':
-            # Adding vertical lines
-            intermediate = latex.split('\n')
-            intermediate[0] = """\\begin{tabular}{|l|lll|lll|lll|}"""
+            intermediate[2] = intermediate[2].replace('{l}', '{c}', 3)
             latex = '\n'.join(intermediate)
             break
+    for col in summary_nested:
+        upper_string = col[0]
+        intermediate = latex.split('\n')
+        if upper_string == 'LLM Standard':
+            # Removing success line from open loop and adding c
+            intermediate[0] = """\\begin{tabular}{cccc}"""
+            latex = '\n'.join(intermediate[0:3] + intermediate[4:])
+            break
+        if upper_string == 'LLM Standard Plan':
+            # Adding semi lines
+            intermediate = intermediate[:3] + [
+                '\\cmidrule(lr){2-4} \\cmidrule(lr){5-7} \\cmidrule(lr){8-10}'
+            ] + intermediate[3:]
+            # Adding c
+            intermediate[0] = """\\begin{tabular}{cccccccccc}"""
+            latex = '\n'.join(intermediate)
+            break
+    # Bolding averages
+    upper_string = col[0]
+    intermediate = latex.split('\n')
+    bold_line = intermediate[-4]
+    bold_line = bold_line[:-2]
+    unbolded = bold_line.split('&')
+    bolded = ['\\textbf{' + part + '}' for part in unbolded]
+    bold_line = '&'.join(bolded)
+    bold_line += '\\\\'
+    intermediate[-4] = bold_line
+    latex = '\n'.join(intermediate)
+
     print(latex)
     return means.reset_index()
 
