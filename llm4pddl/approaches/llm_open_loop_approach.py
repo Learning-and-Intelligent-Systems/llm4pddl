@@ -398,7 +398,16 @@ class LLMOpenLoopApproach(BaseApproach):
                               f"{new_action_str} (score={score})")
                 action_str = new_action_str
             # Update the prompt with action_str. This is the autoregress.
-            prompt += sep + action_str
+            prompt_action_str = action_str
+            # If we're randomizing object names, need to map them back.
+            obj_subs = self._eval_task_str_subs.objects
+            for k, v in obj_subs.items():  # pragma: no cover
+                prompt_action_str = prompt_action_str.replace(k, v)
+            # If we're randomizing operator names, need to map back.
+            op_subs = self._eval_task_str_subs.operators
+            for k, v in op_subs.items():  # pragma: no cover
+                prompt_action_str = prompt_action_str.replace(k, v)
+            prompt += sep + prompt_action_str
             # Update the plan.
             plan.append(action_str)
             # Update the current facts for the next applicability checks.
