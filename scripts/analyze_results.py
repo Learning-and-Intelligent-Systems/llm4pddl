@@ -172,6 +172,27 @@ def _create_summary_table(raw_results: pd.DataFrame,
         for _, row in summary.iterrows():
             for metric in metrics:
                 reshaped_data[row.env][(row.approach_id, metric)] = row[metric]
+        # Reorder the approaches.
+        approach_order = [
+            'llm-standard',
+            'llm-standard-plan',
+            'llm-standard-random-plan',
+            'llm-standard-no-autoregress',
+            'llm-standard-no-autoregress-plan',
+            'random-names-no-autoregress',
+            'random-actions',
+            'pyperplan-only',
+            'fd-only',
+        ]
+        for env, env_data in reshaped_data.items():
+
+            def _sort_key(key):
+                approach, metric = key
+                return (approach_order.index(approach), metrics.index(metric))
+
+            sorted_keys = sorted(env_data.keys(), key=_sort_key)
+            reshaped_data[env] = {k: env_data[k] for k in sorted_keys}
+
         summary_nested = pd.DataFrame(reshaped_data).transpose()
         # Report the total number of results.
         print(f"\nTOTAL RESULTS: {df.shape[0]}")
@@ -218,6 +239,7 @@ def _create_summary_table(raw_results: pd.DataFrame,
             'llm-standard-random-plan': 'LLM Standard Random Plan',
             'llm-standard-no-autoregress': 'No Autoregress',
             'llm-standard-no-autoregress-plan': 'No Autoregress Plan',
+            'random-names-no-autoregress': 'Ablate Names',
             'random-actions': 'Random',
             'pyperplan-only': 'Pure Planning',
             'fd-only': 'Fast Downward'
@@ -296,7 +318,7 @@ def _latex_formatting(latex: str) -> str:
         latex = '\n'.join(intermediate)
     else:
         # Removing success line from open loop and adding c
-        intermediate[0] = """\\begin{tabular}{cccc}"""
+        intermediate[0] = """\\begin{tabular}{ccccc}"""
         latex = '\n'.join(intermediate[0:3] + intermediate[4:])
 
     # Bolding averages
