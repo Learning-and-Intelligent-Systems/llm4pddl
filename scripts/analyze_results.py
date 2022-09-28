@@ -235,24 +235,25 @@ def _create_summary_table(raw_results: pd.DataFrame,
             'success_nodes_created': 'created',
             'success_nodes_expanded': 'expanded',
             'llm-standard': 'LLM Standard',
-            'llm-standard-plan': 'LLM Standard Plan',
-            'llm-standard-random-plan': 'LLM Standard Random Plan',
-            'llm-standard-no-autoregress': 'No Autoregress',
-            'llm-standard-no-autoregress-plan': 'No Autoregress Plan',
+            'llm-standard-plan': 'LLM Plan Guidance',
+            'llm-standard-random-plan': 'Random Plan Guidance',
+            'llm-standard-no-autoregress': 'No Auto',
+            'llm-standard-no-autoregress-plan': 'No Auto Plan',
             'random-names-no-autoregress': 'Ablate Names',
-            'random-actions': 'Random',
+            'random-actions': 'Random Actions',
             'pyperplan-only': 'Pure Planning',
-            'fd-only': 'Fast Downward'
+            'fd-only': 'Fast Downward',
+            'random-names-no-autoregress': 'Ablate Names'
         })
     # Printing planning appendix graphs
     for col in summary_nested:
         upper_string = col[0]
         if upper_string == 'Fast Downward':
             for graph in [
-                    'LLM Standard Plan', 'LLM Standard Random Plan',
-                    'Pure Planning', 'Fast Downward', 'No Autoregress Plan'
+                    'LLM Plan Guidance', 'Random Plan Guidance',
+                    'Pure Planning', 'Fast Downward', 'No Auto Plan'
             ]:
-                latex = _latex_formatting(summary_nested[graph].to_latex())
+                latex = _latex_formatting(summary_nested[graph].to_latex(), is_planning=True)
                 intermediate = latex.split('\n')
                 add_string = '{} & \\multicolumn{3}{c}{' + graph + '} \\\\\n\\cmidrule(lr){2-4}'
                 intermediate = intermediate[0:2] + [add_string
@@ -285,7 +286,7 @@ def _create_summary_table(raw_results: pd.DataFrame,
         if upper_string == 'Fast Downward':
             summary_nested = summary_nested.drop(columns=['Fast Downward'])
             summary_nested = summary_nested.drop(
-                columns=['No Autoregress Plan'])
+                columns=['No Auto Plan'])
             break
 
     latex = summary_nested.to_latex()
@@ -294,7 +295,7 @@ def _create_summary_table(raw_results: pd.DataFrame,
     return means.reset_index()
 
 
-def _latex_formatting(latex: str) -> str:
+def _latex_formatting(latex: str, is_planning: bool = False) -> str:
     """input latex string, formats it the way we want."""
     # Adding horizontal line for averages
     intermediate = latex.split('\n')
@@ -302,7 +303,7 @@ def _latex_formatting(latex: str) -> str:
     latex = '\n'.join(intermediate[:n - 4] + ['\\hline \\\\ [-1.8ex]'] +
                       intermediate[n - 4:])
     # Centering labels
-    if 'LLM Standard Plan' in latex:
+    if 'LLM Plan Guidance' in latex:
         intermediate = latex.split('\n')
         intermediate[2] = intermediate[2].replace('{l}', '{c}', 3)
         latex = '\n'.join(intermediate)
@@ -331,6 +332,29 @@ def _latex_formatting(latex: str) -> str:
     bold_line += '\\\\'
     intermediate[-4] = bold_line
     latex = '\n'.join(intermediate)
+
+    # Add mid line
+    intermediate = latex.split('\n')
+    if is_planning and '\midrule' not in intermediate[3]:
+        intermediate = intermediate[:3] + ['\\midrule'] + intermediate[3:]
+        latex = '\n'.join(intermediate)
+    
+    # For open loop: make titles two lines
+    intermediate = latex.split('\n')
+    if intermediate[0] == '\\begin{tabular}{ccccc}' and 'Ablate Names' in latex:
+        titles = intermediate[2].split('&')
+        titles[-1] = titles[-1][:-2]
+        titles = [title.strip() for title in titles[1:]]
+        first_str = '{} '
+        second_str = '{} '
+        for title in titles:
+            f,s = title.split(' ')
+            first_str+=f'& {f} '
+            second_str+=f'& {s} '
+        first_str+=' \\\\'
+        second_str+=' \\\\'
+        intermediate = intermediate[:2] + [first_str] + [second_str] + intermediate[3:]
+        latex = '\n'.join(intermediate)
     return latex
 
 
