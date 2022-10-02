@@ -292,6 +292,67 @@ def _create_summary_table(raw_results: pd.DataFrame,
     latex = summary_nested.to_latex()
     latex = _latex_formatting(latex)
     print(f'main graph:\n\n{latex}\n')
+
+    # Making percentage differences and colors graph
+    if "Pure Planning" in latex:
+        for mode in ['LLM Plan Guidance', 'Random Plan Guidance']:
+            for column in ['created', 'expanded', 'success']:
+                percentages = []
+                for i in range(len(summary_nested)):
+                    upper = float(summary_nested[mode][column][i])-float(summary_nested['Pure Planning'][column][i])
+                    lower = float(summary_nested['Pure Planning'][column][i])
+                    percentage = round(upper/lower, 4)
+                    percentages.append(percentage*100)
+                summary_nested[(mode, column)] = percentages
+        # Updating averages
+        # summary_nested = summary_nested.drop(index = 'Average')
+        if False: # set to True if you want average
+            avgs = []
+            for col in summary_nested:
+                SUM_ = 0.0
+                number_ = 0.0
+                for num_str in summary_nested[col]:
+                    SUM_ += float(num_str)
+                    number_ += 1.0
+                avg = round(SUM_ / number_, 2)
+                avgs.append(avg)
+            summary_nested.loc['Average'] = avgs
+        # summary_nested = summary_nested.drop(columns=['Pure Planning'])
+
+        # import pdb; pdb.set_trace()
+
+        latex = _latex_formatting(summary_nested.to_latex())
+        intermediate = latex.split('\n')
+        intermediate = intermediate[:25]+intermediate[26:] # getting rid of \hline and avg
+        
+        for line_num in range(6, 6+18):
+            # print(f'{line_num}:{intermediate[line_num]}')                
+            line = intermediate[line_num]
+            print(line)
+            line = line[:-2]
+            nocolors = line.split('&')
+            colors = [nocolors[0]]
+            for k,piece in enumerate(nocolors[1:]):
+                print(f'line_num:{line_num}, piece:{piece}, k:{k}')
+                if abs(float(piece))>10:
+                    if '-' in piece: #this is green if nodes
+                        if (k+1)%3!=0:
+                            colors.append('\\textcolor{green}{' + piece + '}')
+                        else: 
+                            colors.append('\\textcolor{red}{' + piece + '}')
+                    else:
+                        if (k+1)%3!=0:
+                            colors.append('\\textcolor{red}{' + piece + '}')
+                        else:
+                            colors.append('\\textcolor{green}{' + piece + '}')
+                else:
+                    colors.append(piece)
+            line = '&'.join(colors)
+            line += '\\\\'
+            intermediate[line_num] = line
+            latex = '\n'.join(intermediate)
+    print(f'color graph:\n\n{latex}')
+    import pdb; pdb.set_trace()
     return means.reset_index()
 
 
