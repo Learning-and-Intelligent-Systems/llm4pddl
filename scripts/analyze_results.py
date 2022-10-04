@@ -176,9 +176,9 @@ def _create_summary_table(raw_results: pd.DataFrame,
         approach_order = [
             'llm-standard',
             'llm-standard-plan',
-            'llm-standard-random-plan',
             'llm-standard-no-autoregress',
             'llm-standard-no-autoregress-plan',
+            'llm-standard-random-plan',
             'random-names-no-autoregress',
             'random-actions',
             'pyperplan-only',
@@ -238,7 +238,7 @@ def _create_summary_table(raw_results: pd.DataFrame,
             'llm-standard-plan': 'LLM Plan Guidance',
             'llm-standard-random-plan': 'Random Plan Guidance',
             'llm-standard-no-autoregress': 'No Auto',
-            'llm-standard-no-autoregress-plan': 'No Auto Plan',
+            'llm-standard-no-autoregress-plan': 'LLM No Auto Plan Guidance',
             'random-names-no-autoregress': 'Ablate Names',
             'random-actions': 'Random Actions',
             'pyperplan-only': 'Pure Planning',
@@ -251,7 +251,7 @@ def _create_summary_table(raw_results: pd.DataFrame,
         if upper_string == 'Fast Downward':
             for graph in [
                     'LLM Plan Guidance', 'Random Plan Guidance',
-                    'Pure Planning', 'Fast Downward', 'No Auto Plan'
+                    'Pure Planning', 'Fast Downward', 'LLM No Auto Plan Guidance'
             ]:
                 latex = _latex_formatting(summary_nested[graph].to_latex(), is_planning=True)
                 intermediate = latex.split('\n')
@@ -285,8 +285,8 @@ def _create_summary_table(raw_results: pd.DataFrame,
         upper_string = col[0]
         if upper_string == 'Fast Downward':
             summary_nested = summary_nested.drop(columns=['Fast Downward'])
-            summary_nested = summary_nested.drop(
-                columns=['No Auto Plan'])
+            # summary_nested = summary_nested.drop(
+            #     columns=['LLM No Auto Plan Guidance'])
             break
 
     latex = summary_nested.to_latex()
@@ -295,7 +295,7 @@ def _create_summary_table(raw_results: pd.DataFrame,
 
     # Making percentage differences and colors graph
     if "Pure Planning" in latex:
-        for mode in ['LLM Plan Guidance', 'Random Plan Guidance']:
+        for mode in ['LLM Plan Guidance', 'Random Plan Guidance', 'LLM No Auto Plan Guidance']:
             for column in ['created', 'expanded', 'success']:
                 percentages = []
                 for i in range(len(summary_nested)):
@@ -305,7 +305,6 @@ def _create_summary_table(raw_results: pd.DataFrame,
                     percentages.append(percentage*100)
                 summary_nested[(mode, column)] = percentages
         # Updating averages
-        # summary_nested = summary_nested.drop(index = 'Average')
         if False: # set to True if you want average
             avgs = []
             for col in summary_nested:
@@ -317,34 +316,30 @@ def _create_summary_table(raw_results: pd.DataFrame,
                 avg = round(SUM_ / number_, 2)
                 avgs.append(avg)
             summary_nested.loc['Average'] = avgs
-        # summary_nested = summary_nested.drop(columns=['Pure Planning'])
+        summary_nested = summary_nested.drop(columns=['Pure Planning'])
 
-        # import pdb; pdb.set_trace()
 
         latex = _latex_formatting(summary_nested.to_latex())
         intermediate = latex.split('\n')
-        intermediate = intermediate[:25]+intermediate[26:] # getting rid of \hline and avg
+        intermediate = intermediate[:24]+intermediate[26:] # getting rid of \hline and avg
         
         for line_num in range(6, 6+18):
-            # print(f'{line_num}:{intermediate[line_num]}')                
             line = intermediate[line_num]
-            print(line)
             line = line[:-2]
             nocolors = line.split('&')
             colors = [nocolors[0]]
             for k,piece in enumerate(nocolors[1:]):
-                print(f'line_num:{line_num}, piece:{piece}, k:{k}')
                 if abs(float(piece))>10:
                     if '-' in piece: #this is green if nodes
                         if (k+1)%3!=0:
-                            colors.append('\\textcolor{green}{' + piece + '}')
+                            colors.append('\\textcolor{Green}{' + piece + '}')
                         else: 
                             colors.append('\\textcolor{red}{' + piece + '}')
                     else:
                         if (k+1)%3!=0:
                             colors.append('\\textcolor{red}{' + piece + '}')
                         else:
-                            colors.append('\\textcolor{green}{' + piece + '}')
+                            colors.append('\\textcolor{Green}{' + piece + '}')
                 else:
                     colors.append(piece)
             line = '&'.join(colors)
@@ -352,7 +347,6 @@ def _create_summary_table(raw_results: pd.DataFrame,
             intermediate[line_num] = line
             latex = '\n'.join(intermediate)
     print(f'color graph:\n\n{latex}')
-    import pdb; pdb.set_trace()
     return means.reset_index()
 
 
@@ -370,7 +364,7 @@ def _latex_formatting(latex: str, is_planning: bool = False) -> str:
         latex = '\n'.join(intermediate)
 
     intermediate = latex.split('\n')
-    if 'Pure Planning' in latex:
+    if 'LLM Plan Guidance' in latex:
         # Adding semi lines
         intermediate = intermediate[:3] + [
             '\\cmidrule(lr){2-4} \\cmidrule(lr){5-7} \\cmidrule(lr){8-10}'
