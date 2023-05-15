@@ -1,13 +1,13 @@
 # llm4pddl
 
-Under development.
+Code for [PDDL Planning with Pretrained Large Language Models](https://openreview.net/pdf?id=1QMMUB4zfl). Silver et al. (2022). NeurIPS Foundation Models for Decision Making Workshop.
 
 ## Requirements
 
 - Python 3.8+
 - Tested on MacOS Catalina and Ubuntu 18.04
 
-## Instructions For Contributing
+## Installation
 
 ### First Time
 
@@ -23,7 +23,13 @@ Under development.
   - If problems persist, see https://github.com/huggingface/transformers/issues/2831.
 - Run `pip install -e llm4pddl/third_party/pyperplan` to install our fork of pyperplan.
 
-### Developing
+### Example Command
+
+```python llm4pddl/main.py --approach llm-standard --env pyperplan-gripper --num_train_tasks 2 --num_eval_tasks 10 --seed 0 --debug```
+
+See `llm4pddl/flags.py` for additional flags.
+
+### Instructions for Contributing
 
 - After pulling the latest changes, also run `git submodule update --init --recursive` to make sure that you have any changes to the pyperplan submodule.
 - You can't push directly to master. Make a new branch in this repository (don't use a fork, since that will not properly trigger the checks when you make a PR). When your code is ready for review, make a PR and request reviews from the appropriate people.
@@ -36,3 +42,14 @@ Under development.
 - The second one is the static typing check, which uses Mypy to verify type annotations.
 - The third one is the linter check, which runs Pylint with the custom config file `.llm4pddl_pylintrc` in the root of this repository. Feel free to edit this file as necessary.
 - The fourth one is the autoformatting check, which uses the custom config files `.style.yapf` and `.isort.cfg` in the root of this repository.
+
+## Citation
+
+```
+@inproceedings{silver2022pddl,
+  title={PDDL Planning with Pretrained Large Language Models},
+  author={Silver, Tom and Hariprasad, Varun and Shuttleworth, Reece S and Kumar, Nishanth and Lozano-P{\'e}rez, Tom{\'a}s and Kaelbling, Leslie Pack},
+  booktitle={NeurIPS 2022 Foundation Models for Decision Making Workshop},
+  year={2022}
+}
+```

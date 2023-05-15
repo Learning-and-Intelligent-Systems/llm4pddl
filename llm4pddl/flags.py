@@ -26,8 +26,7 @@ def parse_flags() -> None:
     parser.add_argument("--llm_use_cache_only", action="store_true")
     parser.add_argument("--load_data", action="store_true")
     parser.add_argument("--data_dir", default="saved_datasets", type=str)
-    # Also try: "text-davinci-002"
-    parser.add_argument("--llm_model_name", default="code-davinci-002")
+    parser.add_argument("--llm_model_name", default="text-davinci-003")
     # Note that this temperature is only used by the multi LLM approaches,
     # not by the standard (single response) approach, which always uses 0.0.
     parser.add_argument("--llm_multi_temperature", default=0.5, type=float)

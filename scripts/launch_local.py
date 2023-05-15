@@ -2,7 +2,7 @@
 
 Run experiments sequentially, not in parallel.
 
-    python scripts/launch_local.py --config scripts/configs/example.yaml
+python scripts/launch_local.py --config scripts/configs/example.yaml
 
 The default branch can be overridden with the --branch flag.
 """

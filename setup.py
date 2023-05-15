@@ -2,8 +2,7 @@
 
 Usage examples:
 
-    pip install -e .
-    pip install -e .[develop]
+pip install -e . pip install -e .[develop]
 """
 from setuptools import find_packages, setup
 

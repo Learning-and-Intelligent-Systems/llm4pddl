@@ -71,7 +71,7 @@ class LLMOpenLoopApproach(BaseApproach):
             # Since auto-regressive prompting will lead to divergent queries,
             # we need to just prompt separately once per num_completions.
             # Furthermore, to get variance, we need to disable the cache.
-            disable_cache = (self._num_completions > 1)
+            disable_cache = self._num_completions > 1
             for _ in range(self._num_completions):
                 plan = self._prompt_autoregressive(prompt, task, disable_cache)
                 partial_plans.append(plan)
