@@ -129,7 +129,8 @@ def run_cmds_on_machine(
     user: str,
     machine: str,
     ssh_key: Optional[str] = None,
-    allowed_return_codes: Tuple[int, ...] = (0, )) -> None:
+    allowed_return_codes: Tuple[int, ...] = (0, )
+) -> None:
     """SSH into the machine, run the commands, then exit."""
     host = f"{user}@{machine}"
     ssh_cmd = f"ssh -tt -o StrictHostKeyChecking=no {host}"
