@@ -2,7 +2,7 @@
 
 import subprocess
 from dataclasses import dataclass
-from typing import Any, Dict, Iterator, List, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 import yaml
 
@@ -128,7 +128,7 @@ def run_cmds_on_machine(
     cmds: List[str],
     user: str,
     machine: str,
-    ssh_key: str = None,
+    ssh_key: Optional[str] = None,
     allowed_return_codes: Tuple[int, ...] = (0, )) -> None:
     """SSH into the machine, run the commands, then exit."""
     host = f"{user}@{machine}"
