@@ -81,9 +81,12 @@ jobs:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
         cache-dependency-path: '**/setup.py'
-    - name: Run YAPF to test if python code is correctly formatted
-      uses: AlexanderMelde/yapf-action@master
-      with:
-        args: --verbose --style .style.yapf
-    - name: Run isort to organize imports
-      uses: isort/isort-action@master
+    - name: Install dependencies
+      run: |
+        pip install yapf==0.32.0
+    - name: Run yapf to detect any autoformatting changes
+      run: |
+        yapf --diff -r --style .style.yapf --exclude '**/third_party' llm4pddl
+        yapf --diff -r --style .style.yapf scripts
+        yapf --diff -r --style .style.yapf tests
+        yapf --diff -r --style .style.yapf setup.py
